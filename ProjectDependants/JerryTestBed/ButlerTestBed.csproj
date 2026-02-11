@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Maps.Geolocation" Version="1.0.0-beta.3" />
+    <PackageReference Include="Azure.ResourceManager.Maps" Version="1.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Butler5ProviderOllama\Butler5ProviderOllama.csproj" />
+    <ProjectReference Include="..\..\Butler5ProviderOpenAI\Butler5ProviderOpenAI.csproj" />
+    <ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
+    <ProjectReference Include="..\..\UnitTests\LLMProviderUnitTests\GeminiProvider\ProviderUnitTests_Gemini.csproj" />
+    <ProjectReference Include="..\..\WindowsKeyMgr\WindowsKeyMgr.csproj" />
+    <ProjectReference Include="..\JerryChatbox\ButlerSDK.csproj" />
+  </ItemGroup>
+
+</Project>

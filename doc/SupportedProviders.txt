@@ -1,0 +1,28 @@
+
+Full Current Support
+OpenAi (Cloud)
+- requires user provided api key
+- powered by open ai Provider in ButlerSDK
+- Note: Internally Butler's data types for providers are double. OpenAi uses float.
+- ***RECOMMANDED Nuget package is OpenAI (2.8.0) or higher
+
+Ollama (local) thru openai wrapper 
+- setup tested via 0.25.25 Ollama, local host
+- chatgpt suggested dropping a 'config.toml' in my user profile .Ollama subfolder.
+- That got it to work ok.
+- powered by open ai Provider in ButlerSDK pointed to local host
+
+Gemini
+- requires user provided api key
+- powered by Gemini Provider in ButlerSDK
+- ***RECOMMANDED Nuget is Google_GenerativeAI (3.6.3) or higher
+
+Beta/Experirmental
+deepseekv2 thru LlamaSharp.
+- currently outputs math and random math
+LLamaSharp
+
+
+
+
+

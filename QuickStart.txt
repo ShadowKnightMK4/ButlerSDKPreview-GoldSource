@@ -1,0 +1,81 @@
+
+Welcome to the Quick Start guide for my public release of Jerry aka 'Butler SDK'
+
+What is the Butler?
+Butler is a collection of C# code that lets someone target a prebuilt generic LLM (or chat)
+provider. This will enable someone to target their code to Butler and swap between say, 
+Gemini, OpenAI or a local model (via Ollama in OpenAI) mode by a few lines of code different.
+
+Additionally, Butler Implements a tooling system that providers are tasked to translated 
+to their own implementation ie Gemini's provider translates from Butler to Gemini for example.
+
+
+Why use butler instead of say another?
+Flexability! Butler Exposes a Preprocessor for the message list, and a post processor (aka
+counter meastures) to help keep a smaller model on safety rails.
+
+You're somewhat familier with the OpenAI .NET SDK already. This project started out as being
+created on top of that SDK before moving the the provider model it currently yes. 
+
+
+What this gains you?
+You get to focus on your LLM project without committing to a single vender (yet). And if the
+provider you want isnt there, it's reasonable (but a bit tedious) to code your one.
+
+
+
+Min Requirements:
+.NET 8 (https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+Windows 10 or later recommended.
+The Vault (see below) is currently Windows only.  The instracture is there for non Windows.
+For Local Models: Ollama (https://ollama.com/) installed and a model downloaded (like GPT-OSS:20b)
+For Remote Models: An OpenAI account (https://platform.openai.com/) or Google Gemini account (https://gemini.google.dev/)
+The OpenAI or Gemini Cloud also requires an api key you purchase and supply. You'll need to make a vault on your local machine (below)
+LOCAL MODELS ONLY: Recommanded 20GB or More Free space ONLY if using local models.
+LOCAL MODELS ONLY: tested with Vega 64 GPU. Anything better than that is probably fine.
+
+Visual Studio 2022 or later recommanded.
+
+
+Local Models of Interest:
+hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M <- the floor that the default counter measures target 
+hf.co/hermes42/Mistral-7B-Instruct-v0.3-imatrix-GGUF:Q4_K_M <- reasonable. 
+hf.co/unsloth/gpt-oss-20b-GGUF:Q4_K_M <- if it fits in your GPU memory, recommended.
+Note: if you can run the full gpt-oss-120B or higher on hardware, go for it if that works for you. I would love to hear if my sofware is being use 
+for something that large.
+
+Ollama Setup:
+1. Download and install Ollama from https://ollama.com/
+2. Open a command prompt and run: ollama pull gpt-oss-20b
+3. If it works great on 1ist try, huray!
+4. If not, you'll need to ensure Ollama is in OpenAI mode.
+
+Ensuring Ollama is in OpenAI mode:
+1. Create the config file to run Ollama in OpenAI mode (see below). This can be done in notepad. Do save the file with quotes in notepad like "config.toml" to ensure it's not saved as config.toml.txt.
+	C:\Users\yourname\.ollama\config.toml
+2. File contents at min should be this:	
+	[api]
+	openai_compat = true
+3. Save the file and restart Ollama service:
+    run on a command line:
+	ollama stop
+	ollama start
+
+
+If Ollama is painefully slow, check if in CPU mode or detecting your GPU.
+For example on my older card Vega 64, I have to have an enviroment variable named OLLAMA_VULKAN="1"
+otherwise anything other than a 135M model is painfully slow! 
+Important! If you're setting Env Variables, you'll need to run ollama stop and ollama start again.
+
+	
+
+Vault Setup:
+A Vault in Butler SDK is an encrypted local storage for your API keys and other secrets 
+Currently only supports Windows for now. 
+To use: Run butler-vault-setup.exe and follow its steps.
+
+Finally, while on the roadmap I want to support images and more, 
+this version 1 release supports text only even in the model supports images/ect. 
+
+Note: There is some data types in  ButlerSDK referencing images as a value,
+This v1 release for ButlerSDK does *not* support images, sound, ect - just text.

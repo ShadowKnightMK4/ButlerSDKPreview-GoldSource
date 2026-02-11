@@ -1,0 +1,26 @@
+﻿Intro:
+A Vault is a way shipped with Windows to support multiple API Keys to a ButlerSDK project. It is not a  replacement for proper API key protection, and should not be the only copy of API keys you got.
+
+Implementation (Windows):
+A vault is a DPAPI Protected zip file bound to the logged in user’s account. If the password changes to this user or the account is delated, the vault is in theory unrecoverable. The layer of the vault is each file in the zip file presents a single key. They are individually DPAI protected too.
+
+What about non Windows?
+If you code the  IButlerVaultKeyCollection interface, it should slot right in. For this preview, I have a Windows OS as dev machine.
+
+
+Why use:
+I needed a way to let ButlerSDK access a variety of keys and avoid hardcoding into source or letting users of the app have a way to load keys done.
+
+
+How to setup:
+Run ApiKeyVaultCreation (after building) and point it to either a folder or a input your keys interactively at the CLI line. It will walk you through it.
+
+The interface below is used extensively throughout the ButlkerSDK and is how the same accesses a vault. Note the SecureString data type. While it is used for its Disposal version, on Windows at least, it has some small protection.  Microsoft marks it depreciated because of platforming issues. 
+
+*	The interface below
+  public interface IButlerVaultKeyCollection: IDisposable
+  { 
+      public void InitVault(string location); <- this routine initializes the fault. Call it first.
+      public SecureString? ResolveKey(string ID); <- this routine is how the vault presents keys. If 
+      public bool Authenticate(Assembly Target); <- this routine should authenticate (if necessary) against the passed target. Of note. It is free to do whatever – just return true if Authenticated.
+  }

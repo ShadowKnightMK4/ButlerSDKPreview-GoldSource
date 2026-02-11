@@ -1,0 +1,17 @@
+﻿<Project Sdk="MSTest.Sdk/4.0.1">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseVSTest>true</UseVSTest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ButlerLLMProvider\ButlerLLMProviderPlatform.csproj" />
+    <ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
+    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" />
+  </ItemGroup>
+
+</Project>

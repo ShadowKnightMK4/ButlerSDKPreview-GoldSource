@@ -1,0 +1,146 @@
+Here is a documentation guide and analysis designed for a third-party developer. It explains the system generally, then analyzes your specific `ToolPostProcessing` implementation as a concrete case study.
+
+---
+
+# Butler SDK: Countermeasures & Self-Healing Architecture
+
+## 1. What are "Countermeasures"?
+
+In the Butler SDK, **Countermeasures** (implemented via `IButlerPostProcessorHandler`) act as a real-time firewall between the LLM and your application. They allow you to intercept the raw stream, analyze it for quality or logic errors, and—crucially—force the LLM to "try again" (Remedial Action) before the user ever sees the bad output.
+
+### The Problem It Targets
+LLMs sometimes:
+*   Hallucinate tool usage (talking about a tool without actually calling it).
+*   Output unstructured text when JSON was requested.
+*   Violate safety guidelines.
+
+Countermeasures allow Butler to catch these errors internally, wipe the slate clean, and guide the LLM to a correct answer automatically.
+
+---
+
+## 2. The Lifecycle of a Countermeasure
+
+The `Butler` class executes this logic inside `StreamResponseAsync`. Here is the flow:
+
+1.  **Stream Interception (`ProcessReply`):**
+    As packets arrive from the provider, they pass through your handler.
+    *   *Option A:* **PassThru** (Send to UI immediately).
+    *   *Option B:* **Buffered** (Hold internally to analyze context).
+    *   *Option C:* **Discard** (Ignore entirely).
+
+2.  **End-of-Turn Judgment (`EndOfStreamAlert`):**
+    Once the stream finishes, your handler is asked: "Was this turn acceptable?"
+    *   If **Yes**: The buffer is dumped to the UI, and the turn ends.
+    *   If **No**: The Remedial Phase begins.
+
+3.  **Remedial Action (`Remedial`):**
+    If rejected, Butler:
+    *   Optionally discards the "bad" message from history.
+    *   Calls your `Remedial()` method to inject a **Temporary System Prompt** (e.g., "[ERROR] You didn't output JSON. Try again.").
+    *   **Restarts the stream** automatically (up to `MaxRemedials` times).
+
+---
+
+## 3. Case Study: The "Tool Hallucination Fixer"
+
+`ToolPostProcessing` -  Using the Countermeasure system to try catching the model talking about tools without actually using them.*
+
+### Strategy: "Buffer, Scan, & Retry"
+
+'ToolPostProcessing' squarely aims at the problem of: **The model explains what it wants to do ("I'll check the weather...") but forgets to fire the actual JSON tool call.**
+
+#### Component A: The Analyzer (`ToolWordRip`)
+This helper class is the "brain" of detection.
+1.  **Tokenization:** It uses Regex (`(\b[A-Za-z]{3,}\b)`) to break the LLM's response into keywords.
+2.  **Schema Matching:** It compares these words against the names of tools provided in `IButlerChatCompletionOptions`.
+3.  **Sensitivity:** It calculates a score. If the LLM mentions "tool", "argument", or specific function names (like "GetWeather") too many times without a `FinishReason: ToolCall`, it flags the turn as suspicious.
+
+#### Component B: The Interceptor (`ProcessReply`)
+```csharp
+public virtual IButlerPostProcessorHandler.PostProcessorAction ProcessReply(...)
+{
+    // ... validation checks ...
+    this.BackBuffer.Enqueue(update);
+    return IButlerPostProcessorHandler.PostProcessorAction.Buffered;
+}
+```
+**Why this matters:** The code returns `Buffered`. This means the user sees **nothing** while the text is generating. This is necessary because if the model hallucinates, you want to delete the message silently without user seeing the offending message. If you passed it through, the user likely will see bugged output.
+
+#### Component C: The Decision (`EndOfStreamAlert`)
+```csharp
+public virtual IButlerPostProcessorHandler.EndOfAiStreamAction EndOfStreamAlert(...)
+{
+    if (ToolWasCalled) return ...None; // It worked!
+
+    if (IsToolCallLikely(...)) 
+    {
+        this.BackBuffer.Clear(); // Delete the bad text
+        return ...TriggeredAndDiscard; // Tell Butler to retry from scratch
+    }
+}
+```
+If the analyzer detects tool keywords but `ToolWasCalled` is false, it wipes the buffer and demands a retry.
+
+#### Component D: The Fix (`Remedial`)
+```csharp
+public virtual void Remedial(...)
+{
+    ButlerSystemChatMessage Alert = new(@"[ERROR] IT LOOKS LIKE YOU TALKED ABOUT CALLING A TOOL WITHOUT CALLING IT...");
+    Alert.IsTemporary = true; // Crucial! This message is marked temporary - Butler when the ai turn is over AUTOMATICALLY deletes all temporary messages.
+    Msgs.Add(Alert);
+}
+```
+This injects a temporary instruction. Butler will send this context back to the LLM at system prompt level. Once the LLM gets it right, Butler automatically removes this error message so the chat history looks clean.
+
+---
+
+## 4. Advanced: QoS (Quality of Service) Layer
+
+Your implementation also implements `IButlerPostProcessorQOS`. This is a "Step 4" in the lifecycle.
+
+Even if the `EndOfStreamAlert` says "OK", the `FinalQOSCheck` runs.
+*   **Trigger:** Runs after a successful turn.
+*   **Logic:** You spin up a **secondary** LLM request (using `Prov.ChatCreationProvider`).
+*   **Prompt:** You ask the secondary LLM to judge the first LLM ("Did the model actually answer the user?").
+*   **Result:** If the secondary LLM thinks the answer was bad, it rewrites it. The rewritten message replaces the original one in the chat history.
+
+---
+
+## 5. Integration Guide for Developers
+
+To use a Countermeasure (like the `ToolPostProcessing` example) in your app:
+
+### Step 1: Instantiate the Handler
+```csharp
+// 1. Create your countermeasures instance
+var toolGuard = new ToolPostProcessing(); 
+// Optional: Configure sensitivity
+toolGuard.Toolcall_sensitivity = 3; 
+```
+
+### Step 2: Inject into Butler Constructor
+Pass the handler into the `Butler` class initialization.
+
+```csharp
+var butler = new Butler(
+    Key: myKeys,
+    Provider: myProvider,
+    Opts: myChatOptions,
+    ModelChoice: "gpt-4",
+    KeyVar: "OpenAiKey",
+    PostProcessor: toolGuard // <--- INJECT HERE
+);
+```
+
+### Step 3: Run Normally
+You do not need to change your calling code. `Butler` handles the logic internally.
+
+```csharp
+// The stream will now automatically pause, buffer, and retry if tool hallucinations occur.
+await butler.StreamResponseAsync(MyUiHandler);
+```
+
+### Tips for Custom Implementations
+1.  **Don't Buffer if you don't have to:** Buffering increases perceived latency. If you are only checking for safety (e.g., checking for profanity or trying to hard stop PII for example), you can pass through text and only cut the stream if a bad word appears.
+2.  **Manage `QueueSize`:** If you implement buffering, ensure your `QueueSize` property is accurate. Butler monitors this to infinite loops during buffer dumping.
+3.  **Use `IsTemporary`:** Always set `IsTemporary = true` on remedial messages or steering the LLM. This ensures that your "error correction" logic doesn't pollute the long-term context window.

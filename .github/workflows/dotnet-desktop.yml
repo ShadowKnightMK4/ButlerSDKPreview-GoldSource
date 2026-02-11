@@ -1,0 +1,40 @@
+name: ButlerSDK CI
+
+on:
+  push:
+    branches: [ "master"]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build_and_test:
+
+    # Note: We use windows-latest because your 
+    # 'ExternProcessBase' tools rely on Windows-specific CMD commands.
+    # If we ran this on Ubuntu, your 'FlushDNS' tests would fail.
+   
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+
+    - name: Restore Dependencies
+      run: dotnet restore ButlerSDKPreview-GoldSource.sln
+
+
+    # Xanatos Note: We build in Release mode to catch optimization bugs.
+    - name: Build Solution
+      run: dotnet build ButlerSDKPreview-GoldSource.sln --no-restore --configuration Release
+
+    # Xanatos Note: The most critical step. 
+    # If your 'ToolResolver' logic is flawed, this is where we find out.
+    - name: Run Unit Tests
+      run: dotnet test ButlerSDKPreview-GoldSource.sln --no-build --verbosity normal --configuration Release
+

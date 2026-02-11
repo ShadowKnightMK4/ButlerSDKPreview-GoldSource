@@ -1,0 +1,206 @@
+Here is the consolidated, polished documentation for the Butler SDK Tool Protocol. It integrates your core architecture, the lifecycle management, and the new security model into a single, developer-friendly guide.
+
+---
+
+# Butler SDK: Tool Development & Security Protocol
+
+## Overview
+In the Butler SDK, a **Tool** is an intelligent, managed object—not just a callback function. Tools have full lifecycles (`SpinUp`, `WindDown`), can inject context into system prompts, manipulate the chat flow, and declare security permissions.
+
+This guide covers the **`ButlerToolContract`** interfaces required to build robust extensions for the Butler ecosystem.
+
+---
+
+## 1. Core Implementation
+To create a tool, your class must implement `IButlerToolBaseInterface`.
+
+### Basic Requirements
+*   **`ToolName`**: Unique identifier. Must match Regex `[A-Za-z0-9_]` (no spaces).
+*   **`ToolDescription`**: Instructions sent to the LLM describing when and how to use the tool.
+*   **`GetToolJsonString()`**: Returns the OpenAI-compatible JSON schema string defining parameters.
+
+### Execution: Async vs. Sync
+*   **Asynchronous (Recommended):** Implement `IButlerToolAsyncResolver`.
+    *   Butler prefers this interface. If present, `ResolveMyToolAsync` is called, and the synchronous method is ignored.
+*   **Synchronous:** Implement `ResolveMyTool`.
+    *   Use this only if your operation is purely computational and instantaneous.
+
+### Example: "GetWeather" Tool
+
+```csharp
+using ButlerToolContract;
+using System.Text.Json;
+
+public class WeatherTool : IButlerToolBaseInterface, IButlerToolAsyncResolver, IButlerToolSpinup
+{
+    public string ToolName => "GetWeather";
+    public string ToolVersion => "1.0";
+    public string ToolDescription => "Gets the current temperature for a city.";
+
+    // 1. Lifecycle: Called immediately after adding to Butler
+    public void Initialize() 
+    {
+        Console.WriteLine("Weather Service Connected...");
+    }
+
+    // 2. Definition: The JSON Schema for the LLM
+    public string GetToolJsonString()
+    {
+        return @"{
+            ""type"": ""function"",
+            ""function"": {
+                ""name"": ""GetWeather"",
+                ""description"": ""Gets the current temperature"",
+                ""parameters"": {
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""city"": { ""type"": ""string"" }
+                    },
+                    ""required"": [""city""]
+                }
+            }
+        }";
+    }
+
+    // 3. Validation: Check args before execution
+    public bool ValidateToolArgs(ButlerChatToolCallMessage? Call, JsonDocument? FunctionParse)
+    {
+        // Ensure 'city' parameter exists
+        return FunctionParse?.RootElement.TryGetProperty("city", out _) ?? false;
+    }
+
+    // 4. Execution: The actual logic
+    public async Task<ButlerChatToolResultMessage?> ResolveMyToolAsync(string FunctionCallArguments, string FuncId, ButlerChatToolCallMessage? Call)
+    {
+        // Mock API call
+        await Task.Delay(100); 
+        return new ButlerChatToolResultMessage(Call.ToolCallId, "The weather is 72 degrees.");
+    }
+
+    // Required by interface, but ignored because IButlerToolAsyncResolver is implemented
+    public ButlerChatToolResultMessage? ResolveMyTool(string args, string id, ButlerChatToolCallMessage? call) => null;
+}
+```
+
+---
+
+## 2. Tool Lifecycle & Stability
+Butler tools are stateful. You can hook into specific lifecycle events to ensure stability.
+
+| Interface | Method | Purpose |
+| :--- | :--- | :--- |
+| **`IButlerToolPlatformPass`** | `CheckPlatformNeed` | **The Gatekeeper.** Called before loading. If it returns `false`, the tool is rejected (throws `PlatformPassFailureException`). Use for OS checks (e.g., is this Linux?). |
+| **`IButlerToolSpinup`** | `Initialize` | Called immediately after the tool is added. Use to open connections. |
+| **`IButlerToolWindDown`** | `WindDown` | Called when `DeleteTool` is invoked or the Session is disposed. Use to close sockets/files. |
+
+---
+
+## 3. Advanced Tool Behaviors
+
+You can mix and match interfaces to define how your tool interacts with the chat loop.
+
+| Interface | Behavior | Use Case |
+| :--- | :--- | :--- |
+| **`IButlerToolInPassing`** | **Non-Blocking.** Executing this tool does *not* end the AI's turn. The AI continues generating text immediately after the tool result. | Logging, UI updates (progress bars), or intermediate math. |
+| **`IButlerCritPriorityTool`** | **Bypass Limits.** Bypasses internal rate limiters/throttling. | Emergency stop buttons or critical system alerts. |
+| **`IButlerPassiveTool`** | **Hidden.** The tool exists in the backend but is *not* advertised to the LLM via JSON. | Internal system tools triggered explicitly by code, not by AI. |
+| **`IButlkerToolContainsPrivateTools`** | **Composite.** The tool wraps other sub-tools. | Grouping complex logic into a single "Manager" tool. |
+
+---
+
+## 4. Prompt Injection (Context Control)
+
+Tools can modify the System Prompt simply by existing in the toolkit.
+
+### A. Static Injection (`IButlerToolPromptInjection`)
+*   **Method:** `GetToolSystemDirectionText()`
+*   **Behavior:** As long as this tool is active, this text is appended to the main System Prompt.
+*   **Usage:** * "You have access to a Database. ALWAYS query schema before selecting tables."*
+
+### B. Dynamic Injection (`IButlerToolPostCallInjection`)
+*   **Method:** `GetToolPostCallDirection()`
+*   **Behavior:** After this tool runs successfully, this text is injected into the prompt for the **next turn only**.
+*   **Usage:** *"You just queried the database. Now format the results as a Markdown table."*
+
+---
+
+## 5. System Tools (`IButlerSystemToolInterface`)
+
+System Tools are "Meta-Tools" designed to control the Butler instance itself (e.g., modifying memory, switching models, or managing other tools).
+
+*   **Soul-Bound:** A System Tool is paired (`Paired`) to a specific `IButlerChatSession`. It generally cannot be shared across concurrent sessions.
+*   **Usage:** Use `myButler.AddSystemTool(tool)`.
+*   **Example:** The **Discovery Tool** scans loaded assemblies and lets the LLM decide to install new tools dynamically.
+
+---
+
+## 6. Security Protocol (V1)
+
+Because LLMs can be unpredictable, Butler enforces the **Principle of Least Privilege**. Tools must declare their "Surface Area"—what they touch on the host system.
+
+### Declaring Capabilities
+Decorate your tool class with the `[ToolSurfaceCapabilities]` attribute using flags from `ToolSurfaceScope`.
+
+#### The Scope Flags
+*   **Level 0: `NoSideEffects`**
+    *   Pure logic. No Disk, Network, or OS access. (e.g., Calculator).
+*   **Level 1: Passive/Read**
+    *   `DiskRead`, `NetworkRead`, `SystemRead`.
+    *   *Helper:* `StandardReading`.
+*   **Level 2: Active/Write**
+    *   `DiskWrite`, `NetworkWrite`, `SystemWrite` (Registry/OS settings).
+    *   *Helper:* `StandardWriting`.
+*   **Level 3: High Risk**
+    *   `DropsIntoUnmanagedCode`: P/Invoke, external DLLs.
+    *   `ArbitraryExecution`: Running raw shell commands or code interpreters.
+
+### Example: Security Declaration
+```csharp
+[ToolSurfaceCapabilities(ToolSurfaceScope.NetworkRead | ToolSurfaceScope.DiskWrite)]
+public class LogArchiverTool : IButlerToolBaseInterface
+{
+    // Logic: Downloads data (NetRead) and saves to file (DiskWrite)
+}
+```
+
+### Auditing (Host Side)
+Host applications can inspect these flags before loading tools to warn users:
+
+```csharp
+var attr = tool.GetType().GetCustomAttribute<ToolSurfaceCapabilities>();
+if (attr.SurfaceScope.HasFlag(ToolSurfaceScope.ArbitraryExecution))
+{
+    Console.WriteLine("WARNING: This tool can execute arbitrary code!");
+}
+```
+
+### V1 vs. V2 Roadmap
+*   **Current State (V1): Declarative Capability Model (Developer Enforced).
+    The security layer is **declarative**. It allows the UI to warn the user ("This tool wants to access your disk"), but the SDK does not physically block the IO call if the code inside the tool violates its declaration.
+*   **Future Roadmap (V2): Runtime Enforcement.**
+    The roadmap includes plans to intercept calls. If a tool declares `NoSideEffects` but attempts to open a `FileStream`, the Butler SDK (via an isolated context or analyzer) will aim to block the execution.
+
+---
+
+## 7. Session Management Reference
+
+```csharp
+// 1. Add a standard tool
+myButler.AddTool(new WeatherTool()); 
+
+// 2. Add a System tool (Triggers 'Pair')
+myButler.AddSystemTool(new MemoryManagerTool());
+
+// 3. Check for existence
+if (myButler.ExistsTool("GetWeather")) { ... }
+
+// 4. Remove a tool (Triggers 'WindDown')
+myButler.DeleteTool("GetWeather", TriggerCleanup: true);
+
+// 5. Force LLM update
+// If you modify tools in bulk, disable auto-update, then recalc manually.
+myButler.AutoUpdateTooList = false;
+// ... add 10 tools ...
+myButler.RecalcTools(); // Send new definition list to Provider
+myButler.AutoUpdateTooList = true;
+```

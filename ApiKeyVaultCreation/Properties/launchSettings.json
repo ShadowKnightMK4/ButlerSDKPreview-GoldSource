@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ApiKeyVaultCreation": {
+      "commandName": "Project",
+      "commandLineArgs": "-I ..\\itest.zip"
+    }
+  }
+}

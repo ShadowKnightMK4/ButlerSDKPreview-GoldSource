@@ -1,0 +1,159 @@
+﻿
+
+# 🔌 Extending ButlerSDK: Custom Provider Guide
+
+ButlerSDK is architected to be **Vendor Agnostic**. The core logic (`ButlerBase`, `ToolResolver`, `ButlerPostProcessing`) does not know which AI model is running. It relies on **Providers** to translate universal concepts into vendor-specific API calls.
+
+If you want to add support for a new backend (e.g., Anthropic Claude, Cohere, or a custom local inference engine), you need to implement a **Provider**.
+
+## The Architecture
+
+A Provider consists of three distinct layers of responsibility, usually implemented across two classes:
+
+1.  **The Factory (`IButlerLLMProvider`):** Responsible for converting Butler Tools into the Vendor's schema object and providing the Chat Creation interface (`IButlerChatCreationProvider`).
+2.  **The Configurator (`IButlerChatCreationProvider`):** Responsible for authentication and initializing the Vendor's SDK.
+3.  **The Engine (`IButlerChatClient`):** Responsible for the actual transaction between Butler and your model and streaming response translation.
+
+---
+
+## Step 1: The Engine (`IButlerChatClient`)
+
+This class handles the runtime execution. It takes a generic `IList<ButlerChatMessage>` and sends it to the vendor.
+
+**Key Requirements:**
+*   **Streaming:** You must implement `CompleteChatStreamingAsync`.
+*   **Translation:** You must convert `ButlerChatMessage` (Butler format) to the Vendor's message format.
+*   **Yielding:** You must yield `ButlerStreamingChatCompletionUpdate` objects as chunks arrive.
+
+```csharp
+public class MyVendorChatClient : IButlerChatClient
+{
+    private readonly MyVendorSdk _api;
+
+    public MyVendorChatClient(MyVendorSdk api) { _api = api; }
+
+    public async IAsyncEnumerable<ButlerStreamingChatCompletionUpdate> CompleteChatStreamingAsync(
+        IList<ButlerChatMessage> msg, 
+        IButlerChatCompletionOptions options, 
+        [EnumeratorCancellation] CancellationToken cancelMe = default)
+    {
+        // 1. Translate Butler History -> Vendor Request
+        var request = Translator.ToVendorRequest(msg);
+
+        // 2. Call Vendor API
+        await foreach (var chunk in _api.StreamGenerateAsync(request, cancelMe))
+        {
+            var update = new ButlerStreamingChatCompletionUpdate();
+
+            // 3. Map Content (Text)
+            if (chunk.HasText)
+                update.ContentUpdate.Add(new ButlerChatStreamingPart { 
+                    Text = chunk.TextDelta, 
+                    Kind = ButlerChatMessagePartKind.Text 
+                });
+
+            // 4. Map Tool Calls (If applicable)
+            // See "Step 3: Streaming Strategies" below for details
+            if (chunk.HasToolCall)
+                update.EditorableToolCallUpdates.Add(Translator.ToToolUpdate(chunk));
+
+            yield return update;
+        }
+    }
+
+    // Implement non-streaming CompleteChat similarly...
+}
+```
+
+---
+
+## Step 2: The Factory & Configurator (`IButlerLLMProvider`)
+
+This is the main entry point. It implements `IButlerLLMProvider` (for capabilities) and `IButlerChatCreationProvider` (for lifecycle of chat objects).
+
+### Critical: Tool Translation
+You must implement `CreateChatTool`. This takes a generic Butler Tool definition and returns the specific object the Vendor SDK expects. 
+
+*   If you are wrapping **OpenAI**, you return a `ChatTool` object.
+*   If you are wrapping **Gemini**, you return a `FunctionDeclaration`.
+
+```csharp
+public object CreateChatTool(IButlerToolBaseInterface tool)
+{
+    // Example: Converting Butler tool to a hypothetical Vendor Schema
+    return new VendorFunctionDef
+    {
+        Name = tool.ToolName,
+        Description = tool.ToolDescription,
+        // Most vendors accept the raw JSON schema Butler generates
+        Parameters = JsonDocument.Parse(tool.GetToolJsonString())
+    };
+}
+```
+
+### Critical: Security & Initialization
+**Do not** initialize the Vendor SDK in the constructor. Providers are often instantiated by Dependency Injection containers before keys are available. ButlerSDK will explicitly call `Initialize` to inject the key when ready.
+
+```csharp
+public void Initialize(SecureString key)
+{
+    if (key == null || key.Length == 0) 
+        throw new ArgumentException("API Key required");
+
+    // Initialize the actual SDK here using the secure string
+    _api = new MyVendorSdk(key.DecryptString());
+}
+```
+
+---
+
+## Step 3: Handling Tool Execution
+
+This is the most complex part of integration. Different vendors handle tool execution differently.
+
+### ⚠️ Rule #1: Disable Auto-Execution
+ButlerSDK uses a **"Human-in-the-loop"** architecture (the "human" being Butler's security layer). You **must** configure the Vendor SDK to **not** automatically execute tools.
+
+*   **Why?** If the Vendor SDK runs the tool, Butler cannot enforce permissions (`ToolSurfaceScope`), cannot fix malformed JSON via Remedial turns, and cannot update the audit log correctly.
+
+### ⚠️ Rule #2: Define Your Streaming Strategy
+You must implement `IButlerLLMProviderToolRequests` to tell Butler how your vendor streams tool arguments.
+
+#### Scenario A: The "OpenAI Style" (Accumulation)
+The vendor streams arguments token-by-token (e.g., `{"loc"`, `"ation"`, `":"`, `"Lon"`, `"don"}`).
+*   **Implementation:** Do nothing special. Butler defaults to `StreamAccumulation`.
+*   **Your Job:** Pass the raw string chunks in `ButlerStreamingToolCallUpdatePart`. Butler's internal `ToolResolver` will stitch them together.
+
+#### Scenario B: The "Gemini Style" (OneShot)
+The vendor calculates the whole tool call internally and sends the complete JSON in one packet.
+*   **Implementation:** Implement `GetToolMode` and return `OneShot`.
+*   **Your Job:** Pass the full JSON in the update. Butler will execute it immediately without waiting for more chunks.
+
+```csharp
+public class MyOneShotProvider : IButlerLLMProvider, IButlerLLMProviderToolRequests
+{
+    public IButlerLLMProvider.ToolProviderCallBehav GetToolMode()
+    {
+        // Tells Butler: "The tool call is complete in a single packet."
+        return IButlerLLMProvider.ToolProviderCallBehav.OneShot;
+    }
+}
+```
+
+---
+
+## Step 4: Quirky Models (The Preprocessor)
+
+Some models (like DeepSeek) have strict formatting rules (e.g., "System prompt must be first," "Must end with User message"). The Preprocessor is the last stop before your code translates the history into the vendor-specific format.
+
+You can handle this by injecting an `IButlerChatPreprocessor` in your `GetChatClient` method.
+
+```csharp
+public IButlerChatClient? GetChatClient(string model, object? options, IButlerChatPreprocessor? ppr)
+{
+    // If the user didn't provide a preprocessor, use a default one for this vendor
+    if (ppr == null) ppr = new MyVendorDefaultPreprocessor();
+
+    return new MyVendorChatClient(_api, model, ppr);
+}
+```

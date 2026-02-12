@@ -11,7 +11,11 @@
 ButlerSDK transforms Large Language Models (LLMs) from unpredictable chatbots into reliable infrastructure components. It provides a unified abstraction layer over **OpenAI**, **Google Gemini**, and **Ollama**, while enforcing tool infrastructure, strict C# Tool typing and opens the door to letting the developer inspect the Streaming LLM to steer it or filter for agentic workflows.
 
 # Setting the Preview expectations
-While the infrastructure feels decent to me, there may be some bugs or misspelled things I messaged after spellchecking. Please don't hesitate to email or open a GitHub Issue.
+While the infrastructure feels decent to me for a public preview, there may be some bugs or errors/mispellings and there probably is. Regardless, I would like your feedback on the project (butlersdkfeedback@gmail.com) for any area of improvement. This includes bugs and suggetions be it is not limited to them.
+
+# Where to give feedback
+1. butlersdkfeedback@gmail.com
+2. or Open a github Issue.
 
 ### Example (from the QuickStartOpenAi example)
 ```CSharp

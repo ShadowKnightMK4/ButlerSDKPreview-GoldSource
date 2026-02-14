@@ -342,3 +342,16 @@ Copyright 2025-2026 by Thomas Paul Betterly
 * Local models require sufficient GPU memory; remote models need valid API keys.
 
 * Context Window size matters. If you go from a 1,000,000 size token model to a 5000.00 sized model with too much text, you're probably gonna crash!
+
+
+### ⚠️ IMPORTANT Notes on this as a Preview
+
+* Stuff can change, including breaking changes.
+
+### ⚠️ Possible Breaking Changes
+Please note as with any preview, stuff can change as it stablized.
+
+* TrenchCoatChatCollection is planned to be converted to interface for ButlerBase and let you sub your own solution.
+* MockProvider (aka the unit test stub) has gained basic initialize for testing only.
+* New INPROGRESS Feature: Butler class (and by extention ButlerBase) can now be provided a generic IButlerChatCollection (and for full tool (ie the temporary messages and post/pre call stuff + prompt injection) IButlerTrenchImplementation)
+   - objective of the feature is Assume the simpler one (IButlerChatCollection) and use the fancy one if the passed class supports it.

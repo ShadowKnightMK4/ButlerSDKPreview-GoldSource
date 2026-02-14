@@ -1,5 +1,6 @@
 ﻿using ButlerSDK.ToolSupport;
 using ButlerToolContract.DataTypes;
+using ButlerToolContracts.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,13 +59,16 @@ namespace ButlerSDK.ButlerPostProcessing
             }
         }
 
+
+
+
         /// <summary>
         /// does nothing (pass thru class)
         /// </summary>
         /// <param name="Msgs"></param>
         /// <param name="Resolver"></param>
         /// <param name="Toolset"></param>
-        public void Remedial(TrenchCoatChatCollection Msgs, ToolResolver Resolver, ButlerToolBench Toolset)
+        public void Remedial(IButlerChatCollection Msgs, ToolResolver Resolver, ButlerToolBench Toolset)
         {
             
         }

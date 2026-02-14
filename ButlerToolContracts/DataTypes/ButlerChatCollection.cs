@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ButlerToolContracts.DataTypes;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,9 +20,9 @@ namespace ButlerToolContract.DataTypes
     /// <summary>
     /// This presents the list of messages that Butler passes to the LLM. It separates system from prompt injection, from context window. 
     /// </summary>
-    /// <remarks>To acccess the simulated list as an index just use [n] style access.</remarks>
+    /// <remarks>To access the simulated list as an index just use [n] style access.</remarks>
     /// <example>TrenchCoatChatCollection y;    y.AddMessage(MSG);   Console.Write(y[0]); </example>
-    public class TrenchCoatChatCollection : ButlerChatCollectionBase
+    public class TrenchCoatChatCollection : ButlerChatCollectionBase , IButlerChatCollection
     {
         public class ReadOnlyStitcher<ButlerChatMessage> : IReadOnlyList<ButlerChatMessage>
         {
@@ -582,6 +583,10 @@ namespace ButlerToolContract.DataTypes
             }
         }
 
+        IReadOnlyList<ButlerChatMessage> IButlerChatCollection.GetSliceOfMessages(int LastUserMessageIndex, int LastAiTurnIndex)
+        {
+            return GetSliceOfMessages(LastUserMessageIndex, LastAiTurnIndex);
+        }
     }
     /// <summary>
     /// This lets the someone filter chat messages
@@ -693,6 +698,7 @@ namespace ButlerToolContract.DataTypes
             get => base._Messages;
         }
     }
+
 
 
     /// <summary>

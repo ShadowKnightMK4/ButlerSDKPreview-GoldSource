@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using ButlerSDK.Debugging;
 using ButlerSDK.ButlerPostProcessing;
 using System.Reflection;
+using ButlerToolContracts.DataTypes;
 
 
 
@@ -75,8 +76,10 @@ namespace ButlerSDK.Core
 
         internal string? ChatModel_Internal = null;
 
+
+    
         /// <summary>
-        /// Setup the class
+        /// Setup the class and use the default chat message container - <see cref="TrenchCoatChatCollection"/>
         /// <summary>
         /// <param name="Keys">This is used to source needed API keys needed.  </param>
         /// <param name="Handler">An implementation of the provider that Butler will use to communicate with the LLM of your choice - see <see cref="IButlerLLMProvider"/> </param>
@@ -84,6 +87,7 @@ namespace ButlerSDK.Core
         /// <param name="ModelChoice">This is the model requested. It's passed as its and cannot be null </param>
         /// <param name="LLMKEYVAR">Related to <see cref="IButlerVaultKeyCollection"/> Keys instance. Butler will require the key named that.</param>
         /// <exception cref="ArgumentNullException"> can trigger If <see cref="Keys"/>, <see cref="Handler"/> and <see cref="ModelChoice"/> are null </exception>
+        
         public ButlerBase(IButlerVaultKeyCollection Keys, IButlerLLMProvider  Handler, IButlerChatCompletionOptions? Options,string ModelChoice,  string LLMKEYVAR= "" )
         {
             ArgumentNullException.ThrowIfNull(Keys, nameof(Keys));
@@ -102,15 +106,62 @@ namespace ButlerSDK.Core
 
 
 
-            InitializeHandler(LLMKEYVAR);
+            InitializeHandler(LLMKEYVAR, new TrenchCoatChatCollection() as IButlerChatCollection);
             _MainOptions = Options;
+
         }
 
+        /// <summary>
+        /// Setup the class and use the default chat message container - <see cref="TrenchCoatChatCollection"/> or provider your own of either <see cref="IButlerChatCollection"/> or <see cref="IButlerTrenchImplementation"/>
+        /// </summary>
+        /// <param name="Keys">This is used to source needed API keys needed.  </param>
+        /// <param name="Handler">An implementation of the provider that Butler will use to communicate with the LLM of your choice - see <see cref="IButlerLLMProvider"/> </param>
+        /// <param name="Options">This can be null if the provider <see cref="IButlerChatCreationProvider"/> has a <see cref="IButlerChatCreationProvider.DefaultOptions"/> that is not null</param>
+        /// <param name="ModelChoice">This is the model requested. It's passed as its and cannot be null </param>
+        /// <param name="LLMKEYVAR">Related to <see cref="IButlerVaultKeyCollection"/> Keys instance. Butler will require the key named that.</param>
+        /// <param name="ChatMessageHandler">How Butler stores the chat list. This argument lets you supply your own</param>
+        /// <exception cref="ArgumentNullException"> can trigger If <see cref="Keys"/>, <see cref="Handler"/> and <see cref="ModelChoice"/> are null </exception>
+        public ButlerBase(IButlerVaultKeyCollection Keys, IButlerLLMProvider Handler, IButlerChatCompletionOptions? Options, string ModelChoice, string LLMKEYVAR = "", IButlerChatCollection? ChatMessageHandler=default)
+        {
+            ArgumentNullException.ThrowIfNull(Keys, nameof(Keys));
+            ArgumentNullException.ThrowIfNull(Handler, nameof(Handler));
+            ArgumentNullException.ThrowIfNull(ModelChoice, nameof(ModelChoice));
+            ChatModel = ModelChoice;
+            if (Options is null)
+            {
+                Options = Handler.ChatCreationProvider.DefaultOptions;
+            }
+
+            ArgumentNullException.ThrowIfNull(Options, nameof(Options));
+            this.Keys = Keys;
+            Provider = Handler;
+
+
+
+
+   
+                InitializeHandler(LLMKEYVAR, ChatMessageHandler);
+        
+            _MainOptions = Options;
+
+        }
         [MemberNotNull(nameof(ChatFactory))]
         [MemberNotNull(nameof(Chat))]
+        [MemberNotNull(nameof(_ChatCollection))]
         
-        void InitializeHandler(string APIKEYNAME)
+        internal void InitializeHandler(string APIKEYNAME, IButlerChatCollection? ChatStorage)
         {
+            
+            if (ChatStorage is null)
+            {
+                this.DebugTap?.LogString($"Setting up Butler instance with default type {nameof(TrenchCoatChatCollection)}\r\n ");
+                this._ChatCollection = new TrenchCoatChatCollection();
+            }
+            else
+            {
+                this.DebugTap?.LogString($"Setting up Butler instance with default type {ChatStorage.GetType().Name}\r\n ");
+                this._ChatCollection = ChatStorage;
+            }
             // get the keys. Note execution path from butler5 should mean this is never actually tripped
             if (Keys is null)
             {
@@ -209,8 +260,10 @@ namespace ButlerSDK.Core
         /// </summary>
         public void RecalcTools()
         {
+            IButlerTrenchImplementation? Trenchy = _ChatCollection as IButlerTrenchImplementation;
             this._MainOptions.Tools.Clear();
-            this.ChatCollection.ClearPromptInjections();
+            
+            Trenchy?.ClearPromptInjections();
 
             foreach (var toolname in ToolSet.ToolNames)
             {
@@ -223,7 +276,15 @@ namespace ButlerSDK.Core
                     }
                     if (item is IButlerToolPromptInjection prompt)
                     {
-                        this.ChatCollection.AddPromptInjectionMessage(new ButlerSystemChatMessage(prompt.GetToolSystemDirectionText()), prompt);
+                        if (Trenchy is null)
+                        {
+                            Trenchy?.AddPromptInjectionMessage(new ButlerSystemChatMessage(prompt.GetToolSystemDirectionText()), prompt);
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"Error: Attempt to use a Prompt Injection tool {item.ToolName}, However the supplied IButlerChatCollection object does not support this action. Does it implement IButlerTrenchImplementation also?");
+                        }
+                        
                     }
                 }
                 else
@@ -377,7 +438,19 @@ namespace ButlerSDK.Core
 
         #region How butler does chat for stuff like Maui
         //public readonly FilterdButlerChatCollection ChatCollection = new();
-        public readonly TrenchCoatChatCollection ChatCollection = new();
+        //public readonly TrenchCoatChatCollection ChatCollection = new();
+        protected IButlerChatCollection _ChatCollection;
+
+        /// <summary>
+        /// How the chat object is exposed to public use.
+        /// </summary>
+        public IButlerChatCollection ChatCollection
+        {
+            get
+            {
+                return _ChatCollection;
+            }
+        }
 
         /// <summary>
         /// Add a user message with text
@@ -385,7 +458,7 @@ namespace ButlerSDK.Core
         /// <param name="text">contents of user message</param>
         public void AddUserMessage(string text)
         {
-            ChatCollection.AddUserMessage(text);
+            _ChatCollection.AddUserMessage(text);
         }
 
         /// <summary>
@@ -395,12 +468,12 @@ namespace ButlerSDK.Core
         /// <param name="text">contents of the tool call result</param>
         public void AddToolMessage(string CallID, string text)
         {
-            ChatCollection.AddToolMessage(CallID, text);
+            _ChatCollection.AddToolMessage(CallID, text);
         }
 
         public void AddSystemMessage(string text)
         {
-            ChatCollection.AddSystemMessage(text);
+            _ChatCollection.AddSystemMessage(text);
         }
 
         protected virtual void Dispose(bool disposing)

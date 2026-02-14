@@ -12,11 +12,13 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ButlerToolContracts.DataTypes;
 
 namespace ButlerSDK.ButlerPostProcessing
 {
     internal class ToolWordRip
     {
+    
         Regex Engine = new(@"(\b[A-Za-z]{3,}\b)");
         static readonly HashSet<string> ZeroValueWords = new(new string[] { "type", "object", "properties", "string", "description", "required", "items", "array", "enum", "default"});
         Dictionary<string, HashSet<string>> WordWords = new();
@@ -25,7 +27,7 @@ namespace ButlerSDK.ButlerPostProcessing
             
         }
 
-        bool IsCapitalLetter(int c)
+        static bool IsCapitalLetter(int c)
         {
             if (c >= 'A')
             {
@@ -35,7 +37,7 @@ namespace ButlerSDK.ButlerPostProcessing
             return false;
         }
 
-        List<string> SplitCamelCase(string name)
+        static List<string> SplitCamelCase(string name)
         {
             var ret = new List<string>();
             StringBuilder walker = new();
@@ -69,7 +71,7 @@ namespace ButlerSDK.ButlerPostProcessing
             }
             return ret;
         }
-        void CamalCaseHandling(IButlerToolBaseInterface butler, HashSet<string> MissRet)
+        static void CamalCaseHandling(IButlerToolBaseInterface butler, HashSet<string> MissRet)
         {
             var alt = SplitCamelCase(butler.ToolName);
             foreach (string part in alt)
@@ -266,7 +268,7 @@ namespace ButlerSDK.ButlerPostProcessing
         }
 
 
-        public async Task<ButlerAssistantChatMessage?> FinalQOSCheck(IButlerLLMProvider Prov, IButlerChatClient QOSCheck, TrenchCoatChatCollection Messages, int LastUserMessageIndex, int LastAiTurnIndex)
+        public async Task<ButlerAssistantChatMessage?> FinalQOSCheck(IButlerLLMProvider Prov, IButlerChatClient QOSCheck, IButlerChatCollection Messages, int LastUserMessageIndex, int LastAiTurnIndex)
         {
             var Slice = Messages.GetSliceOfMessages(LastUserMessageIndex, LastAiTurnIndex);
             List<ButlerChatMessage> QOS = new();
@@ -308,7 +310,7 @@ namespace ButlerSDK.ButlerPostProcessing
                     if (StreamPart.FinishReason != null)
                         reason = (ButlerChatFinishReason)StreamPart.FinishReason;
                     for (int i = 0; i < StreamPart.ContentUpdate.Count; i++)
-                    { 
+                    {
                         if (StreamPart.ContentUpdate[i].Kind == ButlerChatMessagePartKind.Text)
                         {
                             message += StreamPart.ContentUpdate[i].Text;
@@ -320,13 +322,18 @@ namespace ButlerSDK.ButlerPostProcessing
                 {
                     return new ButlerAssistantChatMessage(message);
                 }
-                return null; 
+                return null;
             }
-            catch (Exception) 
+            catch (Exception)
             {
-                    return null;// tell asynch streaming that we DON'T DISCARD the message
+                return null;// tell asynch streaming that we DON'T DISCARD the message
             }
 
+        }
+
+        public void Remedial(IButlerChatCollection Msgs, ToolResolver Resolver, ButlerToolBench Toolset)
+        {
+            throw new NotImplementedException();
         }
     }
 }

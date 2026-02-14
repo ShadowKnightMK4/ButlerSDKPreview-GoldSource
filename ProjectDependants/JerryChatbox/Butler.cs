@@ -6,6 +6,7 @@ using ButlerSDK.Debugging;
 using ButlerSDK.ToolSupport;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
+using ButlerToolContracts.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -19,6 +20,10 @@ namespace ButlerSDK.Core
 
     public class Butler : ButlerBase
     {
+        /// <summary>
+        /// Way to ensure code readable - same as <see cref="string.Empty"/>
+        /// </summary>
+        public const string NoApiKey = "";
         protected readonly IButlerPostProcessorHandler? PostProcessing;
         protected readonly IButlerChatPreprocessor? PreProcessing;
 
@@ -29,7 +34,7 @@ namespace ButlerSDK.Core
         /// <summary>
         /// If <see cref="AutoSysPromptToday"/> is true, this method is called to insert today's date/time as a system prompt each turn.
         /// </summary>
-        /// <remarks>This method is overridable if you want to insert something else</remarks>
+        /// <remarks>This method is overridable if you want to insert something else. IMPORTANT. Highly recommand you do NOT insert anything except temporary messages</remarks>
         protected virtual void HandleAutoSysPromptToday()
         {
             if (AutoSysPromptToday)
@@ -38,7 +43,7 @@ namespace ButlerSDK.Core
                 ButlerSystemChatMessage Today = new ButlerSystemChatMessage(msg);
                 LogTap?.LogString($"Injecting \"{msg}\" as system prompt");
                 Today.IsTemporary = true;
-                ChatCollection.Add(Today);
+                _ChatCollection.Add(Today);
             }
         }
 
@@ -60,6 +65,24 @@ namespace ButlerSDK.Core
         /// <param name="PPR">The pre processor. Optional. Provider can actually ignore if wanted - they need to exception if so. Before Translation from butler by provider, this is called to possibly alter a copy of the message</param>
         public Butler(IButlerVaultKeyCollection Key, IButlerLLMProvider Provider, IButlerChatCompletionOptions? Opts, string ModelChoice, string KeyVar, IButlerPostProcessorHandler? PostProcessor = null, IButlerChatPreprocessor? PPR = null) :
             base(Key, Provider, Opts, ModelChoice, KeyVar)
+        {
+            this.PostProcessing = PostProcessor;
+            this.PreProcessing = PPR;
+        }
+
+        /// <summary>
+        /// Entry point 
+        /// </summary>
+        /// <param name="Key">This is used to source needed API keys needed.  </param>
+        /// <param name="Provider">An implementation of the provider that Butler will use to communicate with the LLM of your choice - see <see cref="IButlerLLMProvider"/> </param>
+        /// <param name="Opts">This can be null if the provider <see cref="IButlerChatCreationProvider"/> has a <see cref="IButlerChatCreationProvider.DefaultOptions"/> that is not null</param>
+        /// <param name="ModelChoice">This is the model requested. It's passed as its and cannot be null </param>
+        /// <param name="KeyVar">Related to <see cref="IButlerVaultKeyCollection"/> Keys instance. Butler will require the key named that.</param>
+        /// <param name="PostProcessor">Optional post processor handler for guiding LLMs as they product data - see <see cref="IButlerPostProcessorHandler"/> and <see cref="ToolPostProcessing"/> for a way to use it</param>
+        /// <param name="PPR">The pre processor. Optional. Provider can actually ignore if wanted - they need to exception if so. Before Translation from butler by provider, this is called to possibly alter a copy of the message</param>
+        /// <param name="ChatHandler">The object that will be used for handler chat message lists. The default is <see cref="TrenchCoatChatCollection"/></param> If you do not specify one, default is used.
+        public Butler(IButlerVaultKeyCollection Key, IButlerLLMProvider Provider, IButlerChatCompletionOptions? Opts, string ModelChoice, string KeyVar, IButlerChatCollection ChatHandler, IButlerPostProcessorHandler? PostProcessor = null, IButlerChatPreprocessor? PPR = null) :
+            base(Key, Provider, Opts, ModelChoice, KeyVar,ChatHandler)
         {
             this.PostProcessing = PostProcessor;
             this.PreProcessing = PPR;
@@ -98,7 +121,7 @@ namespace ButlerSDK.Core
                 {
                     LogTap?.LogString("Tool Resolver object has scheduled tools. Triggering and awaiting.");
                     await Resolver.RunScheduleAsync(base.ToolSet, Stats);
-                    Resolver.PlaceInChatLog(ChatCollection, false);
+                    Resolver.PlaceInChatLog(_ChatCollection, false);
                     LogTap?.LogString("Placed tool results in chat log");
                 }
             }
@@ -144,6 +167,61 @@ namespace ButlerSDK.Core
             public ToolResolverTelemetryStats? ResolverStatus;
         }
 
+        
+        public enum TrenchSupportFallback
+        {
+            /// <summary>
+            /// If the <see cref="ChatCollection"/> is not a <see cref="IButlerTrenchImplementation"/> subclass, we
+            /// </summary>
+            Throw = 0,
+            /// <summary>
+            /// If the <see cref="ChatCollection"/> is not of <see cref="IButlerTrenchImplementation"/>, we do not do the specific trench stuff (like post tool injection)
+            /// </summary>
+            Discard = 1
+        }
+
+        private TrenchSupportFallback _TrenchFallback = TrenchSupportFallback.Throw;
+
+        /// <summary>
+        /// Choose how this instance of Butler will handle Not Trenchy support (aka PostToolCall, and Temporay message removal)
+        /// </summary>
+        public TrenchSupportFallback TrenchSupport => _TrenchFallback;
+
+        internal void _HandleRemovingTemporaryMessages(IButlerChatCollection ChatCollection)
+        {
+            if (ChatCollection is IButlerTrenchImplementation Trenchy)
+            {
+                Trenchy.RemoveTemporaryMessages();
+            }
+            else
+            {
+                switch (_TrenchFallback)
+                {
+                    case TrenchSupportFallback.Throw: throw new NotSupportedException("Butler class is using a IButlerChatCollection that currently doesn't support the Trenchcoat (did you use default TrenchCoat or use Custom one?) for temporary message removal");
+                    case TrenchSupportFallback.Discard: LogTap?.LogString("Discarding post too call action. Reason not supported"); break;
+                }
+            }
+        }
+
+        internal void _HandlePostToolCallAdd_DoTrenchActionOnUnsupported(IReadOnlyList<(string CallID, IButlerToolBaseInterface Tool)>? ToolsUsed, string TemplateMessage)
+        {
+            if (_ChatCollection is IButlerTrenchImplementation Trenchy)
+            {
+                if (ToolsUsed is not null)
+                {
+                    Trenchy.AddPostToolCallFollowup(ToolsUsed, TemplateMessage);
+                }
+            }
+            else
+            {
+                switch (_TrenchFallback)
+                {
+                    case TrenchSupportFallback.Throw: throw new NotSupportedException("Butler class is using a IButlerChatCollection that currently doesn't support the Trenchcoat (did you use default TrenchCoat or use Custom one?) for post tool call follow message adding");
+                    case TrenchSupportFallback.Discard: LogTap?.LogString("Discarding post too call action. Reason not supported"); break;
+                }
+
+            }
+        }
         /// <summary>
         /// Examine the tool calls in the passed packet. If any, schedule them in the resolver and trigger them if needed. This does trigger calls if Provider is OneShot mode
         /// </summary>
@@ -188,7 +266,8 @@ namespace ButlerSDK.Core
                             {
                                 if (Args.ResolverStatus.ToolsUsed is not null)
                                 {
-                                    this.ChatCollection.AddPostToolCallFollowup(Args.ResolverStatus.ToolsUsed, string.Empty);
+                                    //       this.ChatCollection.AddPostToolCallFollowup(Args.ResolverStatus.ToolsUsed, string.Empty);
+                                    _HandlePostToolCallAdd_DoTrenchActionOnUnsupported(Args.ResolverStatus.ToolsUsed, string.Empty);
                                 }
                             }
                             
@@ -287,7 +366,8 @@ namespace ButlerSDK.Core
             {
                 if (ToolContext.ResolverStatus.ToolsUsed is not null)
                 {
-                    ChatCollection.AddPostToolCallFollowup(ToolContext.ResolverStatus.ToolsUsed, string.Empty);
+                    _HandlePostToolCallAdd_DoTrenchActionOnUnsupported(ToolContext.ResolverStatus.ToolsUsed, string.Empty);
+                  //  ChatCollection.AddPostToolCallFollowup(ToolContext.ResolverStatus.ToolsUsed, string.Empty);
                 }
             }
         }
@@ -414,7 +494,19 @@ namespace ButlerSDK.Core
             LogTap?.LogString("AI TURN STARTING: \r\n");
 
             // we save this for QOS turn (if implemented)
-            int OriginalContextWindowStart = ChatCollection.RunningContextWindowCount - 1;
+            int OriginalContextWindowStart;
+            
+            /* the theory with this is start at running context window -1 regardless aka user message */
+            if (_ChatCollection is IButlerTrenchImplementation Trenchy)
+            {
+                OriginalContextWindowStart = Trenchy.CountRunningContextWindow - 1;
+            }
+            else
+            {
+                OriginalContextWindowStart = _ChatCollection.Count -1;
+            }
+
+
             while (!TurnOver)
             {
                 if (AutoSysPromptToday)
@@ -427,7 +519,7 @@ namespace ButlerSDK.Core
             ProviderErrorHandlerMark: // if the provider reports continuing, we execute the request and goto here.
                                       // provider should *not* modify butler state/ect/side effects - just report the action
                                       // to do.
-                var StreamWalker = preTargetClient.CompleteChatStreamingAsync(this.ChatCollection, this.MainOptions, cancelMe);
+                var StreamWalker = preTargetClient.CompleteChatStreamingAsync(this._ChatCollection, this.MainOptions, cancelMe);
                 ToolTriggered = false;
                 FinishReason = null;
                 NetworkErrorStateHandling = NetworkErrorAction.NoError;
@@ -482,7 +574,7 @@ namespace ButlerSDK.Core
                                             await _TriggerToolCall(ToolContext.Resolver, ToolContext.ResolverStatus);
                                             LogTap?.LogTelemetryStats(ToolContext.ResolverStatus!); // ! justified"
 
-                                            ToolContext.Resolver.PlaceInChatLog(ChatCollection);
+                                            ToolContext.Resolver.PlaceInChatLog(_ChatCollection);
                                             _PostToolCallTriggerHandler(ToolContext);
                                             TurnOver = false;
                                         }
@@ -498,7 +590,7 @@ namespace ButlerSDK.Core
                                                 await _TriggerToolCall(ToolContext.Resolver, ToolContext.ResolverStatus);
                                                 LogTap?.LogTelemetryStats(ToolContext.ResolverStatus);
 
-                                                ToolContext.Resolver.PlaceInChatLog(ChatCollection);
+                                                ToolContext.Resolver.PlaceInChatLog(_ChatCollection);
                                                 
                                                 _PostToolCallTriggerHandler(ToolContext);
 
@@ -563,7 +655,7 @@ namespace ButlerSDK.Core
                         {
                             LogTap?.LogString($"No CounterMeasures Object: immediate pass thru to handler and add to Stitcher");
                             AssistantTurnReply.Append(StreamPart);
-                            if (Handler is not null) Handler(StreamPart, ChatCollection);
+                            if (Handler is not null) Handler(StreamPart, _ChatCollection);
 
                         }
                     }
@@ -628,13 +720,14 @@ namespace ButlerSDK.Core
                     _EnsureResolverIsActive(ref ToolContext.Resolver);
 
                     LogTap?.LogString($"Alerting CounterMeasures that LLM finished Streaming reply (EOS).\r\n");
-                    var action = CounterMeasures.EndOfStreamAlert(FinishReason, ChatCollection, AssistantTurnReply.GetMessage(ButlerChatMessageRole.Assistant), MainOptions, ToolTriggered);
+                    var action = CounterMeasures.EndOfStreamAlert(FinishReason, _ChatCollection, AssistantTurnReply.GetMessage(ButlerChatMessageRole.Assistant), MainOptions, ToolTriggered);
                     switch (action)
                     {
                         case IButlerPostProcessorHandler.EndOfAiStreamAction.None:
                             {
                                 LogTap?.LogString($"EOS says OK. Butler is discarding temporary messages. If not a tool call turn, LLM turn is over\r\n");
-                                this.ChatCollection.RemoveTemporaryMessages();
+                                //this.ChatCollection.RemoveTemporaryMessages();
+                                _HandleRemovingTemporaryMessages(this._ChatCollection);
                                 if (FinishReason == ButlerChatFinishReason.ToolCalls)
                                 {
 
@@ -651,9 +744,10 @@ namespace ButlerSDK.Core
                                     LogTap?.LogString($"EOS says Remedial is needed. Discarding Temporary messages <<< TURN IS NOT OVER>>. Calling Remedial and doing another pass thru in the ai turn. Current Tries: {ErrorRemedial} out of {MaxRemedials}\r\n");
                                     ErrorRemedial++;
                                     TurnOver = false;
-                                    this.ChatCollection.RemoveTemporaryMessages();
+                                    //  this.ChatCollection.RemoveTemporaryMessages();
+                                    _HandleRemovingTemporaryMessages(this._ChatCollection);
                                     HandlerQue.Clear();
-                                    CounterMeasures.Remedial(this.ChatCollection, ToolContext.Resolver!, this.ToolSet); //! justified see ensure resolver thing is active earlier in this if block
+                                    CounterMeasures.Remedial(this._ChatCollection, ToolContext.Resolver!, this.ToolSet); //! justified see ensure resolver thing is active earlier in this if block
                                 }
                                 else
                                 {
@@ -662,7 +756,7 @@ namespace ButlerSDK.Core
                                     ButlerSystemChatMessage msg = new("[CIRCUIT BREAK] You were unable to help the user this time. Report as much.");
                                     msg.IsTemporary = true;
                                     HandlerQue.Clear();
-                                    this.ChatCollection.Add(msg);
+                                    this._ChatCollection.Add(msg);
                                 }
                                 break;
                             }
@@ -675,8 +769,9 @@ namespace ButlerSDK.Core
                                     TurnOver = false;
                                     AssistantTurnReply = new();
                                     HandlerQue.Clear();
-                                    this.ChatCollection.RemoveTemporaryMessages();
-                                    CounterMeasures.Remedial(this.ChatCollection, ToolContext.Resolver!, this.ToolSet); //! justified see ensure resolver thing is active earlier in this if block
+                                    //this.ChatCollection.RemoveTemporaryMessages();
+                                    _HandleRemovingTemporaryMessages(_ChatCollection);
+                                    CounterMeasures.Remedial(this._ChatCollection, ToolContext.Resolver!, this.ToolSet); //! justified see ensure resolver thing is active earlier in this if block
                                 }
                                 else
                                 {
@@ -684,7 +779,7 @@ namespace ButlerSDK.Core
                                     TurnOver = true;
                                     ButlerSystemChatMessage msg = new("[CIRCUIT BREAK] You were unable to figure a solution. Report as much. '[ERROR]'");
                                     msg.IsTemporary = true;
-                                    this.ChatCollection.Add(msg);
+                                    this._ChatCollection.Add(msg);
                                 }
                                 break;
                             }
@@ -697,11 +792,11 @@ namespace ButlerSDK.Core
                                     TurnOver = false;
                                     var msg = AssistantTurnReply.GetMessage(ButlerChatMessageRole.System);
                                     msg.IsTemporary = true;
-                                    this.ChatCollection.RemoveTemporaryMessages();
-                                    ChatCollection.Add(msg);
+                                    _HandleRemovingTemporaryMessages(this._ChatCollection);
+                                    _ChatCollection.Add(msg);
                                     HandlerQue.Clear();
                                     AssistantTurnReply = new();
-                                    CounterMeasures.Remedial(this.ChatCollection, ToolContext.Resolver!, this.ToolSet); //! justified see ensure resolver thing is active earlier in this if block
+                                    CounterMeasures.Remedial(this._ChatCollection, ToolContext.Resolver!, this.ToolSet); //! justified see ensure resolver thing is active earlier in this if block
                                 }
                                 else
                                 {
@@ -709,7 +804,7 @@ namespace ButlerSDK.Core
                                     TurnOver = true;
                                     ButlerSystemChatMessage msg = new("[CIRCUIT BREAK] You were unable to figure a solution. Report as much. '[ERROR]'");
                                     msg.IsTemporary = true;
-                                    this.ChatCollection.Add(msg);
+                                    this._ChatCollection.Add(msg);
                                 }
                                 break;
                             }
@@ -723,14 +818,15 @@ namespace ButlerSDK.Core
                 if (ToolContext.Resolver is not null)
                 {
                     LogTap?.LogString("Checking if last ditch tool resolving.");
-                    this.ChatCollection.RemoveTemporaryMessages();
+                    //this.ChatCollection.RemoveTemporaryMessages();
+                    _HandleRemovingTemporaryMessages(this._ChatCollection);
                     //if (ToolCallAction == IButlerLLMProvider.ToolProviderCallBehav.StreamAccumulation)
                     {
                         if (ToolContext.Resolver.HasScheduledTools)
                         {
                             LogTap?.LogString("There are unresolved tools. calling them and doing another ai turn.");
                             await _TriggerToolCall(ToolContext.Resolver, ToolContext.ResolverStatus);
-                            ToolContext.Resolver.PlaceInChatLog(ChatCollection);
+                            ToolContext.Resolver.PlaceInChatLog(_ChatCollection);
                             _PostToolCallTriggerHandler(ToolContext);
                             TurnOver = false;
                         }
@@ -749,7 +845,7 @@ namespace ButlerSDK.Core
                         var part = HandlerQue.Dequeue();
                         if (part is not null)
                         {
-                            if (Handler is not null) Handler(part, ChatCollection);
+                            if (Handler is not null) Handler(part, _ChatCollection);
                             AssistantTurnReply.Append(part);
                         }
                         QueSize--;
@@ -774,7 +870,8 @@ namespace ButlerSDK.Core
                         }
                         else
                         {
-                            this.ChatCollection.RemoveTemporaryMessages();
+                            //this.ChatCollection.RemoveTemporaryMessages();
+                            _HandleRemovingTemporaryMessages(this._ChatCollection);
 
                             if (ErrorRemedial < MaxRemedials)
                             {
@@ -782,7 +879,7 @@ namespace ButlerSDK.Core
                                 TurnOver = false;
                                 ErrorRemedial++;
                                 ButlerSystemChatMessage msg = new ButlerSystemChatMessage("[DIRECTIVE] PLEASE RESPOND TO USER REQUEST!");
-                                ChatCollection.Add(msg);
+                                _ChatCollection.Add(msg);
                             }
                             else
                             {
@@ -797,16 +894,28 @@ namespace ButlerSDK.Core
                         {
                             LogTap?.LogString("Message seems ok - not blank\r\n");
                             // here
-                            ChatCollection.Add(Msg);
+                            _ChatCollection.Add(Msg);
                             if (CounterMeasures is IButlerPostProcessorQOS QOS)
                             {
                                 if (QOS.QosEnabled)
                                 {
-                                    LogTap?.LogString($"Detected QOS Implementation, handing it off for one final pass. RunningContextWindow Start {OriginalContextWindowStart}. Ending (before temp messages removed) {ChatCollection.RunningContextWindowCount} ");
-                                    var ReplyMessage = await QOS.FinalQOSCheck(Provider, preTargetClient, ChatCollection, OriginalContextWindowStart, ChatCollection.RunningContextWindowCount);
+                                    int LastMessagePost;
+                                    if (_ChatCollection is IButlerTrenchImplementation innterTrenchy)
+                                    {
+                                        LastMessagePost = innterTrenchy.CountRunningContextWindow - 1;
+                                        LogTap?.LogString($"Detected QOS Implementation, handing it off for one final pass. RunningContextWindow Start {OriginalContextWindowStart}. Ending (before temp messages removed) {innterTrenchy.CountRunningContextWindow} ");
+                                    }
+                                    else
+                                    {
+                                        LastMessagePost = _ChatCollection.Count - 1;
+                                        LogTap?.LogString($"Detected QOS Implementation, handing it off for one final pass. RunningContextWindow Start {OriginalContextWindowStart}. Ending (before temp messages removed). Note: A TrenchCoat Interface wasn't provided. ");
+                                    }
+
+                                    
+                                    var ReplyMessage = await QOS.FinalQOSCheck(Provider, preTargetClient, _ChatCollection, OriginalContextWindowStart, LastMessagePost);
                                     if (ReplyMessage is not null)
                                     {
-                                        ChatCollection[ChatCollection.Count] = ReplyMessage;
+                                        _ChatCollection[_ChatCollection.Count] = ReplyMessage;
                                     }
                                 }
                             }
@@ -828,7 +937,8 @@ namespace ButlerSDK.Core
 
 
             LogTap?.LogString("Ai Turn over. Cleaning temporary messages \r\n");
-            this.ChatCollection.RemoveTemporaryMessages();
+            //this.ChatCollection.RemoveTemporaryMessages();
+            _HandleRemovingTemporaryMessages(this._ChatCollection);
             return FinishReason;
         }
 

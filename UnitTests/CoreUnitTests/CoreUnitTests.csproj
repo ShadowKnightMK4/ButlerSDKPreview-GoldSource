@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -29,6 +29,7 @@
     <ProjectReference Include="..\..\ApiKeyMgr\ApiKeyMgr.csproj" />
     <ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
     <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" />
+    <ProjectReference Include="..\Butler5ProviderMock\Butler5ProviderMock.csproj" />
     <ProjectReference Include="..\UnitTestDataTypes\UnitTestDataTypes.csproj" />
   </ItemGroup>
 

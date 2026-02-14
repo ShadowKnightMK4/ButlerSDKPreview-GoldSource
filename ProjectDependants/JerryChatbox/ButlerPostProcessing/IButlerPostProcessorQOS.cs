@@ -1,5 +1,6 @@
 ﻿using ButlerLLMProviderPlatform.Protocol;
 using ButlerToolContract.DataTypes;
+using ButlerToolContracts.DataTypes;
 
 namespace ButlerSDK.ButlerPostProcessing
 {
@@ -14,6 +15,6 @@ namespace ButlerSDK.ButlerPostProcessing
         /// </summary>
         /// <param name="Messages">The slice of the context window starting from user turn at [0], to the proposed reply at the end of the list plus </param>
         /// <returns>If you return null, the LLM turn is fully over. If not, *This* message is swapped</returns>
-        public Task<ButlerAssistantChatMessage?> FinalQOSCheck(IButlerLLMProvider Prov, IButlerChatClient QOSCheck, TrenchCoatChatCollection Messages, int LastUserMessageIndex, int LastAiTurnIndex);
+        public Task<ButlerAssistantChatMessage?> FinalQOSCheck(IButlerLLMProvider Prov, IButlerChatClient QOSCheck, IButlerChatCollection Messages, int LastUserMessageIndex, int LastAiTurnIndex);
     }
 }

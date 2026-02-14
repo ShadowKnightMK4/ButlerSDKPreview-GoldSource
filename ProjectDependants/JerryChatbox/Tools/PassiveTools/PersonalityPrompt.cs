@@ -18,7 +18,7 @@ namespace ButlerSDK.Tools.NoCallTools
 
         public string ToolVersion => "HASONE";
 
-        public string ToolDescription => "Add some ass to your bot";
+        public string ToolDescription => "Add some sass to your bot";
 
         public string GetToolJsonString()
         {

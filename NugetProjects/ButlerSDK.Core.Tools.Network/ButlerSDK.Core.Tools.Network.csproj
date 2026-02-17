@@ -7,6 +7,8 @@
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <IncludeBuildOutput>false</IncludeBuildOutput>
 	  <!-- Don't ship an empty DLL for this project -->
+	  <!-- 2. Tell NuGet to be silent about the empty lib folder -->
+	  <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

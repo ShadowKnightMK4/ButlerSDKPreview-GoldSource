@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
 	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	  <IncludeBuildOutput>false</IncludeBuildOutput>
+	  <IncludeBuildOutput>true</IncludeBuildOutput>
 	  <!-- Don't ship an empty DLL for this project -->
 	  <!-- 2. Tell NuGet to shut up about the empty lib folder -->
 	  <NoWarn>$(NoWarn);NU5128</NoWarn>

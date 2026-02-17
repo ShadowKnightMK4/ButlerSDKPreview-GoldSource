@@ -122,6 +122,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonExtNetworkTools", "NonEx
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualTool", "VirtualTool\VirtualTool.csproj", "{2E90BA9E-A700-4147-A5E1-72565A0B4AF1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSdk.All", "NugetProjects\ButlerSdk.All\ButlerSdk.All.csproj", "{8287C59E-07CC-431D-9312-3743293987B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -316,6 +318,10 @@ Global
 		{2E90BA9E-A700-4147-A5E1-72565A0B4AF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E90BA9E-A700-4147-A5E1-72565A0B4AF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E90BA9E-A700-4147-A5E1-72565A0B4AF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8287C59E-07CC-431D-9312-3743293987B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8287C59E-07CC-431D-9312-3743293987B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8287C59E-07CC-431D-9312-3743293987B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8287C59E-07CC-431D-9312-3743293987B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -368,6 +374,7 @@ Global
 		{DB5166D2-C6FF-49AB-9BF4-C7D196F27182} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{9C6ED5EB-0AC4-4FA3-9F81-D5A91711B28A} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{2E90BA9E-A700-4147-A5E1-72565A0B4AF1} = {362C5453-F0ED-480E-A297-F94779B3805F}
+		{8287C59E-07CC-431D-9312-3743293987B1} = {02CE2EA8-75DB-4303-ADB7-1F4B7D3E154A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E98753D-786C-427A-9051-6515CCB6B063}

@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>ButlerSDK Core Library</Title>
+		<Version>1.0.0.0-PublicPreview</Version>
+		<IncludeBuildOutput>true</IncludeBuildOutput>
+		<!-- Don't ship an empty DLL for this project -->
+		<!-- 2. Tell NuGet to be silent about the empty lib folder -->
+		<NoWarn>$(NoWarn);NU5128</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\ButlerSystemToolBase\ButlerSystemToolBase.csproj" />
+	  <ProjectReference Include="..\ButlerSDK.Core.Tools.Discoverer\ButlerSDK.Core.Tools.Discoverer.csproj" />
+	  <ProjectReference Include="..\ButlerSDK.Core.Tools.ExternProcess\ButlerSDK.Core.Tools.ExternProcess.csproj" />
+	  <ProjectReference Include="..\ButlerSDK.Core.Tools.Network\ButlerSDK.Core.Tools.Network.csproj" />
+	  <ProjectReference Include="..\ButlerSDK.Core.Tools.Protocol\ButlerSDK.Core.Tools.csproj" />
+	  <ProjectReference Include="..\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+	  <ProjectReference Include="..\ButlerSDK.Provider.Ollama\ButlerSDK.Provider.OpenAi.Ollama.csproj" />
+	  <ProjectReference Include="..\ButlerSDK.Provider.OpenAi\ButlerSDK.KeyHandling\ButlerSDK.KeyHandling.csproj" />
+	  <ProjectReference Include="..\ButlerSDK.Providers.Gemini\ButlerSDK.Provider.Gemini.csproj" />
+	  <ProjectReference Include="..\ButlerSDK.Providers.OpenAi\ButlerSDK.Provider.OpenAi.csproj" />
+	  <ProjectReference Include="..\ButlerSDK.Provider\ButlerSDK.Provider.csproj" />
+	</ItemGroup>
+
+
+
+</Project>

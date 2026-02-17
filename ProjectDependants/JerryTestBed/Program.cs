@@ -114,7 +114,7 @@ that the tools may change depending on the chat as needed.
             //var testme = new Butler5(DevBuild, Llama, null, "C:\\Users\\Thoma\\Downloads\\DeepSeek-Coder-V2-Lite-Instruct-Q8_0_L.gguf", null);
             //            testme.ChatModel = "gpt-4o-mini"; // TODO: Maybe let the provider offer a default mode? Cloud offers preset strings, local just supported files;
 
-            
+
             testme.AddTool(new ButlerTool_DeviceAPI_GetLocalDateTime(DevBuild));
             testme.AddTool(new ButlerTool_RestAPI_GetPublicIP(DevBuild));
             testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessNetworkAdaptor(DevBuild));

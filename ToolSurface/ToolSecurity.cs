@@ -8,8 +8,9 @@ using System.Threading.Tasks;
 
 namespace ButlerSDK.ToolSupport
 {
-    internal static class ToolSurfaceFlagChecking
+    public static class ToolSurfaceFlagChecking
     {
+        
         public static bool LookupToolFlag(IButlerToolBaseInterface Tool, out bool AnyPermission, out ToolSurfaceScope Result)
         {
             AnyPermission = false;

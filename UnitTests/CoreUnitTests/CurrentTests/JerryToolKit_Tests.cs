@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using UnitTests.UnitTestingTools;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Security;
+using ButlerSDK.ToolSupport.Bench;
 
 
 namespace UnitTests.CurrentTests

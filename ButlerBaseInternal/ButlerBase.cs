@@ -1,20 +1,15 @@
-﻿using ButlerSDK.ApiKeyMgr.Contract;
-using ButlerLLMProviderPlatform.Protocol;
-using ButlerSDK.ToolSupport;
+﻿using ButlerLLMProviderPlatform.Protocol;
 using System.Diagnostics;
 using System.Security;
-using System.Text.Json;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using System.Diagnostics.CodeAnalysis;
-using ButlerSDK.Debugging;
-using ButlerSDK.ButlerPostProcessing;
-using System.Reflection;
 using ButlerToolContracts.DataTypes;
-
+using ButlerSDK.Debugging;
+using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK.ToolSupport.Bench;
-using ButlerSDK.ToolSupport.DiscoverTool;
 using ButlerBaseInternal;
+using ButlerSDK.ToolSupport;
 
 
 
@@ -242,7 +237,7 @@ namespace ButlerSDK.Core
         /// When using that tool, be sure to set it to *here* and also <see cref="AddTool(IButlerToolBaseInterface)"/>. Doing so will hook the LLM up to let it discover tools provided its live atm tools
         /// </summary>
 
-        public  ButlerTool_Discoverer? TheToolBox = null;
+        public ButlerTool_Discoverer? TheToolBox = null;
        
         public IButlerChatCompletionOptions MainOptions { get => _MainOptions; }
         IButlerChatCompletionOptions _MainOptions;
@@ -309,14 +304,6 @@ namespace ButlerSDK.Core
         /// IF set, invalid names will not trigger an exception by butler4, you may get an exception triggered via OpenAI .net sdk if your name doesn't follow it's converting of Strictly A-z range, with 0-9 in there. The only allowed symbol is _ and nothing else, not even spaces in the tool name.
         /// </summary>
         public bool AllowUnvalidedToolNames { get; set; }
-        /// <summary>
-        /// Add a tool base off the abstract base class
-        /// </summary>
-        /// <param name="tool"></param>
-        public void AddTool(ButlerToolBase tool)
-        {
-            AddTool(tool as IButlerToolBaseInterface);
-        } 
 
         /// <summary>
         /// add a tool following the interface

@@ -1,21 +1,11 @@
 ﻿using ButlerSDK.ApiKeyMgr.Contract;
-using ButlerLLMProviderPlatform.DataTypes;
 using ButlerToolContract.DataTypes;
-using ButlerSDK;
-using ButlerSDK.Tools;
-using OpenQA.Selenium.DevTools;
-
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 using ButlerSDK.ToolSupport.DiscoverTool;
+
+
 namespace ButlerSDK.Tools
 {
     [ButlerTool_DiscoverAttributes(true)]

@@ -4,6 +4,7 @@ using ButlerSDK.ButlerPostProcessing;
 using ButlerSDK.Core;
 using ButlerSDK.Debugging;
 using ButlerSDK.ToolSupport;
+using ButlerSDK.ToolSupport.Bench;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using ButlerToolContracts.DataTypes;
@@ -120,7 +121,7 @@ namespace ButlerSDK.Core
                 if (Resolver.HasScheduledTools)
                 {
                     LogTap?.LogString("Tool Resolver object has scheduled tools. Triggering and awaiting.");
-                    await Resolver.RunScheduleAsync(base.ToolSet, Stats);
+                    await Resolver.RunScheduleAsync(base.ToolSet , Stats);
                     Resolver.PlaceInChatLog(_ChatCollection, false);
                     LogTap?.LogString("Placed tool results in chat log");
                 }

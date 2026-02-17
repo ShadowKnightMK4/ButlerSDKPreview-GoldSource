@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ButlerBase.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.17.0" />
     <PackageReference Include="Azure.Maps.Geolocation" Version="1.0.0-beta.3" />
     <PackageReference Include="Azure.ResourceManager.Maps" Version="1.1.0" />
@@ -19,8 +23,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\ApiKeyMgr\ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\BasicToolStarterClass\ButlerToolBase.csproj" />
     <ProjectReference Include="..\..\ButlerLLMProvider\ButlerLLMProviderPlatform.csproj" />
+    <ProjectReference Include="..\..\ButlerToolBench\ToolBenchCollection.csproj" />
     <ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
+    <ProjectReference Include="..\..\DiscovererTool\DiscovererTool.csproj" />
   </ItemGroup>
 
 </Project>

@@ -10,7 +10,7 @@ namespace ButlerSDK.Debugging
     /// </summary>
     public class ButlerTap :  IDisposable
     {
-        Stream Target;
+        protected Stream Target;
         private bool disposedValue;
         static JsonSerializerOptions Opts = new ()
             {
@@ -26,7 +26,11 @@ namespace ButlerSDK.Debugging
 
         }
 
-        static void WriteString(Stream Target, string Value, bool AtEnd=true)
+        public void WriteString(string Value, bool AtEnd=true)
+        {
+
+        }
+        public static void WriteString(Stream Target, string Value, bool AtEnd=true)
         {
 
             var data = Encoding.UTF8.GetBytes(Value);
@@ -43,15 +47,16 @@ namespace ButlerSDK.Debugging
              WriteString(this.Target, @$"---  Beginning Tap ----  {DateTimeOffset.Now.ToString("o")} \r\n");
            
         }
-
+        /*
         public void LogTelemetryStats(ToolResolverTelemetryStats? Stats)
         {
             if (Stats is not null)
             {
                 var str = JsonSerializer.Serialize<ToolResolverTelemetryStats>(Stats, JustIndentIt);
                 WriteString(this.Target, str);
-            } 
-        }
+            }
+        }*/
+
         public void LogString(string msg)
         {
             WriteString(this.Target, msg);

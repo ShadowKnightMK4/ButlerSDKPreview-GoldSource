@@ -1,18 +1,8 @@
-﻿using Microsoft.Identity.Client;
-using OpenQA.Selenium.Internal;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-/*
+﻿/*
  * This particular version of ApiKeyRateLimiter  (ref on my LinkedIn account as MIT)
  * is NOT part part of the MIT release there. It's a component of ButlerSDK here and
  * inherits Butler's LICENCE.
   */
-
 
 namespace ButlerSDK
 {

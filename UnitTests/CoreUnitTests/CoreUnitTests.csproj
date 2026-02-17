@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\ApiKeyMgr\ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\ButlerToolBench\ToolBenchCollection.csproj" />
     <ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
     <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" />
     <ProjectReference Include="..\Butler5ProviderMock\Butler5ProviderMock.csproj" />

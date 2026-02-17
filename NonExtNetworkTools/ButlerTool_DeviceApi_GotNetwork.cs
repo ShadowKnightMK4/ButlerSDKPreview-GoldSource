@@ -1,7 +1,6 @@
 ﻿using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerLLMProviderPlatform.DataTypes;
 using ButlerToolContract.DataTypes;
-using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +10,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using ButlerSDK.ToolSupport;
 using ButlerToolContract;
-using OpenAI.Responses;
 
 namespace ButlerSDK.Tools
 {

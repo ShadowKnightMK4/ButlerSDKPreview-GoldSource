@@ -16,6 +16,7 @@ using System.Text.Json;
 using ButlerToolContract;
 using System.Net.NetworkInformation;
 using JetBrains.Annotations;
+using ButlerSDK.ToolSupport.Bench;
 
 namespace ButlerSDK.ToolSupport
 {

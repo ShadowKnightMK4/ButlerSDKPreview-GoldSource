@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <IncludeBuildOutput>false</IncludeBuildOutput>
+	  <!-- Don't ship an empty DLL for this project -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\WindowsKeyMgr\WindowsKeyMgr.csproj" />
+    <ProjectReference Include="..\ButlerSDK.Provider.OpenAi\ButlerSDK.KeyHandling\ButlerSDK.KeyHandling.csproj" />
+  </ItemGroup>
+
+</Project>

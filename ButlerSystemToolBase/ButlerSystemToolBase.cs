@@ -1,5 +1,6 @@
 ﻿using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK.ToolSupport;
+using ButlerSDK.ToolSupport.Bench;
 using ButlerToolContract;
 
 namespace ButlerSDK

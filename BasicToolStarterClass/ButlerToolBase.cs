@@ -12,7 +12,7 @@ namespace ButlerSDK
         public ApiKeyNotFound(string message) : base(message) { }
         public ApiKeyNotFound(string message, Exception innerException) : base(message, innerException) { }
 
-        internal static string CannedMessage(string v)
+        public static string CannedMessage(string v)
         {
             return $"The Butler tool {v} uses keys and you must pass a class that defines the {nameof(IButlerVaultKeyCollection)} interface";
         }

@@ -13,6 +13,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ButlerToolContracts.DataTypes;
+using ButlerSDK.ToolSupport.Bench;
 
 namespace ButlerSDK.ButlerPostProcessing
 {
@@ -256,17 +257,7 @@ namespace ButlerSDK.ButlerPostProcessing
         }
 
         
-        public virtual void Remedial(TrenchCoatChatCollection Msgs, ToolResolver Resolver, ButlerToolBench Toolset)
-        {
-
-            ButlerSystemChatMessage Alert = new(@"[ERROR] IT LOOKS LIKE YOU TALKED ABOUT CALLING A TOOL WITHOUT CALLING IT. [REMEDIAL STEPS] Look at the last user and assistant turn. Produce the json needed to answer with no other dialog! ");
-            
-            Alert.IsTemporary = true;
-            Msgs.Add(Alert);
-
-         
-        }
-
+     
 
         public async Task<ButlerAssistantChatMessage?> FinalQOSCheck(IButlerLLMProvider Prov, IButlerChatClient QOSCheck, IButlerChatCollection Messages, int LastUserMessageIndex, int LastAiTurnIndex)
         {
@@ -331,9 +322,15 @@ namespace ButlerSDK.ButlerPostProcessing
 
         }
 
-        public void Remedial(IButlerChatCollection Msgs, ToolResolver Resolver, ButlerToolBench Toolset)
+ 
+
+        public void Remedial(IButlerChatCollection Msgs, ToolResolver Resolver, IButlerToolBench Toolset)
         {
-            throw new NotImplementedException();
+
+            ButlerSystemChatMessage Alert = new(@"[ERROR] IT LOOKS LIKE YOU TALKED ABOUT CALLING A TOOL WITHOUT CALLING IT. [REMEDIAL STEPS] Look at the last user and assistant turn. Produce the json needed to answer with no other dialog! ");
+
+            Alert.IsTemporary = true;
+            Msgs.Add(Alert);
         }
     }
 }

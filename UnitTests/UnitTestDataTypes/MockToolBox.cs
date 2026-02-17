@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ButlerToolContract;
+using ButlerSDK.ToolSupport.Bench;
 
 namespace UnitTests.UnitTestingTools
 {
@@ -30,6 +31,8 @@ namespace UnitTests.UnitTestingTools
         public bool Ok = true;
 
         public int ToolCount => throw new NotImplementedException();
+
+        public IEnumerable<string> ToolNames => throw new NotImplementedException();
 
         public Dictionary<string, IButlerToolBaseInterface> fakeToolKit =new();
         /// <summary>
@@ -80,6 +83,21 @@ namespace UnitTests.UnitTestingTools
                 return result;
             }
             return null;
+        }
+
+        public void AddTool(string name, IButlerToolBaseInterface tool, ToolSurfaceScope Scope, bool ValidateNames)
+        {
+
+        }
+
+        public void RemoveAllTools(bool AllowCleanup, bool DoNotRemoveSystemTools)
+        {
+
+        }
+
+        public void RemoveTool(string name, bool AllowCleanup, bool DoNotRemoveSystemTools = true)
+        {
+
         }
     };
 }

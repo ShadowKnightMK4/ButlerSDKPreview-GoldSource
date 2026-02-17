@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK;
 using ButlerSDK.Tools;
-using OpenQA.Selenium;
 
 namespace ButlerSDK.Tools
 {

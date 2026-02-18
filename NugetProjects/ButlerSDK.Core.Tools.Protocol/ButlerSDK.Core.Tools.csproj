@@ -12,8 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
-    <ProjectReference Include="..\..\SecureStringHelper\SecureStringHelper.csproj" />
+    <ProjectReference Include="..\ButlerSDK.Core\ButlerSDK.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -5,7 +5,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <IncludeBuildOutput>true</IncludeBuildOutput>
 	  <!-- Don't ship an empty DLL for this project -->
 	  <!-- 2. Tell NuGet to shut up about the empty lib folder -->
@@ -13,6 +12,7 @@
   </PropertyGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\ButlerSDK.Core\ButlerSDK.Core.csproj" />
 		<ProjectReference Include="..\ButlerSDK.Provider\ButlerSDK.Provider.csproj" />
 		<ProjectReference Include="..\..\Butler5ProviderOpenAI\Butler5ProviderOpenAI.csproj" />
 	</ItemGroup>

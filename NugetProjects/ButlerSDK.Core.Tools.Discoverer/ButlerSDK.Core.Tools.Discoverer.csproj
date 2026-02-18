@@ -1,18 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	  <IncludeBuildOutput>false</IncludeBuildOutput>
-	  <!-- Don't ship an empty DLL for this project -->
-	  <!-- 2. Tell NuGet to be silent about the empty lib folder -->
-	  <NoWarn>$(NoWarn);NU5128</NoWarn>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<IncludeBuildOutput>true</IncludeBuildOutput>
+		<NoWarn>$(NoWarn);NU5128</NoWarn>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\DiscovererTool\DiscovererTool.csproj" />
-  </ItemGroup>
+		<!-- Run the script -->
+		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- 1. INGREDIENTS: Keep PrivateAssets="all" so they aren't listed as dependencies -->
+		<ProjectReference Include="..\..\DiscovererTool\DiscovererTool.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\ButlerSDK.Core.Tools.Protocol\ButlerSDK.Core.Tools.csproj" PrivateAssets="all" />
+
+		<!-- 2. CORE: Remove PrivateAssets. We WANT this to be a dependency, NOT a file inside. -->
+		<ProjectReference Include="..\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+	</ItemGroup>
+
+	<!-- 3. THE FIXED SCRIPT -->
+	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
+		<ItemGroup>
+			<!-- Step A: Grab ALL ProjectReference DLLs -->
+			<_InternalProjectRefs Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+
+			<!-- Step B: Add them to the package, BUT EXCLUDE the Core DLL -->
+			<!-- Replace 'ButlerSDK.Core.dll' with the actual output filename of your core project -->
+			<BuildOutputInPackage Include="@(_InternalProjectRefs)" Exclude="**\ButlerSDK.Core.dll" />
+		</ItemGroup>
+	</Target>
 
 </Project>

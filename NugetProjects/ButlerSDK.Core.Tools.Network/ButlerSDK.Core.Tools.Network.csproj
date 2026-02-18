@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	  <IncludeBuildOutput>false</IncludeBuildOutput>
+	  <IncludeBuildOutput>true</IncludeBuildOutput>
 	  <!-- Don't ship an empty DLL for this project -->
 	  <!-- 2. Tell NuGet to be silent about the empty lib folder -->
 	  <NoWarn>$(NoWarn);NU5128</NoWarn>
@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\NonExtNetworkTools\NonExtNetworkTools.csproj" />
+    <ProjectReference Include="..\ButlerSDK.Core.Tools.Protocol\ButlerSDK.Core.Tools.csproj" />
+    <ProjectReference Include="..\ButlerSDK.Core\ButlerSDK.Core.csproj" />
   </ItemGroup>
 
 </Project>

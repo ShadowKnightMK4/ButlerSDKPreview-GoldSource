@@ -1,0 +1,9 @@
+<Project>
+ <PropertyGroup>
+   <!-- 
+     Tells every project: "When you pack, put the .nupkg here!" 
+     $(MSBuildThisFileDirectory) is the folder where this file lives.
+   -->
+   <PackageOutputPath>$(SolutionDir)..\NugetProjects\Package</PackageOutputPath>
+ </PropertyGroup>
+</Project>

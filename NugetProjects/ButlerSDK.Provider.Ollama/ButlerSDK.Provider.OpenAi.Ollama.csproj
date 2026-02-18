@@ -6,14 +6,17 @@
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	  <IncludeBuildOutput>false</IncludeBuildOutput>
+	  <IncludeBuildOutput>true</IncludeBuildOutput>
 	  <!-- Don't ship an empty DLL for this project -->
 	  <!-- 2. Tell NuGet to shut up about the empty lib folder -->
 	  <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Butler5ProviderOllama\Butler5ProviderOllama.csproj" />
+    <ProjectReference Include="..\ButlerSDK.Core\ButlerSDK.Core.csproj" />
     <ProjectReference Include="..\ButlerSDK.Providers.OpenAi\ButlerSDK.Provider.OpenAi.csproj" />
+    <ProjectReference Include="..\ButlerSDK.Provider\ButlerSDK.Provider.csproj" />
   </ItemGroup>
 
 </Project>

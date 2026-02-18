@@ -5,11 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <IncludeBuildOutput>false</IncludeBuildOutput>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ButlerToolContracts\ButlerToolContracts.csproj" />
-    <ProjectReference Include="..\VirtualTool\VirtualTool.csproj" />
+    <ProjectReference Include="..\..\ApiKeyMgr\ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\ApiKeys\ApiKeys.csproj" />
+    <ProjectReference Include="..\ButlerSDK.Core\ButlerSDK.Core.csproj" />
   </ItemGroup>
 
 </Project>

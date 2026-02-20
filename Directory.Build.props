@@ -4,6 +4,8 @@
      Tells every project: "When you pack, put the .nupkg here!" 
      $(MSBuildThisFileDirectory) is the folder where this file lives.
    -->
-   <PackageOutputPath>$(SolutionDir)..\NugetProjects\Package</PackageOutputPath>
+      <PackageOutputPath>$(MSBuildThisFileDirectory)\NugetProjects\Package</PackageOutputPath>
+<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+	  <IsPackable>false</IsPackable>
  </PropertyGroup>
 </Project>

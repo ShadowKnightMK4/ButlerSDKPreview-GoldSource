@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<PackageId>ButlerSDK.Abstractions</PackageId>
+		<Version>1.0.0-preview1</Version>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
+		<!-- 1. Suppress the empty DLL output -->
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+
+		<!-- 2. Tell NuGet this is intentional (Suppress warning NU5128) -->
+		<SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- 3. These become Dependencies. 
+         When user installs Abstractions, they get these two automatically. -->
+		<ProjectReference Include="..\..\ButlerLLMProvider\ButlerLLMProviderPlatform.csproj" />
+		<ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
+	</ItemGroup>
+
+</Project>

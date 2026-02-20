@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IsPackable>true</IsPackable>
+		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\ApiKeyMgr\ApiKeyMgr.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\ApiKeys\ApiKeys.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\ApiRateLimiter\ApiRateLimiter.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\BasicToolStarterClass\ButlerToolBase.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\ButlerBaseInternal\ButlerBaseInternal.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\ButlerSystemToolBase\ButlerSystemToolBase.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\ButlerToolBench\ToolBenchCollection.csproj" PrivateAssets="all"/>
+		<ProjectReference Include="..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" PrivateAssets="all" />
+
+		<!-- This one remains a standard dependency -->
+		<ProjectReference Include="..\NugetProjects\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
+		<ProjectReference Include="..\ToolSurface\ToolSurface.csproj" PrivateAssets="all" />
+	</ItemGroup>
+
+	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
+		<ItemGroup>
+			<!-- 
+         STEP 1: Create a safe temporary list.
+         This function implicitly ignores any file that doesn't have 'ReferenceSourceTarget'.
+         It saves us from the "Does not define value" crash.
+      -->
+			<_SafeProjectReferences Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+
+			<!-- 
+         STEP 2: Add to the package.
+         We filter by Filename to exclude Abstractions. 
+         (Using Filename is safer than .Contains on the full path).
+      -->
+			<BuildOutputInPackage Include="@(_SafeProjectReferences)" Condition="'%(Filename)' != 'ButlerSDK.Core.Abstractions'" />
+		</ItemGroup>
+	</Target>
+
+</Project>

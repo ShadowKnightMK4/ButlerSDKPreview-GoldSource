@@ -1,4 +1,5 @@
 ﻿using ApiKeyMgr;
+using ButlerLLMProviderPlatform;
 using ButlerLLMProviderPlatform.Protocol;
 using ButlerSDK;
 using ButlerSDK.Core;
@@ -8,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using ButlerSDK.Core;
 namespace OpenAiProvider
 {
     public static class FacadeAddOn
@@ -32,7 +33,7 @@ namespace OpenAiProvider
             ArgumentException.ThrowIfNullOrWhiteSpace(Model);
             InMemoryApiKey CloudKeys = new();
             CloudKeys.AddKey(FacadeKey, OpenAiKey);
-            var ret = new Butler(CloudKeys, provider, provider.ChatCreationProvider.DefaultOptions, Model, FacadeKey, null!, null!);
+            Butler ret = new Butler(CloudKeys, provider, provider.ChatCreationProvider.DefaultOptions, Model, FacadeKey, null!, null!);
             if (ret == null)
             {
                 throw new InvalidOperationException("Failed to create Butler instance with OpenAI provider.");

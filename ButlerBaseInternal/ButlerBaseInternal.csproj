@@ -8,11 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ApiKeyMgr\ApiKeyMgr.csproj" />
-    <ProjectReference Include="..\ButlerLLMProvider\ButlerLLMProviderPlatform.csproj" />
-    <ProjectReference Include="..\ButlerToolBench\ToolBenchCollection.csproj" />
-    <ProjectReference Include="..\ButlerToolContracts\ButlerToolContracts.csproj" />
-    <ProjectReference Include="..\ToolSurface\ToolSurface.csproj" />
+    <ProjectReference Include="..\ApiKeyMgr\ApiKeyMgr.csproj"  PrivateAssets="all"/>
+    <ProjectReference Include="..\ButlerLLMProvider\ButlerLLMProviderPlatform.csproj"  PrivateAssets="all"/>
+    <ProjectReference Include="..\ButlerToolBench\ToolBenchCollection.csproj"  PrivateAssets="all"/>
+    <ProjectReference Include="..\ButlerToolContracts\ButlerToolContracts.csproj"  PrivateAssets="all" />
+    <ProjectReference Include="..\ToolSurface\ToolSurface.csproj"  PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

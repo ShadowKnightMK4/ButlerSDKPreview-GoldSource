@@ -1,20 +1,12 @@
 ﻿using ButlerLLMProviderPlatform.Protocol;
+using ButlerProtocolBase.ToolSecurity;
 using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK.ButlerPostProcessing;
-using ButlerSDK.Core;
 using ButlerSDK.Debugging;
 using ButlerSDK.ToolSupport;
-using ButlerSDK.ToolSupport.Bench;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using ButlerToolContracts.DataTypes;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ButlerSDK.Core
 {
@@ -27,7 +19,7 @@ namespace ButlerSDK.Core
         public const string NoApiKey = "";
         protected readonly IButlerPostProcessorHandler? PostProcessing;
         protected readonly IButlerChatPreprocessor? PreProcessing;
-
+       
         /// <summary>
         /// What tool self reported permissions are allowed. A <see cref="SecurityException"/> will trigger on added tool
         /// </summary>

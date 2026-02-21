@@ -11,8 +11,9 @@
 
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\Butler5ProviderOpenAI\Butler5ProviderOpenAI.csproj"  PrivateAssets="all"/>
+		<ProjectReference Include="..\..\Butler5ProviderOpenAI\Butler5ProviderOpenAI.csproj" PrivateAssets="all" />
 		<ProjectReference Include="..\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
+		<ProjectReference Include="..\ButlerSDK.Core\ButlerSDK.Core.csproj" />
 	</ItemGroup>
 
 	<!-- 

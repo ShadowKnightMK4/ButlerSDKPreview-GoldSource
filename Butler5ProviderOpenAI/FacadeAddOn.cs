@@ -1,16 +1,9 @@
 ﻿using ApiKeyMgr;
-using ButlerLLMProviderPlatform;
-using ButlerLLMProviderPlatform.Protocol;
 using ButlerSDK;
 using ButlerSDK.Core;
 using ButlerSDK.Providers.OpenAI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ButlerSDK.Core;
-namespace OpenAiProvider
+
+namespace ButlerSDK
 {
     public static class FacadeAddOn
     {

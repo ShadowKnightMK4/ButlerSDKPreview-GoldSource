@@ -4,8 +4,7 @@ using ButlerSDK.Debugging;
 using System.Diagnostics;
 using ButlerSDK.ButlerPostProcessing;
 using ButlerSDK;
-using ButlerSDK.Providers.Gemini;
-using OpenAiProvider;
+using ButlerSDK.Providers.OpenAI;
 using System.Text.Json;
 using ButlerSDK.Core;
 
@@ -21,7 +20,7 @@ namespace ButlerTestBed
         //        static ToolResolver5? Schedule = null;
         static bool HandlerChatMessageStreamHandler(ButlerStreamingChatCompletionUpdate content, IList<ButlerChatMessage> msg)
         {
-
+           
 
             foreach (var ContentPart in content.ContentUpdate)
             {
@@ -41,6 +40,7 @@ namespace ButlerTestBed
         }
         static async Task Main(string[] args)
         {
+          
             ButlerSDK.ApiKeyMgr.WindowsVault.WindowsVault  DevBuild = new();
             ButlerSDK.Providers.OpenAI.ButlerOpenAiProvider OpenAi;
             //            var Llama = new Butler.Providers.LlamaProvider.Butler5ProviderLlama(new  DeepSeekV2PPr(), null);

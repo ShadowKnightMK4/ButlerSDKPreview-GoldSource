@@ -1,4 +1,5 @@
-﻿using ButlerSDK.ApiKeyMgr.Contract;
+﻿using ButlerSDK.ApiKeyMgr;
+using ButlerSDK.ApiKeyMgr.Contract;
 using SecureStringHelper;
 using System;
 using System.Collections.Generic;

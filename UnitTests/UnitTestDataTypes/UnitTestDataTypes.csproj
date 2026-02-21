@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\ApiKeyMgr\ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\ButlerBaseInternal\ButlerBaseInternal.csproj" />
     <ProjectReference Include="..\..\ButlerLLMProvider\ButlerLLMProviderPlatform.csproj" />
     <ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
     <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" />

@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ApiKeyMgr\ApiKeyMgr.csproj" />
     <ProjectReference Include="..\ButlerToolContracts\ButlerToolContracts.csproj" />
+    <ProjectReference Include="..\CommonProtocol\ButlerProtocolBase.csproj" />
   </ItemGroup>
 
 </Project>

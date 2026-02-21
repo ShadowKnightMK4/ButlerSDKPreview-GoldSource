@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ApiKeys\ApiKeys.csproj" />
+    <ProjectReference Include="..\CommonProtocol\ButlerProtocolBase.csproj" />
     <ProjectReference Include="..\SecureStringHelper\SecureStringHelper.csproj" />
   </ItemGroup>
 

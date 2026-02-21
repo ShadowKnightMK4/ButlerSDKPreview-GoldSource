@@ -1,0 +1,1 @@
+﻿This contains the interfaces for the ButlerSDK Providers (things that link Butler to say OpenAI Chat or Gemini), the data types ButlerSDK uses for messages and tool interface defines.

@@ -17,8 +17,10 @@ using ButlerToolContract;
 using System.Net.NetworkInformation;
 using JetBrains.Annotations;
 using ButlerSDK.ToolSupport.Bench;
+using ButlerSDK.Core;
 
-namespace ButlerSDK.ToolSupport
+
+    namespace ButlerSDK.ToolSupport
 {
 
     /// <summary>
@@ -576,107 +578,6 @@ namespace ButlerSDK.ToolSupport
 
 
 
-    /// <summary>
-    /// This class is little more than a <
-    /// </summary>
-    class JerryButlerToolset
-    {
-        #region event system for butler2
-        /// <summary>
-        /// Butler2 calls this to notify the tools of a new message. Message is contents. Your tool can't change the message
-        /// </summary>
-        /// <param name="message"></param>
-        public static void MessageNotify(ButlerChatMessage message)
-        {
-            var col = Tools.GetEnumerator();
-            col.MoveNext();
-            while (col.Current.Value is not null)
-            {
-                col.Current.Value.OnMessageAdded(message);
-            }
-        }
-        #endregion
-        readonly static ApiKeyRateLimiter Limits = new();
-        /// <summary>
-        /// 
-        /// </summary>
-        readonly static Dictionary<string, ButlerToolBase> Tools = [];
-
-        public static void AddTool(string name, ButlerToolBase tool)
-        {
-            Tools.Add(name, tool);
-            Limits.AddService(name, 0, 200, 200, ApiKeyRateLimiter.LimitType.PerCall);
-        }
-
-        public static void SetLimit(string name, ulong limit)
-        {
-            Limits.AssignNewServiceLimit(name, limit);
-        }
-
-        const string limit_exceeded = "Notice: This tool's rate has been hit, please try again later";
-
-        
-        static ButlerToolBase? ChatToTool(ButlerChatToolCallMessage c)
-        {
-            ButlerToolBase ret;
-            try
-            {
-                ret = Tools[c.ToolName];
-            }
-            catch (KeyNotFoundException)
-            {
-                return null;
-            }
-            return ret;
-        }
-
-        /// <summary>
-        /// Invoke this tool, pass the specified function call arguments and call id (as needed: note OpenAI gives you a call id you should pass) and the json arguments
-        /// </summary>
-        /// <param name="FunctionName">the name of the tool to call</param>
-        /// <param name="CallId">what's the id of the call. Note this is passed unchanged to the tool</param>
-        /// <param name="Arguments">arguments to the tool. Should probably be in json matching <see cref="ButlerToolBase.GetToolJsonString()"/> template as needed</param>
-        /// <returns></returns>
-        public static ButlerChatToolCallMessage? CallToolFunction(string FunctionName, string CallId, string Arguments)
-        {
-            ButlerToolBase Tool;
-            try
-            {
-                Tool = Tools[FunctionName];
-            }
-            catch (KeyNotFoundException)
-            {
-                return null;
-            }
-            if (Tool != null)
-            {
-                return Tool.ResolveMyTool(Arguments, CallId, null);
-            }
-            return null;
-        }
-        public static ButlerChatToolCallMessage? CallToolFunction(ButlerChatToolCallMessage Func)
-        {
-            ButlerToolBase Tool;
-            try
-            {
-                Tool = Tools[Func.ToolName];
-            }
-            catch (KeyNotFoundException)
-            {
-                return null;
-            }
-            finally
-            {
-
-            }
-            if (Tool != null)
-            {
-                return Tool.ResolveMyTool(Func);
-            }
-            return null;
-        }
-
-    }
 }
 
 

@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\ButlerLLMProvider\ButlerLLMProviderPlatform.csproj" />
     <ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
+    <ProjectReference Include="..\..\CommonProtocol\ButlerProtocolBase.csproj" />
   </ItemGroup>
 
 </Project>

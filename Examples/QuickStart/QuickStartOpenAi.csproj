@@ -8,8 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Butler5ProviderOpenAI\Butler5ProviderOpenAI.csproj" />
-    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" />
+    <ProjectReference Include="..\..\NugetProjects\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\..\NugetProjects\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\NugetProjects\ButlerSDK.Provider.OpenAi\ButlerSDK.Provider.OpenAi.csproj" />
   </ItemGroup>
 
 </Project>

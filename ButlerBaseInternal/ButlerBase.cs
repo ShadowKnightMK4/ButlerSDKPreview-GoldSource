@@ -10,6 +10,7 @@ using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK.ToolSupport.Bench;
 using ButlerBaseInternal;
 using ButlerSDK.ToolSupport;
+using ButlerProtocolBase.ToolSecurity;
 
 
 
@@ -326,6 +327,7 @@ namespace ButlerSDK.Core
                ToolSet.AddTool(tool.ToolName, tool, ToolSurfaceScope, false);
             }
             else
+
             {
                 ToolSet.AddTool(tool.ToolName, tool, ToolSurfaceScope, true);
             }

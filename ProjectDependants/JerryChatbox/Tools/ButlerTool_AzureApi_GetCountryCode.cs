@@ -27,7 +27,7 @@ namespace ButlerSDK.Tools
         {
             if (key is null)
             {
-                throw new ButlerSDK.ApiKeyNotFound(ApiKeyNotFound.CannedMessage(nameof(ButlerTool_AzureApi_GetCountryCode)));
+                throw new ApiKeyNotFound(ApiKeyNotFound.CannedMessage(nameof(ButlerTool_AzureApi_GetCountryCode)));
             }
         }
         const string json_template = @"{

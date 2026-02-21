@@ -7,22 +7,10 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<IsPackable>true</IsPackable>
 		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+		<Version>1.0.1</Version>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\ApiKeyMgr\ApiKeyMgr.csproj" PrivateAssets="all" />
-		<ProjectReference Include="..\ApiKeys\ApiKeys.csproj" PrivateAssets="all" />
-		<ProjectReference Include="..\ApiRateLimiter\ApiRateLimiter.csproj" PrivateAssets="all" />
-		<ProjectReference Include="..\BasicToolStarterClass\ButlerToolBase.csproj" PrivateAssets="all" />
-		<ProjectReference Include="..\ButlerBaseInternal\ButlerBaseInternal.csproj" PrivateAssets="all" />
-		<ProjectReference Include="..\ButlerSystemToolBase\ButlerSystemToolBase.csproj" PrivateAssets="all" />
-		<ProjectReference Include="..\ButlerToolBench\ToolBenchCollection.csproj" PrivateAssets="all"/>
-		<ProjectReference Include="..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" PrivateAssets="all" />
 
-		<!-- This one remains a standard dependency -->
-		<ProjectReference Include="..\NugetProjects\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
-		<ProjectReference Include="..\ToolSurface\ToolSurface.csproj" PrivateAssets="all" />
-	</ItemGroup>
 
 	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
 		<ItemGroup>
@@ -41,5 +29,22 @@
 			<BuildOutputInPackage Include="@(_SafeProjectReferences)" Condition="'%(Filename)' != 'ButlerSDK.Core.Abstractions'" />
 		</ItemGroup>
 	</Target>
+
+
+
+	<ItemGroup>
+		<!-- PrivateAssets="all" is REQUIRED here so NuGet doesn't look for them on the internet -->
+		<ProjectReference Include="..\..\ApiKeyMgr\ApiKeyMgr.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\..\ApiKeys\ApiKeys.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\..\BasicToolStarterClass\ButlerToolBase.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\..\ButlerBaseInternal\ButlerBaseInternal.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\..\ButlerToolBench\ToolBenchCollection.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\..\SecureStringHelper\SecureStringHelper.csproj" PrivateAssets="all" />
+		<ProjectReference Include="..\..\ToolSurface\ToolSurface.csproj" PrivateAssets="all" />
+
+		<!-- This one STAYS NORMAL because we want it to be a public dependency -->
+		<ProjectReference Include="..\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
+	</ItemGroup>
 
 </Project>

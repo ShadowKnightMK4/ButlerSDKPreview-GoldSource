@@ -20,7 +20,6 @@
   <ItemGroup>
     <ProjectReference Include="..\ApiKeyMgr\ApiKeyMgr.csproj" />
     <ProjectReference Include="..\ApiKeys\ApiKeys.csproj" />
-    <ProjectReference Include="..\ButlerLLMProvider\ButlerLLMProviderPlatform.csproj" />
     <ProjectReference Include="..\NugetProjects\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
     <ProjectReference Include="..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" />
     <ProjectReference Include="..\SecureStringHelper\SecureStringHelper.csproj" />

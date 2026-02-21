@@ -6,33 +6,15 @@
 		<Nullable>enable</Nullable>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<IsPackable>true</IsPackable>
-		<!-- Remove IncludeReferencedProjects, it doesn't do what you want here -->
 
-		<!-- This instructs the build to run our custom target (defined below) when packing -->
-		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+		<NuspecFile>ButlerSDK.Core.Abstractions.nuspec</NuspecFile>
+		<NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<!-- 
-      PrivateAssets="all" is CRITICAL. 
-      It tells NuGet: "Don't list this as a dependency in the .nuspec file." 
-    -->
-		<ProjectReference Include="..\..\ButlerLLMProvider\ButlerLLMProviderPlatform.csproj" PrivateAssets="all" />
-		<ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" PrivateAssets="all" />
+	  <ProjectReference Include="..\..\CommonProtocol\ButlerProtocolBase.csproj" />
 	</ItemGroup>
 
-	<!-- 
-    This Target runs during the Pack process. 
-    It grabs the DLLs from the referenced projects and adds them to the Package Output.
-  -->
-	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
-		<ItemGroup>
-			<!-- 
-ontains all files (DLLs, PDBs, XMLs) that would be 
-        copied to the bin fol        ReferenceCopyLocalPaths cder. We filter for only those coming from ProjectReferences.
-      -->
-			<BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
-		</ItemGroup>
-	</Target>
+
 
 </Project>

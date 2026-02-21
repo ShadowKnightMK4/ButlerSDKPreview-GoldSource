@@ -1,4 +1,5 @@
-﻿using ButlerToolContract;
+﻿using ButlerProtocolBase.ToolSecurity;
+using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 
 namespace ButlerSDK.ToolSupport.Bench

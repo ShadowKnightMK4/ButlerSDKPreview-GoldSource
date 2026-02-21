@@ -1,23 +1,18 @@
-﻿using ButlerLLMProviderPlatform;
+﻿using ButlerLLMProviderPlatform.DataTypes;
 using ButlerLLMProviderPlatform.Protocol;
-using System.Security;
+using ButlerToolContract;
+using ButlerToolContract.DataTypes;
+using Microsoft.Extensions.Logging;
 using OpenAI;
 using OpenAI.Chat;
-using System.ClientModel;
-using ButlerToolContract.DataTypes;
-using ButlerToolContract; 
-using System.Diagnostics.CodeAnalysis;
-using System.Collections;
-using System.Reflection.Metadata.Ecma335;
-using ButlerLLMProviderPlatform.DataTypes;
-using Microsoft.VisualBasic;
-using System.Diagnostics;
 using OpenAI.Models;
-using System.Net;
-using Microsoft.Extensions.Logging;
-using System.Runtime.CompilerServices;
 using SecureStringHelper;
-using OpenQA.Selenium.DevTools;
+using System.ClientModel;
+using System.Collections;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Security;
+
 /*
  * The provider for OpenAI for butlerr5.
  * 

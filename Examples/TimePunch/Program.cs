@@ -1,25 +1,14 @@
-﻿using ButlerSDK.ApiKeyMgr.Contract;
-
-using ButlerSDK;
-using ButlerSDK.ToolSupport;
-using ButlerSDK.Tools;
-
-using OpenAI.Files;
-using OpenQA.Selenium.Internal;
-
-using ButlerSDK.Providers.OpenAI;
+﻿using ButlerSDK.Tools;
 using ButlerSDK.Providers.OpenAI.Ollama;
 
 using ButlerToolContract.DataTypes;
-using ButlerToolContract;
 using ButlerSDK.Debugging;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using System.Diagnostics;
 using ButlerSDK.ButlerPostProcessing;
 using ButlerSDK.Core;
 using System.Reflection;
 using ButlerSDK.ApiKeyMgr;
+
+
 [assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]
 
 namespace TimePunchApp

@@ -1,7 +1,7 @@
 ﻿using ButlerSDK;
-using ButlerSDK.Providers.Gemini;
-using ButlerSDK.Tools;
+using ButlerSDK.ToolSupport;
 using ButlerToolContract.DataTypes;
+using ButlerSDK.ApiKeyMgr;
 
 
 static class Program
@@ -35,6 +35,7 @@ static class Program
 
 
 
+        
         // create an Gemini powered butler.
         var butler = ButlerStarter.Instance.CreateGeminiButler(apiKey, "models/gemini-flash-latest");
 

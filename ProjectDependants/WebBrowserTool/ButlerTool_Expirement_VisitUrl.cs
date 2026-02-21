@@ -1,17 +1,12 @@
-﻿using ButlerSDK.ApiKeyMgr.Contract;
-using ButlerLLMProviderPlatform.DataTypes;
-using ButlerToolContract.DataTypes;
+﻿using ButlerToolContract.DataTypes;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Support.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using ButlerSDK.ToolSupport.DiscoverTool;
+using ButlerSDK.Tools;
+using ButlerSDK.ApiKeyMgr.Contract;
+
 /* this is effectively a prototype */
 #nullable disable
 #pragma warning disable

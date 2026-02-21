@@ -1,11 +1,6 @@
 ﻿using ButlerSDK;
-using ButlerSDK.ApiKeyMgr.Contract;
-using ButlerSDK.Core;
 using ButlerToolContract.DataTypes;
-using OpenAiProvider;
-using System.Reflection;
-using System.Threading.Tasks;
-[assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]
+using ButlerSDK.Provider.OpenAi;
 
 internal class Program
 {
@@ -38,7 +33,7 @@ internal class Program
             throw new InvalidOperationException("OPENAI_API_KEY not set.");
 
 
-
+        
 
         // create an OpenAi powered butler
         var butler = ButlerStarter.Instance.CreateOpenAiButler(apiKey, "gpt-4o");

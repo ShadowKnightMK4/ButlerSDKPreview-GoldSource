@@ -6,8 +6,6 @@ using GenerativeAI;
 using GenerativeAI.Types;
 using SecureStringHelper;
 using System.Collections;
-using System.Diagnostics;
-using System.Net.Mail;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;

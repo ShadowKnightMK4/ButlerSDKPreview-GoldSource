@@ -1,15 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Selenium.Support" Version="4.41.0" />
+    <PackageReference Include="Selenium.WebDriver" Version="4.41.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\BasicToolStarterClass\ButlerToolBase.csproj" />
     <ProjectReference Include="..\..\NugetProjects\ButlerSDK.Core\ButlerSDK.Core.csproj" />
-    <ProjectReference Include="..\..\NugetProjects\ButlerSDK.Provider.Gemini\ButlerSDK.Provider.Gemini.csproj" />
   </ItemGroup>
 
 </Project>

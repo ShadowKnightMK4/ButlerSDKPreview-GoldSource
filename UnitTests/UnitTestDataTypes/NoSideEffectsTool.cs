@@ -1,4 +1,5 @@
-﻿using ButlerSDK;
+﻿using ButlerProtocolBase.ToolSecurity;
+using ButlerSDK;
 using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
@@ -8,8 +9,8 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-
-namespace UnitTests.UnitTestingTools
+using ButlerSDK.Core;
+    namespace UnitTests.UnitTestingTools
 {
     [ToolSurfaceCapabilities(ToolSurfaceScope.MaxAvailablePermissions)]
     public class AllModeMockScope_AllAccessTagged: AllModeToolMockUnspecifiedScope
@@ -50,7 +51,7 @@ namespace UnitTests.UnitTestingTools
     /// </summary>
     /// <remarks>api handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
     [ToolSurfaceCapabilities(ToolSurfaceScope.NoPermissions)]
-    public class NoSideEffectsTool : ButlerToolBase, IDisposable
+    public class NoSideEffectsTool :  ButlerToolBase, IDisposable
     {
 
 

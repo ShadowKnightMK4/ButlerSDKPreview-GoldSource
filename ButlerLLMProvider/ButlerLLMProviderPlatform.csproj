@@ -17,4 +17,8 @@
     <ProjectReference Include="..\ButlerToolContracts\ButlerToolContracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="protocol\" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>ButlerSDK.Core.Abstractions</id>
+    <version>1.0.0</version>
+    <authors>Thomas</authors>
+    <description>The core interfaces for the ButlerSDK Providers, Tools and The generic data types.</description>
+    <tags>FRESH</tags>
+	  <readme>README.md</readme>
+
+	  <dependencies>
+		  <group targetFramework="net8.0">
+			  <!-- You don't even need to list dependencies here if you don't have any. 
+             Just having the group tells NuGet this is a .NET 8 package. -->
+		  </group>
+	  </dependencies>
+  </metadata>
+	  <files>
+		  <file src="..\..\ButlerLLMProvider\bin\Release\net8.0\*.dll" target="lib\net8.0\" />
+		  <file src="README.md" target="\" />
+	  </files>
+</package>

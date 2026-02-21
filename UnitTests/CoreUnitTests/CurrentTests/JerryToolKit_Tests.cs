@@ -12,6 +12,7 @@ using UnitTests.UnitTestingTools;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Security;
 using ButlerSDK.ToolSupport.Bench;
+using ButlerProtocolBase.ToolSecurity;
 
 
 namespace UnitTests.CurrentTests

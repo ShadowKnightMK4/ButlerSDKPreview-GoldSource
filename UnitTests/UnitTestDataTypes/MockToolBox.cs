@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ButlerToolContract;
 using ButlerSDK.ToolSupport.Bench;
+using ButlerProtocolBase.ToolSecurity;
 
 namespace UnitTests.UnitTestingTools
 {

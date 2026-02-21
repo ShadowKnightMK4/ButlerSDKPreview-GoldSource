@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using ButlerSDK.ToolSupport;
 using ButlerToolContract;
+using ButlerProtocolBase.ToolSecurity;
 
 namespace ButlerSDK.Tools
 {

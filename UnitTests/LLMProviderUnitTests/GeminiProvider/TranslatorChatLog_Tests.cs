@@ -3,7 +3,6 @@ using ButlerToolContract.DataTypes;
 using GenerativeAI;
 using GenerativeAI.Types;
 using Microsoft.Extensions.DependencyModel;
-using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
 using System.Linq;

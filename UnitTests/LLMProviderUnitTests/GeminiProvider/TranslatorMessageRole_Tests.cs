@@ -1,5 +1,4 @@
 ﻿using ButlerToolContract.DataTypes;
-using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
 using System.Linq;

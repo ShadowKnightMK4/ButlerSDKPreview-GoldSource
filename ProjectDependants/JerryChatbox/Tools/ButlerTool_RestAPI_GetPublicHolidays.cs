@@ -2,9 +2,6 @@
 using ButlerLLMProviderPlatform.DataTypes;
 using ButlerToolContract.DataTypes;
 using ButlerSDK.HttpClientStuff;
-using Json.More;
-using OpenAI.Chat;
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design.Serialization;
@@ -68,9 +65,9 @@ namespace ButlerSDK.Tools
         {
             
             JsonDocument? FunctionCheck=null;
-            if (Doc != null)
+            if (Doc is not null)
             {
-                FunctionCheck = Doc.ToJsonDocument();
+                FunctionCheck = Doc;
             }
             else
             {

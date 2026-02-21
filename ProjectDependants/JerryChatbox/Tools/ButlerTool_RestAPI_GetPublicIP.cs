@@ -1,7 +1,6 @@
 ﻿using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerLLMProviderPlatform.DataTypes;
 using ButlerToolContract.DataTypes;
-using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
 using System.Linq;

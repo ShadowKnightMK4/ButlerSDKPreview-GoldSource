@@ -7,6 +7,7 @@ using ButlerSDK;
 using ButlerSDK.Providers.OpenAI;
 using System.Text.Json;
 using ButlerSDK.Core;
+using ButlerSDK.Providers.Gemini;
 
 /*
  * A word. The TestBed project you see here is how I did manually testing aka edit and run.
@@ -46,7 +47,7 @@ namespace ButlerTestBed
             //            var Llama = new Butler.Providers.LlamaProvider.Butler5ProviderLlama(new  DeepSeekV2PPr(), null);
             var Llama = new ButlerSDK.Providers.OpenAI.Ollama.OllamaOpenAiProvider(null);
             //OpenAi = new ButlerOpenAiProvider();
-            var Gemini = new ButlerSDK.Providers.Gemini.ButlerGeminiProvider();
+            var Gemini = new ButlerGeminiProvider();
             DevBuild.Authenticate(System.Reflection.Assembly.GetExecutingAssembly());
 
             // swap this to the vault you want to use

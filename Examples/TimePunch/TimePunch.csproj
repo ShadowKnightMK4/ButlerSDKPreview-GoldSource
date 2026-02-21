@@ -5,13 +5,15 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ApiKeyMgr\ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
     <ProjectReference Include="..\..\ApiKeys\ApiKeys.csproj" />
-    <ProjectReference Include="..\..\Butler5ProviderOllama\Butler5ProviderOllama.csproj" />
-    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" />
+    <ProjectReference Include="..\..\Butler5ProviderOllama\ButlerSDK.Provider.OpenAI.Ollama.csproj" />
+    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" />
   </ItemGroup>
 
 </Project>

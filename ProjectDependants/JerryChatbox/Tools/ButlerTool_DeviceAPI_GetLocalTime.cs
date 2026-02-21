@@ -2,7 +2,6 @@
 using ButlerLLMProviderPlatform.DataTypes;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
-using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -124,7 +123,7 @@ namespace ButlerSDK.Tools
             
         }
 
-
+        
         public override ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
         {
             
@@ -174,5 +173,7 @@ namespace ButlerSDK.Tools
         {
             return $"{this.ToolName} returns date and time data, YOU MUST use that instead of guessing current date / time!";
         }
+
+ 
     }
 }

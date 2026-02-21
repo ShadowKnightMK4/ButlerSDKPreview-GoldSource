@@ -9,7 +9,7 @@ using System.Reflection;
 using ButlerSDK.ApiKeyMgr;
 
 
-[assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]
+//[assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]
 
 namespace TimePunchApp
 {

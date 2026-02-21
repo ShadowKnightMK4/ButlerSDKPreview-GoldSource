@@ -5,6 +5,8 @@
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -12,10 +14,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\..\ApiKeyMgr\ApiKeyMgr.csproj" />
-		<ProjectReference Include="..\..\..\Butler5ProviderOpenAI\Butler5ProviderOpenAI.csproj" />
-		<ProjectReference Include="..\..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
-		<ProjectReference Include="..\..\..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" />
+		<ProjectReference Include="..\..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+		<ProjectReference Include="..\..\..\Butler5ProviderOpenAI\ButlerSDK.Provider.OpenAI.csproj" />
+		<ProjectReference Include="..\..\..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" />
 		<ProjectReference Include="..\..\UnitTestDataTypes\UnitTestDataTypes.csproj" />
 	</ItemGroup>
 

@@ -5,7 +5,10 @@
      $(MSBuildThisFileDirectory) is the folder where this file lives.
    -->
       <PackageOutputPath>$(MSBuildThisFileDirectory)\NugetProjects\Package</PackageOutputPath>
-<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-	  <IsPackable>false</IsPackable>
+<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	  <IsPackable>true</IsPackable>
+   <IncludeSymbols>true</IncludeSymbols>
+   <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
  </PropertyGroup>
 </Project>

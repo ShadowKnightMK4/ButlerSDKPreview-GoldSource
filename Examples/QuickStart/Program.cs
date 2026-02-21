@@ -1,6 +1,6 @@
 ﻿using ButlerSDK;
 using ButlerToolContract.DataTypes;
-using ButlerSDK.Provider.OpenAi;
+using ButlerSDK.Providers;
 
 internal class Program
 {

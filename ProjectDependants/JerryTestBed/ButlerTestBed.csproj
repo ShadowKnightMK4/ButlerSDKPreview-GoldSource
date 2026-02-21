@@ -5,23 +5,21 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Maps.Geolocation" Version="1.0.0-beta.3" />
-    <PackageReference Include="Azure.ResourceManager.Maps" Version="1.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\Butler5ProviderOllama\Butler5ProviderOllama.csproj" />
-    <ProjectReference Include="..\..\Butler5ProviderOpenAI\Butler5ProviderOpenAI.csproj" />
-    <ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
-    <ProjectReference Include="..\..\ExternProcessLauncher\ExternProcessLauncher.csproj" />
-    <ProjectReference Include="..\..\ExternProcessNetworkToolsWindows\ExternProcessNetworkToolsWindows.csproj" />
-    <ProjectReference Include="..\..\NonExtNetworkTools\NonExtNetworkTools.csproj" />
-    <ProjectReference Include="..\..\UnitTests\LLMProviderUnitTests\GeminiProvider\ProviderUnitTests_Gemini.csproj" />
-    <ProjectReference Include="..\..\WindowsKeyMgr\WindowsKeyMgr.csproj" />
-    <ProjectReference Include="..\JerryChatbox\ButlerSDK.csproj" />
+    <ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\Butler5ProviderGemini\ButlerSDK.Provider.Gemini.csproj" />
+    <ProjectReference Include="..\..\Butler5ProviderOllama\ButlerSDK.Provider.OpenAI.Ollama.csproj" />
+    <ProjectReference Include="..\..\Butler5ProviderOpenAI\ButlerSDK.Provider.OpenAI.csproj" />
+    <ProjectReference Include="..\..\ButlerSDK.Tools.AzureMaps\ButlerSDK.Tools.AzureMaps.csproj" />
+    <ProjectReference Include="..\..\ExternProcessLauncher\ButlerSDK.Tools.ExternProcessLauncher.csproj" />
+    <ProjectReference Include="..\..\ExternProcessNetworkToolsWindows\ButlerSDK.Tools.ExternProcessLauncher.Network.Windows.csproj" />
+    <ProjectReference Include="..\..\NonExtNetworkTools\ButlerSDK.Tools.Network.csproj" />
+    <ProjectReference Include="..\..\WindowsKeyMgr\ButlerSDK.ApiKeyMgr.WindowsKeyMgr.csproj" />
+    <ProjectReference Include="..\JerryChatbox\ButlerSDK.Core.csproj" />
   </ItemGroup>
 
 </Project>

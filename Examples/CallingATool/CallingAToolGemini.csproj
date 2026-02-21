@@ -5,11 +5,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\NugetProjects\ButlerSDK.Core\ButlerSDK.Core.csproj" />
-    <ProjectReference Include="..\..\NugetProjects\ButlerSDK.Provider.Gemini\ButlerSDK.Provider.Gemini.csproj" />
+    <ProjectReference Include="..\..\Butler5ProviderGemini\ButlerSDK.Provider.Gemini.csproj" />
+    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" />
   </ItemGroup>
 
 </Project>

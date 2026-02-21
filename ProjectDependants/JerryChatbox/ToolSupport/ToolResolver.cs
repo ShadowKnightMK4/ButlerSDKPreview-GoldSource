@@ -1,9 +1,6 @@
-﻿using Azure.AI.OpenAI;
-using ButlerLLMProviderPlatform.DataTypes;
+﻿using ButlerLLMProviderPlatform.DataTypes;
 using ButlerToolContract.DataTypes;
 using ButlerSDK;
-using OpenAI.Chat;
-
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,7 +12,6 @@ using System.Text.Json.Nodes;
 using System.Text.Json;
 using ButlerToolContract;
 using System.Net.NetworkInformation;
-using JetBrains.Annotations;
 using ButlerSDK.ToolSupport.Bench;
 using ButlerSDK.Core;
 

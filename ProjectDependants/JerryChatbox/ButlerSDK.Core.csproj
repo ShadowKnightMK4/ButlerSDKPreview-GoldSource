@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <IsPackable>true</IsPackable>
+	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ButlerBase.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\BasicToolStarterClass\ButlerSDK.Tools.ButlerToolBase.csproj" />
+    <ProjectReference Include="..\..\ButlerBaseInternal\ButlerSDK.ChatController.csproj" />
+    <ProjectReference Include="..\..\ButlerSystemToolBase\ButlerSDK.Tools.ButlerSystemToolBase.csproj" />
+    <ProjectReference Include="..\..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -5,6 +5,8 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,9 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Butler5ProviderGemini\Butler5ProviderGemini.csproj" />
-    <ProjectReference Include="..\..\..\ButlerLLMProvider\ButlerLLMProviderPlatform.csproj" />
-    <ProjectReference Include="..\..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
+    <ProjectReference Include="..\..\..\Butler5ProviderGemini\ButlerSDK.Provider.Gemini.csproj" />
     <ProjectReference Include="..\..\UnitTestDataTypes\UnitTestDataTypes.csproj" />
   </ItemGroup>
 

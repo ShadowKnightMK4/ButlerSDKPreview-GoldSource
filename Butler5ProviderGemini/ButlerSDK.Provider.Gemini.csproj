@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <IsPackable>true</IsPackable>
+	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google_GenerativeAI" Version="3.6.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\SecureStringHelper\ButlerSDK.SecureStringHelper.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

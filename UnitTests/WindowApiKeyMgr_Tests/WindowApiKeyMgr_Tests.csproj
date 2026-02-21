@@ -5,6 +5,8 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\WindowsKeyMgr\WindowsKeyMgr.csproj" />
+    <ProjectReference Include="..\..\WindowsKeyMgr\ButlerSDK.ApiKeyMgr.WindowsKeyMgr.csproj" />
   </ItemGroup>
 
   <ItemGroup>

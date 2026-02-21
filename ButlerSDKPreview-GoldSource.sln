@@ -3,23 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.0.11205.157
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ButlerSDK", "ProjectDependants\JerryChatbox\ButlerSDK.csproj", "{6AE5E9F0-211B-41E1-BF49-9F7EBFCB549B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ButlerSDK.Core", "ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj", "{6AE5E9F0-211B-41E1-BF49-9F7EBFCB549B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ButlerTestBed", "ProjectDependants\JerryTestBed\ButlerTestBed.csproj", "{48D9CAE7-4098-4165-A79F-2FC8624D7D05}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LocalDepends", "LocalDepends", "{362C5453-F0ED-480E-A297-F94779B3805F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiKeyMgr", "ApiKeyMgr\ApiKeyMgr.csproj", "{F9AE5C16-EEB7-4ABD-817E-18935F72DFD4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ButlerSDK.ApiKeyMgr", "ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj", "{F9AE5C16-EEB7-4ABD-817E-18935F72DFD4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiKeys", "ApiKeys\ApiKeys.csproj", "{04050F8C-745F-4241-BBAF-999D683777F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerLLMProviderPlatform", "ButlerLLMProvider\ButlerLLMProviderPlatform.csproj", "{B3430BAF-C213-4692-A925-A75CA4FA81B4}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ProviderWrappers", "ProviderWrappers", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Butler5ProviderOpenAI", "Butler5ProviderOpenAI\Butler5ProviderOpenAI.csproj", "{DDDC39C4-3F43-484F-9632-E4BFC49A0DA3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerToolContracts", "ButlerToolContracts\ButlerToolContracts.csproj", "{2648BE01-9988-40BC-8E4B-467C5262E314}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.OpenAI", "Butler5ProviderOpenAI\ButlerSDK.Provider.OpenAI.csproj", "{DDDC39C4-3F43-484F-9632-E4BFC49A0DA3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ApiKeyHandling", "ApiKeyHandling", "{C888937B-F5A9-488A-869E-5D30B657409A}"
 EndProject
@@ -35,15 +31,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Butler5ProviderMock", "Unit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestDataTypes", "UnitTests\UnitTestDataTypes\UnitTestDataTypes.csproj", "{E9EABBE4-F949-4892-A7D1-6C1E8A3DDAFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsKeyMgr", "WindowsKeyMgr\WindowsKeyMgr.csproj", "{2890498B-7634-49F0-A52F-248378BB238F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.ApiKeyMgr.WindowsKeyMgr", "WindowsKeyMgr\ButlerSDK.ApiKeyMgr.WindowsKeyMgr.csproj", "{2890498B-7634-49F0-A52F-248378BB238F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowApiKeyMgr_Tests", "UnitTests\WindowApiKeyMgr_Tests\WindowApiKeyMgr_Tests.csproj", "{CCF3C8B4-23D7-4FA3-B481-9B1C6B28FE81}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{90C68CD0-9657-46C7-865E-C27B83631C29}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Butler5ProviderGemini", "Butler5ProviderGemini\Butler5ProviderGemini.csproj", "{DD02A8EE-BB68-4BB9-9829-F0D8B608A536}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.Gemini", "Butler5ProviderGemini\ButlerSDK.Provider.Gemini.csproj", "{DD02A8EE-BB68-4BB9-9829-F0D8B608A536}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Butler5ProviderOllama", "Butler5ProviderOllama\Butler5ProviderOllama.csproj", "{3EC16CDA-F5A9-49D6-9BCB-EB50C56C2D0A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.OpenAI.Ollama", "Butler5ProviderOllama\ButlerSDK.Provider.OpenAI.Ollama.csproj", "{3EC16CDA-F5A9-49D6-9BCB-EB50C56C2D0A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProviderUnitTests_Gemini", "UnitTests\LLMProviderUnitTests\GeminiProvider\ProviderUnitTests_Gemini.csproj", "{AE100265-AB3A-4EC9-839A-F0E8D761A00E}"
 EndProject
@@ -62,7 +58,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimePunch", "Examples\TimePunch\TimePunch.csproj", "{39EF22DF-52DC-4989-A50E-12C445D4E7EE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SecureStringHelper", "SecureStringHelper\SecureStringHelper.csproj", "{7E766429-1E6F-40D0-B6A0-E103B93FDEC3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.SecureStringHelper", "SecureStringHelper\ButlerSDK.SecureStringHelper.csproj", "{7E766429-1E6F-40D0-B6A0-E103B93FDEC3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SecureStringTests", "UnitTests\SecureStringTests\SecureStringTests.csproj", "{B46FDDEE-AA04-439F-B8B2-F293374C92A0}"
 EndProject
@@ -74,45 +70,39 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickStartOpenAi", "Example
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnvApiKeyApiTests", "UnitTests\EnvApiKeyApiTests\EnvApiKeyApiTests.csproj", "{0DB2D6CF-E11D-4252-BFDE-903514A9686B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscovererTool", "DiscovererTool\DiscovererTool.csproj", "{0325EBC6-B355-4972-A83A-D4F530B191E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.DiscovererTool", "DiscovererTool\ButlerSDK.Tools.DiscovererTool.csproj", "{0325EBC6-B355-4972-A83A-D4F530B191E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerToolBase", "BasicToolStarterClass\ButlerToolBase.csproj", "{3CE63704-845E-487E-BD1C-D9F60F8A9BB3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.ButlerToolBase", "BasicToolStarterClass\ButlerSDK.Tools.ButlerToolBase.csproj", "{3CE63704-845E-487E-BD1C-D9F60F8A9BB3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSystemToolBase", "ButlerSystemToolBase\ButlerSystemToolBase.csproj", "{71667D9D-A4CF-4ED0-8B22-A103572EEB14}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.ButlerSystemToolBase", "ButlerSystemToolBase\ButlerSDK.Tools.ButlerSystemToolBase.csproj", "{71667D9D-A4CF-4ED0-8B22-A103572EEB14}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToolBenchCollection", "ButlerToolBench\ToolBenchCollection.csproj", "{64C230D5-79BE-48E8-8236-845157BCACAC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.Bench", "ButlerToolBench\ButlerSDK.Tools.Bench.csproj", "{64C230D5-79BE-48E8-8236-845157BCACAC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiRateLimiter", "ApiRateLimiter\ApiRateLimiter.csproj", "{0EBFA037-F322-443C-9486-EDBE978BF659}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.ApiRateLimiter", "ApiRateLimiter\ButlerSDK.ApiRateLimiter.csproj", "{0EBFA037-F322-443C-9486-EDBE978BF659}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToolSurface", "ToolSurface\ToolSurface.csproj", "{9E999976-81D8-401E-AE2B-26B081C0F844}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.ToolSurface", "ToolSurface\ButlerSDK.Tools.ToolSurface.csproj", "{9E999976-81D8-401E-AE2B-26B081C0F844}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerBaseInternal", "ButlerBaseInternal\ButlerBaseInternal.csproj", "{D90278C0-89D1-4BE2-ABEC-3FF74317F078}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.ChatController", "ButlerBaseInternal\ButlerSDK.ChatController.csproj", "{D90278C0-89D1-4BE2-ABEC-3FF74317F078}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExternProcessLauncher", "ExternProcessLauncher\ExternProcessLauncher.csproj", "{E4FEDDB3-16DE-4F2E-9297-428AAEFA1977}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.ExternProcessLauncher", "ExternProcessLauncher\ButlerSDK.Tools.ExternProcessLauncher.csproj", "{E4FEDDB3-16DE-4F2E-9297-428AAEFA1977}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExternProcessNetworkToolsWindows", "ExternProcessNetworkToolsWindows\ExternProcessNetworkToolsWindows.csproj", "{DB5166D2-C6FF-49AB-9BF4-C7D196F27182}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.ExternProcessLauncher.Network.Windows", "ExternProcessNetworkToolsWindows\ButlerSDK.Tools.ExternProcessLauncher.Network.Windows.csproj", "{DB5166D2-C6FF-49AB-9BF4-C7D196F27182}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonExtNetworkTools", "NonExtNetworkTools\NonExtNetworkTools.csproj", "{9C6ED5EB-0AC4-4FA3-9F81-D5A91711B28A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.Network", "NonExtNetworkTools\ButlerSDK.Tools.Network.csproj", "{9C6ED5EB-0AC4-4FA3-9F81-D5A91711B28A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualTool", "VirtualTool\VirtualTool.csproj", "{2E90BA9E-A700-4147-A5E1-72565A0B4AF1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.VirtualTool", "VirtualTool\ButlerSDK.Tools.VirtualTool.csproj", "{2E90BA9E-A700-4147-A5E1-72565A0B4AF1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nugets", "Nugets", "{993CC020-03CC-4668-97EF-178F09B6C4BC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Core.Abstractions", "NugetProjects\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj", "{DF312D0B-FC70-4456-B511-08F903127C73}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.Gemini", "NugetProjects\ButlerSDK.Provider.Gemini\ButlerSDK.Provider.Gemini.csproj", "{53646909-1D90-4C21-BCBC-5E4AE2EFD3C2}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.OpenAi", "NugetProjects\ButlerSDK.Provider.OpenAi\ButlerSDK.Provider.OpenAi.csproj", "{9A535BB0-4C29-4A6E-89B2-4775205A4B7D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDk.Provider.OpenAi.Ollama", "NugetProjects\ButlerSDk.Provider.OpenAi.Ollama\ButlerSDk.Provider.OpenAi.Ollama.csproj", "{D1F32238-DF1E-4C5F-9979-41366FBF1E84}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Core", "NugetProjects\ButlerSDK.Core\ButlerSDK.Core.csproj", "{879D8F3E-249F-426E-E040-AE91BB5016DB}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HeavyTools", "HeavyTools", "{B0121799-2A6A-4C25-98AE-F3867E92836C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebBrowserTool", "ProjectDependants\WebBrowserTool\WebBrowserTool.csproj", "{AD18E33F-431C-49F9-BA64-44F38DE29E71}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.WebBrowserTool", "ProjectDependants\WebBrowserTool\ButlerSDK.Tools.WebBrowserTool.csproj", "{AD18E33F-431C-49F9-BA64-44F38DE29E71}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerProtocolBase", "CommonProtocol\ButlerProtocolBase.csproj", "{83FEA087-FCDA-45A3-A727-ED24F8532096}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Core.Abstractions", "CommonProtocol\ButlerSDK.Core.Abstractions.csproj", "{83FEA087-FCDA-45A3-A727-ED24F8532096}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.AzureMaps", "ButlerSDK.Tools.AzureMaps\ButlerSDK.Tools.AzureMaps.csproj", "{2EB9ABAE-1FF4-415F-90F0-B50B3DA82EF5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetTest", "Examples\NugetTest\NugetTest.csproj", "{EDE71A67-93F9-40C2-BA77-733E51A8010A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -136,18 +126,10 @@ Global
 		{04050F8C-745F-4241-BBAF-999D683777F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04050F8C-745F-4241-BBAF-999D683777F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{04050F8C-745F-4241-BBAF-999D683777F9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B3430BAF-C213-4692-A925-A75CA4FA81B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B3430BAF-C213-4692-A925-A75CA4FA81B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B3430BAF-C213-4692-A925-A75CA4FA81B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B3430BAF-C213-4692-A925-A75CA4FA81B4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DDDC39C4-3F43-484F-9632-E4BFC49A0DA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DDDC39C4-3F43-484F-9632-E4BFC49A0DA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DDDC39C4-3F43-484F-9632-E4BFC49A0DA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DDDC39C4-3F43-484F-9632-E4BFC49A0DA3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2648BE01-9988-40BC-8E4B-467C5262E314}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2648BE01-9988-40BC-8E4B-467C5262E314}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2648BE01-9988-40BC-8E4B-467C5262E314}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2648BE01-9988-40BC-8E4B-467C5262E314}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4176ABB8-DB3E-4E9C-90B8-B07F765DF549}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4176ABB8-DB3E-4E9C-90B8-B07F765DF549}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4176ABB8-DB3E-4E9C-90B8-B07F765DF549}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -260,26 +242,6 @@ Global
 		{2E90BA9E-A700-4147-A5E1-72565A0B4AF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E90BA9E-A700-4147-A5E1-72565A0B4AF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E90BA9E-A700-4147-A5E1-72565A0B4AF1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DF312D0B-FC70-4456-B511-08F903127C73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DF312D0B-FC70-4456-B511-08F903127C73}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DF312D0B-FC70-4456-B511-08F903127C73}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DF312D0B-FC70-4456-B511-08F903127C73}.Release|Any CPU.Build.0 = Release|Any CPU
-		{53646909-1D90-4C21-BCBC-5E4AE2EFD3C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{53646909-1D90-4C21-BCBC-5E4AE2EFD3C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{53646909-1D90-4C21-BCBC-5E4AE2EFD3C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{53646909-1D90-4C21-BCBC-5E4AE2EFD3C2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9A535BB0-4C29-4A6E-89B2-4775205A4B7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9A535BB0-4C29-4A6E-89B2-4775205A4B7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9A535BB0-4C29-4A6E-89B2-4775205A4B7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9A535BB0-4C29-4A6E-89B2-4775205A4B7D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D1F32238-DF1E-4C5F-9979-41366FBF1E84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D1F32238-DF1E-4C5F-9979-41366FBF1E84}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D1F32238-DF1E-4C5F-9979-41366FBF1E84}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D1F32238-DF1E-4C5F-9979-41366FBF1E84}.Release|Any CPU.Build.0 = Release|Any CPU
-		{879D8F3E-249F-426E-E040-AE91BB5016DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{879D8F3E-249F-426E-E040-AE91BB5016DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{879D8F3E-249F-426E-E040-AE91BB5016DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{879D8F3E-249F-426E-E040-AE91BB5016DB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AD18E33F-431C-49F9-BA64-44F38DE29E71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AD18E33F-431C-49F9-BA64-44F38DE29E71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD18E33F-431C-49F9-BA64-44F38DE29E71}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -288,6 +250,14 @@ Global
 		{83FEA087-FCDA-45A3-A727-ED24F8532096}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83FEA087-FCDA-45A3-A727-ED24F8532096}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83FEA087-FCDA-45A3-A727-ED24F8532096}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2EB9ABAE-1FF4-415F-90F0-B50B3DA82EF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2EB9ABAE-1FF4-415F-90F0-B50B3DA82EF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2EB9ABAE-1FF4-415F-90F0-B50B3DA82EF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2EB9ABAE-1FF4-415F-90F0-B50B3DA82EF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDE71A67-93F9-40C2-BA77-733E51A8010A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDE71A67-93F9-40C2-BA77-733E51A8010A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDE71A67-93F9-40C2-BA77-733E51A8010A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDE71A67-93F9-40C2-BA77-733E51A8010A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -295,10 +265,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F9AE5C16-EEB7-4ABD-817E-18935F72DFD4} = {C888937B-F5A9-488A-869E-5D30B657409A}
 		{04050F8C-745F-4241-BBAF-999D683777F9} = {C888937B-F5A9-488A-869E-5D30B657409A}
-		{B3430BAF-C213-4692-A925-A75CA4FA81B4} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{DDDC39C4-3F43-484F-9632-E4BFC49A0DA3} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{2648BE01-9988-40BC-8E4B-467C5262E314} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{C888937B-F5A9-488A-869E-5D30B657409A} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{4176ABB8-DB3E-4E9C-90B8-B07F765DF549} = {C888937B-F5A9-488A-869E-5D30B657409A}
 		{F1FDDD6D-5A26-4B0A-920F-57F487A8A777} = {B6D434AF-AA6F-407F-AB28-FDF146EFAB97}
@@ -328,14 +296,11 @@ Global
 		{DB5166D2-C6FF-49AB-9BF4-C7D196F27182} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{9C6ED5EB-0AC4-4FA3-9F81-D5A91711B28A} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{2E90BA9E-A700-4147-A5E1-72565A0B4AF1} = {362C5453-F0ED-480E-A297-F94779B3805F}
-		{DF312D0B-FC70-4456-B511-08F903127C73} = {993CC020-03CC-4668-97EF-178F09B6C4BC}
-		{53646909-1D90-4C21-BCBC-5E4AE2EFD3C2} = {993CC020-03CC-4668-97EF-178F09B6C4BC}
-		{9A535BB0-4C29-4A6E-89B2-4775205A4B7D} = {993CC020-03CC-4668-97EF-178F09B6C4BC}
-		{D1F32238-DF1E-4C5F-9979-41366FBF1E84} = {993CC020-03CC-4668-97EF-178F09B6C4BC}
-		{879D8F3E-249F-426E-E040-AE91BB5016DB} = {993CC020-03CC-4668-97EF-178F09B6C4BC}
 		{B0121799-2A6A-4C25-98AE-F3867E92836C} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{AD18E33F-431C-49F9-BA64-44F38DE29E71} = {B0121799-2A6A-4C25-98AE-F3867E92836C}
 		{83FEA087-FCDA-45A3-A727-ED24F8532096} = {362C5453-F0ED-480E-A297-F94779B3805F}
+		{2EB9ABAE-1FF4-415F-90F0-B50B3DA82EF5} = {B0121799-2A6A-4C25-98AE-F3867E92836C}
+		{EDE71A67-93F9-40C2-BA77-733E51A8010A} = {90C68CD0-9657-46C7-865E-C27B83631C29}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E98753D-786C-427A-9051-6515CCB6B063}

@@ -6,10 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UseVSTest>true</UseVSTest>
+	  <IsPackable>false</IsPackable>
+	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SecureStringHelper\SecureStringHelper.csproj" />
+    <ProjectReference Include="..\..\SecureStringHelper\ButlerSDK.SecureStringHelper.csproj" />
   </ItemGroup>
 
 </Project>

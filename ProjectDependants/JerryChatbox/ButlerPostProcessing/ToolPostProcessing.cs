@@ -5,7 +5,6 @@ using ButlerSDK.ToolSupport;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using ButlerSDK.ButlerPostProcessing;
-using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;

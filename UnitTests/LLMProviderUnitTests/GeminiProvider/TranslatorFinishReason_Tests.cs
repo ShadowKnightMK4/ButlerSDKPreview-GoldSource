@@ -1,7 +1,6 @@
 ﻿using ButlerSDK.Providers.Gemini;
 using ButlerToolContract.DataTypes;
 using GenerativeAI.Types;
-using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
 using System.Linq;

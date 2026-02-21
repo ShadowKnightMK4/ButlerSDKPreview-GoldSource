@@ -1,5 +1,4 @@
-﻿using Azure.AI.OpenAI;
-using ButlerToolContract;
+﻿using ButlerToolContract;
 using ButlerSDK.Tools;
 using ButlerSDK.ToolSupport;
 using System;

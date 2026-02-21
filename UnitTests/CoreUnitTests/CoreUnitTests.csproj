@@ -4,8 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
-    <IsPackable>false</IsPackable>
+	  <IsPackable>false</IsPackable>
+	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
@@ -26,10 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ApiKeyMgr\ApiKeyMgr.csproj" />
-    <ProjectReference Include="..\..\ButlerToolBench\ToolBenchCollection.csproj" />
-    <ProjectReference Include="..\..\ButlerToolContracts\ButlerToolContracts.csproj" />
-    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.csproj" />
+    <ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\ButlerToolBench\ButlerSDK.Tools.Bench.csproj" />
+    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" />
     <ProjectReference Include="..\Butler5ProviderMock\Butler5ProviderMock.csproj" />
     <ProjectReference Include="..\UnitTestDataTypes\UnitTestDataTypes.csproj" />
   </ItemGroup>

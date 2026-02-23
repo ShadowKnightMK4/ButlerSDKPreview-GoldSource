@@ -91,10 +91,10 @@ Write your tools once. Run them anywhere.
 *To implement a custom provider, implement `IButlerChatClient` and `IButlerLLMProvider`. You'll also need to likely translate between Butler's messaging data and your LLM's own.*
 
 ### 3. Secure Key Management
-ButlerSDK rejects the practice of holding API keys in long-lived `string` variables for application life type.
+ButlerSDK rejects the practice of holding API keys in long-lived `string` variables for application life time.
 *   **Storage (At Rest):** Keys can be encrypted with DPAPI on Windows via the `WindowsVault`. 
 *   **Memory (In Use):** Keys in memory are handled via `SecureString`. The primary goal is encouraging deterministic disposal and reducing the lifetime of plaintext values in managed memory and not as a way to lean on it's platform specific encryption abilities.
-*   **Ephemeral Access Pattern:** Tools can utilize internal disposal helpers to access keys *only* for the duration of the HTTP request, minimizing the attack surface.  One such example is the azure map using tool [Here](https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource/blob/master/ButlerSDK.Tools.AzureMaps/ButlerTool_AzureApi_GetCountryCode.cs).
+*   **Ephemeral Access Pattern:** Tools can utilize internal disposal helpers to access keys *only* for the duration of the HTTP request, minimizing the attack surface.  One such example is the azure map using tool [Here](https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource/blob/master/ButlerSDK.Tools.AzureMaps/ButlerTool_AzureApi_GetCountryCode.cs) and the helper it uses and disposes is [there](https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource/blob/master/ButlerSDK.Tools.AzureMaps/Internal/AzureHelpers.cs)
 *   **Disclaimer:** Butler's underlying SDK needs do eventually need a plain .NET string. Butler's Key managemenet is try keeping the string in memory bare minimum.
 ---
 

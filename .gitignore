@@ -364,3 +364,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/ButlerSDK.Core.1.0.0-preview-GitHub-Release-Readme.txt.txt
+/ButlerSDK.Core.1.0.0-preview.zip
+/nuget.exe

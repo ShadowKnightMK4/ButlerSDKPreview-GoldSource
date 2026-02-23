@@ -23,7 +23,7 @@ namespace UnitTests.CurrentTests
         {
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
-            Test.AddService("SERVICENAME", 0, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.none, false);
+            Test.AddService("SERVICENAME", 0, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.none, false);
             Assert.IsTrue(Test.ServiceCount == 1);
         }
 
@@ -35,7 +35,7 @@ namespace UnitTests.CurrentTests
         {
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
-            Test.AddService("SERVICENAME", 0, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.none, false);
+            Test.AddService("SERVICENAME", 0, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.none, false);
             Assert.IsTrue(Test.DoesServiceExist("SERVICENAME"));
         }
 
@@ -49,10 +49,10 @@ namespace UnitTests.CurrentTests
         {
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
-            Test.AddService("SERVICENAME", 0, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.none, false);
+            Test.AddService("SERVICENAME", 0, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.none, false);
             Assert.IsTrue(Test.DoesServiceExist("SERVICENAME"));
             Assert.IsTrue(Test.ServiceCount == 1);
-            Test.AddService("SERVICENAME", 0, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.none, false);
+            Test.AddService("SERVICENAME", 0, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.none, false);
         }
 
         /// <summary>
@@ -63,10 +63,10 @@ namespace UnitTests.CurrentTests
         {
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
-            Test.AddService("SERVICENAME", 0, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.none, false);
+            Test.AddService("SERVICENAME", 0, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.none, false);
             Assert.IsTrue(Test.DoesServiceExist("SERVICENAME"));
             Assert.IsTrue(Test.ServiceCount == 1);
-            Test.AddService("SERVICENAME", 25.12m , ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.SharedBudget, true);
+            Test.AddService("SERVICENAME", 25.12m , ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.SharedBudget, true);
 
             Assert.IsTrue(Test.DoesServiceExist("SERVICENAME"));
             Assert.IsTrue(Test.ServiceCount == 1);
@@ -83,9 +83,9 @@ namespace UnitTests.CurrentTests
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
             Assert.IsTrue(Test.ServiceCount == 0);
-            Test.AddService("SOMBRA", 0, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.none, false);
+            Test.AddService("SOMBRA", 0, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.none, false);
             Assert.IsTrue(Test.ServiceCount == 1);
-            Test.AddService("REAPER", 0, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.none, false);
+            Test.AddService("REAPER", 0, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.none, false);
 
             Assert.IsTrue(Test.DoesServiceExist("REAPER"));
             Assert.IsTrue(Test.DoesServiceExist("SOMBRA"));
@@ -102,8 +102,8 @@ namespace UnitTests.CurrentTests
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
             Assert.IsTrue(Test.ServiceCount == 0);
-            Test.AddService("SOMBRA", 0, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.none, false);
-            Test.AddService("REAPER", 0, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.none, false);
+            Test.AddService("SOMBRA", 0, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.none, false);
+            Test.AddService("REAPER", 0, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.none, false);
 
             Assert.IsTrue(Test.DoesServiceExist("REAPER"));
             Assert.IsTrue(Test.DoesServiceExist("SOMBRA"));
@@ -130,7 +130,7 @@ namespace UnitTests.CurrentTests
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
             Assert.IsTrue(Test.ServiceCount == 0);
-            Test.AddService("SOMBRA", 20, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.SharedBudget, false);
+            Test.AddService("SOMBRA", 20, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.SharedBudget, false);
             Assert.IsTrue(Test.ServiceCount == 1);
             Test.SharedBudget = 200;
             Assert.IsTrue(Test.SharedBudget == 200);
@@ -151,7 +151,7 @@ namespace UnitTests.CurrentTests
         {
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
-            Test.AddService("SOMBRA", 500, ulong.MaxValue, ulong.MaxValue, ApiKeyRateLimiter.LimitType.SharedBudget, false);
+            Test.AddService("SOMBRA", 500, ulong.MaxValue, ulong.MaxValue, ButlerApiLimitType.SharedBudget, false);
             Test.SharedBudget = 200;
             Assert.IsTrue(Test.ServiceCount == 1);
             Assert.IsTrue(Test.SharedBudget == 200);
@@ -173,7 +173,7 @@ namespace UnitTests.CurrentTests
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
             Assert.IsTrue(Test.ServiceCount == 0);
-            Test.AddService("SOMBRA", 200, 20, 40, ApiKeyRateLimiter.LimitType.PerCall, false);
+            Test.AddService("SOMBRA", 200, 20, 40, ButlerApiLimitType.PerCall, false);
             Test.SharedBudget = 200;
             Assert.IsTrue(Test.ServiceCount == 1);
             Assert.IsTrue(Test.SharedBudget == 200);
@@ -195,7 +195,7 @@ namespace UnitTests.CurrentTests
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
             Assert.IsTrue(Test.ServiceCount == 0);
-            Test.AddService("SOMBRA", 200, 20, 40, ApiKeyRateLimiter.LimitType.PerCall, false);
+            Test.AddService("SOMBRA", 200, 20, 40, ButlerApiLimitType.PerCall, false);
             Test.SharedBudget = 200;
             Assert.IsTrue(Test.SharedBudget == 200);
 
@@ -217,7 +217,7 @@ namespace UnitTests.CurrentTests
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
             Assert.IsTrue(Test.ServiceCount == 0);
-            Test.AddService("SOMBRA", 200, 20, old_limit, ApiKeyRateLimiter.LimitType.PerCall, false);
+            Test.AddService("SOMBRA", 200, 20, old_limit, ButlerApiLimitType.PerCall, false);
 
             Assert.IsTrue(Test.ServiceCount == 1);
             Assert.IsTrue(Test.GetServiceLimit("SOMBRA") == old_limit);
@@ -237,7 +237,7 @@ namespace UnitTests.CurrentTests
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
             Assert.IsTrue(Test.ServiceCount == 0);
-            Test.AddService("SOMBRA", 200, 20, 40, ApiKeyRateLimiter.LimitType.PerCall, false);
+            Test.AddService("SOMBRA", 200, 20, 40, ButlerApiLimitType.PerCall, false);
 
             Assert.IsTrue(Test.GetServiceInventory("SOMBRA") == 20);
             Test.ResetServiceLimit("SOMBRA");
@@ -253,7 +253,7 @@ namespace UnitTests.CurrentTests
             var Test = new ApiKeyRateLimiter();
             Assert.IsNotNull(Test);
             Assert.IsTrue(Test.ServiceCount == 0);
-            Test.AddService("SOMBRA", 200, 20, 40, ApiKeyRateLimiter.LimitType.PerCall, false);
+            Test.AddService("SOMBRA", 200, 20, 40,  ButlerApiLimitType.PerCall, false);
             Assert.IsTrue(Test.ServiceCount == 1);
             Assert.IsTrue(Test.GetCurrentCost("SOMBRA") == 200);
             Test.AssignNewCost("SOMBRA", 12);

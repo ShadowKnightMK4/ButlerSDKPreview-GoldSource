@@ -61,7 +61,7 @@ namespace ButlerSDK.Providers.OpenAI.Ollama
             if  ( (key is null) || (key.Length == 0))
             {
                 useKey = new SecureString();
-                useKey.AssignStringThenReadyOnly("LLAMA_API_KEY_NOT_NEEDED");
+                useKey.AssignStringThenReadOnly("LLAMA_API_KEY_NOT_NEEDED");
             }
             else
             {
@@ -85,7 +85,7 @@ namespace ButlerSDK.Providers.OpenAI.Ollama
             /// </summary>
             using (SecureString DefaultOllamaKey = new SecureString())
             {
-                DefaultOllamaKey.AssignStringThenReadyOnly("LLAMA_API_KEY_NOT_NEEDED");
+                DefaultOllamaKey.AssignStringThenReadOnly("LLAMA_API_KEY_NOT_NEEDED");
                 local.Initialize(DefaultOllamaKey);
             }
         }

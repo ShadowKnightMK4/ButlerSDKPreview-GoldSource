@@ -12,7 +12,7 @@ namespace SecureStringTests
         {
             using (SecureString Demo = new())
             {
-                Demo.AssignStringThenReadyOnly(DemoString);
+                Demo.AssignStringThenReadOnly(DemoString);
                 Assert.IsTrue(Demo.IsReadOnly());
             }
         }
@@ -21,7 +21,7 @@ namespace SecureStringTests
         {
             using (SecureString Demo = new())
             {
-                Demo.AssignStringThenReadyOnly(DemoString);
+                Demo.AssignStringThenReadOnly(DemoString);
                 Assert.AreEqual(Demo.Length, DemoString.Length);
             }
         }
@@ -31,7 +31,7 @@ namespace SecureStringTests
         {
             using (SecureString Demo = new())
             {
-                Demo.AssignStringThenReadyOnly(DemoString);
+                Demo.AssignStringThenReadOnly(DemoString);
                 Assert.AreEqual(Demo.Length, DemoString.Length);
                 string Decrypted = Demo.DecryptString();
                 Assert.AreEqual(DemoString, Decrypted);

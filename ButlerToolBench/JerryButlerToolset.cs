@@ -174,13 +174,13 @@ namespace ButlerSDK.ToolSupport.Bench
                     {
                         if (Limiter.DoesServiceExist(name) == false)
                         {
-                            Limiter.AddService(name, 0, 200, 200, ApiKeyRateLimiter.LimitType.PerCall);
+                            Limiter.AddService(name, 0, 200, 200, ButlerApiLimitType.PerCall);
                         }
                     }
                     else
                     {
                         Limiter.RemoveService(name);
-                        Limiter.AddService(name, 0, 200, 200, ApiKeyRateLimiter.LimitType.PerCall);
+                        Limiter.AddService(name, 0, 200, 200, ButlerApiLimitType.PerCall);
                     }
                     if (tool is IButlerToolSpinup spin)
                         spin.Initialize();

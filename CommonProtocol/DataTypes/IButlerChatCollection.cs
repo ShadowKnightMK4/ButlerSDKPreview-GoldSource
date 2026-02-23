@@ -10,9 +10,12 @@ using System.Threading.Tasks;
 namespace ButlerToolContracts.DataTypes
 {
 
+    /// <summary>
+    /// The 'defacto' standard for full tool use.
+    /// </summary>
     public interface IButlerTrenchImplementation : IButlerChatCollection
     {
-        public void AddPostToolCallFollowup(IReadOnlyList<(string CallID, IButlerToolBaseInterface Tool)> ToolsUsed, string MessageTemplate);
+        public void AddPostToolCallFollowup(IReadOnlyList<(string callid, IButlerToolBaseInterface tool)> ToolCallRefocusing, string MessageTemplate);
         public void RemoveTemporaryMessages();
 
         public void AddPromptInjectionMessage(ButlerChatMessage message, IButlerToolPromptInjection Source);
@@ -22,6 +25,10 @@ namespace ButlerToolContracts.DataTypes
         public int CountRunningContextWindow { get; }
     }
 
+    /// <summary>
+    /// The minimal chat collection that the Butler chat session object uses.
+    /// </summary>
+    /// <remarks>Does not support the prompt injection steering of tools on add</remarks>
     public interface IButlerChatCollection : INotifyPropertyChanged, IList<ButlerChatMessage>
     {
 

@@ -276,7 +276,7 @@ namespace ButlerSDK.Core
                     }
                     if (item is IButlerToolPromptInjection prompt)
                     {
-                        if (Trenchy is null)
+                        if ((Trenchy is not null) || (TrenchSupport != TrenchSupportFallback.Throw))
                         {
                             Trenchy?.AddPromptInjectionMessage(new ButlerSystemChatMessage(prompt.GetToolSystemDirectionText()), prompt);
                         }
@@ -301,10 +301,111 @@ namespace ButlerSDK.Core
         #region tool CRUD
         #region Adding Tools
 
+        #region Trency vs bare min difference checking and dealing
+        public enum TrenchSupportFallback
+        {
+            /// <summary>
+            /// DEFAULT: If the <see cref="ChatCollection"/> is not a <see cref="IButlerTrenchImplementation"/> subclass, we throw if the tool requires <see cref="IButlerToolPostCallInjection"/> or <see cref="IButlerToolPromptInjection"/>
+            /// </summary>
+            Throw = 0,
+            /// <summary>
+            /// If the <see cref="ChatCollection"/> is not of <see cref="IButlerTrenchImplementation"/>, a tool that uses <see cref="IButlerToolPromptInjection"/> or <see cref="IButlerToolPostCallInjection"/> registeres BUT the routines will not be called
+            /// </summary>
+            DisableToolPromptSteering = 1,
+            /// <summary>
+            /// Do DisableToolPromptSteering and log to the tap
+            /// </summary>
+            DiscardAndLog = 2
+        }
+
+
+        private TrenchSupportFallback _TrenchFallback = TrenchSupportFallback.Throw;
+
+        /// <summary>
+        /// Choose how this instance of Butler will handle Not Trenchy support (aka PostToolCall, and Temporay message removal)
+        /// </summary>
+        public TrenchSupportFallback TrenchSupport
+        {
+            get
+            {
+                return _TrenchFallback;
+            }
+            set
+            {
+                _TrenchFallback = value;
+            }
+        }
+
+        /// <summary>
+        /// Placed in <see cref="AddTool(IButlerToolBaseInterface)"/>
+        /// </summary>
+        /// <param name="x"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        internal void ValidateTrenchyToolNeedAndNotify(IButlerToolBaseInterface x)
+        {
+            bool IsTrenchy = this.ChatCollection is IButlerTrenchImplementation TestThis;
+            if (IsTrenchy)
+            {
+                return;
+            }
+            ArgumentNullException.ThrowIfNull(x);
+            if (x is IButlerToolPostCallInjection Post)
+            {
+                if (!IsTrenchy)
+                {
+                    switch (_TrenchFallback)
+                    {
+                        case TrenchSupportFallback.Throw:
+                            {
+                                throw new InvalidOperationException($"Attempt to Add Post Tool call required tool in strict mode without {nameof(IButlerTrenchImplementation)} support. You can disable this by setting {nameof(TrenchSupportFallback)} to an action other than throw. Warning: Adding tools that require Trenchy may trigger malfunction if this flag is set to something not throwing.");
+                            }
+                        case TrenchSupportFallback.DisableToolPromptSteering:
+                            {
+                                // do nothing;
+                                break;
+                            }
+                        case TrenchSupportFallback.DiscardAndLog:
+                            {
+                                DebugTap?.LogString($"Someone added a tool that requires  {nameof(IButlerTrenchImplementation)} support but has not used a chat collection with that. The action is discarded, but the tool may malfunction if continued.");
+                                break;
+                            }
+                    }
+                }
+            }
+            else
+            {
+                if (!IsTrenchy)
+                {
+                    if (this.ChatCollection is not IButlerTrenchImplementation)
+                    {
+                        switch (_TrenchFallback)
+                        {
+                            case TrenchSupportFallback.Throw:
+                                {
+                                    throw new InvalidOperationException($"Attempt to Add PromptInjection tool in strict mode without {nameof(IButlerTrenchImplementation)} support. You can disable this by setting {nameof(TrenchSupportFallback)} to an action other than throw. Warning: Adding tools that require Trenchy may trigger malfunction if this flag is set to something not throwing.");
+                                }
+                            case TrenchSupportFallback.DisableToolPromptSteering:
+                                {
+                                    // do nothing;
+                                    break;
+                                }
+                            case TrenchSupportFallback.DiscardAndLog:
+                                {
+                                    DebugTap?.LogString($"Someone added a tool that requires  {nameof(IButlerTrenchImplementation)} support but has not used a chat collection with that. The action is discarded, but the tool may malfunction if continued.");
+                                    break;
+                                }
+                        }
+                    }
+                }
+            }
+        }
+        
+        #endregion
         /// <summary>
         /// IF set, invalid names will not trigger an exception by butler4, you may get an exception triggered via OpenAI .net sdk if your name doesn't follow it's converting of Strictly A-z range, with 0-9 in there. The only allowed symbol is _ and nothing else, not even spaces in the tool name.
         /// </summary>
         public bool AllowUnvalidedToolNames { get; set; }
+
 
         /// <summary>
         /// add a tool following the interface
@@ -314,6 +415,7 @@ namespace ButlerSDK.Core
         {
             
             ArgumentNullException.ThrowIfNull(tool);
+     
             if (tool is IButlerSystemToolInterface sys)
             {
                 AddSystemTool(sys);
@@ -322,6 +424,10 @@ namespace ButlerSDK.Core
 #endif
                 return;
             }
+
+            ValidateTrenchyToolNeedAndNotify(tool);
+
+
             if (this.AllowUnvalidedToolNames) 
             {
                ToolSet.AddTool(tool.ToolName, tool, ToolSurfaceScope, false);
@@ -339,6 +445,7 @@ namespace ButlerSDK.Core
         public void AddSystemTool(IButlerSystemToolInterface systemTool)
         {
             ArgumentNullException.ThrowIfNull(systemTool);
+            ValidateTrenchyToolNeedAndNotify(systemTool);
             ToolSurfaceFlagChecking.LookupToolFlag(systemTool, out bool Any, out ToolSurfaceScope Result);
             ToolSet.AddTool(systemTool.ToolName, systemTool, Result, !AllowUnvalidedToolNames);
 

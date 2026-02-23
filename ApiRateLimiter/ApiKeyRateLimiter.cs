@@ -7,9 +7,9 @@
 namespace ButlerSDK
 {
     /// <summary>
-    /// A quick primer on this class. It collects a Service description with its <see cref="AddService(string, decimal, ulong, ulong, ApiKeyRateLimiter.LimitType, bool)"/> call. In that you define how to limit, an inventory of calls and a cost per call that gets deducted from the shared budget. Inventory is unique for each service.
+    /// A quick primer on this class. It collects a Service description with its <see cref="AddService(string, decimal, ulong, ulong, ApiKeyRateLimiter.ButlerApiLimitType, bool)"/> call. In that you define how to limit, an inventory of calls and a cost per call that gets deducted from the shared budget. Inventory is unique for each service.
     /// </summary>
-    public class ApiKeyRateLimiter
+    public class ApiKeyRateLimiter : IApiKeyRateLimiter
     {
         /// <summary>
         /// Thrown if trying to get info on a service the class doesn't know about.
@@ -22,35 +22,34 @@ namespace ButlerSDK
         /// <summary>
         /// thrown by <see cref="ChargeService(string, int)"/> if the budget or inventory doesn't allow it.
         /// </summary>
-        public class OverBudgetException: Exception
+        public class OverBudgetException : Exception
         {
             public OverBudgetException(string msg) : base(msg)
             {
 
             }
-            public OverBudgetException(string msg,  Exception inner) : base(msg, inner)
+            public OverBudgetException(string msg, Exception inner) : base(msg, inner)
             {
 
             }
 
         }
-        /// <summary>
-        /// The Global Shared budget for this class. The CostPerCall used in <see cref="AddService(string, decimal, ulong, ulong, LimitType, bool)"/> is what this is the budget for. Events all services for this class.
-        /// </summary>
+ 
         public decimal SharedBudget
         {
-           get {
-               lock (SynchObject)
-                    {
+            get
+            {
+                lock (SynchObject)
+                {
                     return _SharedBudget;
 
-                    }
                 }
+            }
             set
             {
                 lock (SynchObject)
                 {
-                        _SharedBudget = value;
+                    _SharedBudget = value;
                 }
             }
         }
@@ -76,7 +75,7 @@ namespace ButlerSDK
             /// <summary>
             /// How the calls are limited
             /// </summary>
-            public LimitType Limit;
+            public ButlerApiLimitType Limit;
             /// <summary>
             /// Price per single call. You pick the unit and keep it the consistent
             /// </summary>
@@ -95,23 +94,7 @@ namespace ButlerSDK
         /// <summary>
         /// Defines how the limits work. None Trumps the rest but PerCall and SharedBudget mix OK.
         /// </summary>
-        [Flags]
-
-        public enum LimitType
-        {
-            /// <summary>
-            /// no limit. This one trumps all others.
-            /// </summary>
-            none,
-            /// <summary>
-            /// Each call dec inv by 1. If 0 is left, further calls fails
-            /// </summary>
-            PerCall = 1,
-            /// <summary>
-            /// Each call dec budge by cost per call. If budget can't support it, call fails.
-            /// </summary>
-            SharedBudget =2
-        }
+  
         public ApiKeyRateLimiter()
         {
 
@@ -164,17 +147,17 @@ namespace ButlerSDK
             decimal CostCalculated;
             if (CallCount == 0) return true;
 
-            if (Service.Limit == LimitType.none)
+            if (Service.Limit == ButlerApiLimitType.none)
                 return true;
 
 
-            if (Service.Limit.HasFlag(LimitType.PerCall))
+            if (Service.Limit.HasFlag(ButlerApiLimitType.PerCall))
             {
                 if (Service.Inventory - CallCount < 0)
                     return false;
             }
 
-            if (Service.Limit.HasFlag(LimitType.SharedBudget))
+            if (Service.Limit.HasFlag(ButlerApiLimitType.SharedBudget))
                 CostCalculated = CallCount * Service.CostPerCall;
             else
                 CostCalculated = 0;
@@ -185,17 +168,8 @@ namespace ButlerSDK
             return true;
         }
 
-        /// <summary>
-        /// Add A new service to track and describe it
-        /// </summary>
-        /// <param name="ServiceName">name of the service - keep it unique to this instance</param>
-        /// <param name="CostPerCall">each call costs this much out of the charged budget. If subtracting this cost from the shared budget leaves less than 0, the call fails</param>
-        /// <param name="CurrentInventory">number of items in the unique inventory for this service 1 call = 1 item. If this is 0, the call would fail</param>
-        /// <param name="MaxInventory">More like the value CurrentInventory is reset to on refresh</param>
-        /// <param name="LimitKind">How we limit the call. Use any combination except that if you use <see cref="LimitType.none"/> the check is disabled</param>
-        /// <param name="ReplaceIfExists">Default is false, if true, this new service will override an old one</param>
-        /// <exception cref="InvalidOperationException">thrown if attempting to add a duplicate and ReplaceIfExists is false</exception>
-        public void AddService(string ServiceName, decimal CostPerCall, ulong CurrentInventory, ulong MaxInventory, LimitType LimitKind, bool ReplaceIfExists=false)
+      
+        public void AddService(string ServiceName, decimal CostPerCall, ulong CurrentInventory, ulong MaxInventory, ButlerApiLimitType LimitKind, bool ReplaceIfExists = false)
         {
             if (Data.ContainsKey(ServiceName) && ReplaceIfExists == false)
             {
@@ -213,12 +187,7 @@ namespace ButlerSDK
             Data[ServiceName] = NewEntry;
         }
 
-        /// <summary>
-        /// Remove this service from our list.
-        /// </summary>
-        /// <param name="ServiceName">name of the service to remove</param>
-        /// <param name="PanicIfNonExistent">Throw <see cref="ServiceNonExistentException"/> if the requested service isn't found</param>
-        public void RemoveService(string ServiceName, bool PanicIfNonExistent)
+        public void RemoveService(string ServiceName, bool PanicIfNonExistent=false)
         {
             bool check = Data.Remove(ServiceName);
             if (!check && PanicIfNonExistent)
@@ -226,22 +195,7 @@ namespace ButlerSDK
                 throw new ServiceNonExistentException($"Attempt to Remove Unknown Service of name {ServiceName}");
             }
         }
-        /// <summary>
-        /// Remove this service from our list.
-        /// </summary>
-        /// <param name="ServiceName">name of the service to remove</param>
-        public void RemoveService(string ServiceName)
-        {
-            RemoveService(ServiceName, false);
-        }
 
-        /// <summary>
-        /// Charge the service call
-        /// </summary>
-        /// <param name="ServiceName">name of the service to charge</param>
-        /// <param name="CallNumber">number of calls to charge for</param>
-        /// <exception cref="ServiceNonExistentException">Is thrown if a service named ServiceName is not found</exception>
-        /// <exception cref="OverBudgetException">Is thrown if charging the call would cause the service to go over budget</exception>
         public void ChargeService(string ServiceName, int CallNumber)
         {
 
@@ -254,16 +208,16 @@ namespace ButlerSDK
             {
                 decimal CallCharge;
                 decimal Inv;
-                if (Service.Limit.HasFlag(LimitType.SharedBudget))
+                if (Service.Limit.HasFlag(ButlerApiLimitType.SharedBudget))
                 {
                     CallCharge = Service.CostPerCall * CallNumber;
-                }    
+                }
                 else
                 {
                     CallCharge = 0;
                 }
-                
-                if (Service.Limit.HasFlag(LimitType.PerCall))
+
+                if (Service.Limit.HasFlag(ButlerApiLimitType.PerCall))
                 {
                     Inv = CallNumber;
                 }
@@ -290,25 +244,9 @@ namespace ButlerSDK
             }
         }
 
-        /// <summary>
-        /// Return if we would stay in budget with a single call for this service
-        /// </summary>
-        /// <param name="ServiceName">name of the service to check</param>
-        /// <returns>true if correct and false if not. </returns>
-        /// <exception cref="ServiceNonExistentException"> is thrown if the service is not found</exception>
-        public bool CheckForCallPermission(string ServiceName)
-        {
-            return CheckForCallPermission(ServiceName, 1);
-        }
 
-        /// <summary>
-        /// Return if we would stay in budget with an arbitrary number of calls for this service
-        /// </summary>
-        /// <param name="ServiceName">name of the service to check</param>
-        /// <param name="CallCount">Number of calls to account for</param>
-        /// <returns>true if correct and false if not. </returns>
-        /// <exception cref="ServiceNonExistentException"> is thrown if the service is not found</exception>
-        public bool CheckForCallPermission(string ServiceName, int CallCount)
+     
+        public bool CheckForCallPermission(string ServiceName, int CallCount=1)
         {
             ApiEntry? Service = LookUpService(ServiceName);
             if (Service is null)
@@ -319,22 +257,13 @@ namespace ButlerSDK
         }
 
 
-        /// <summary>
-        /// Does an entry for this Service exist in our system?
-        /// </summary>
-        /// <param name="ServiceName">name of the service to check</param>
-        /// <returns>true if it exists or false if not</returns>
+       
         public bool DoesServiceExist(string ServiceName)
         {
             return Data.ContainsKey(ServiceName);
         }
 
-        /// <summary>
-        /// Update a service inventory limit
-        /// </summary>
-        /// <param name="ServiceName">name of the service to update</param>
-        /// <param name="Limit">the new upper inventory limit</param>
-        /// <exception cref="ServiceNonExistentException">Is thrown if the service doesn't exist</exception>
+    
         public void AssignNewServiceLimit(string ServiceName, ulong Limit)
         {
             var Service = this.LookUpService(ServiceName);
@@ -346,12 +275,7 @@ namespace ButlerSDK
                 Service.Reset = Limit;
         }
 
-        /// <summary>
-        /// Get the current service inventory limit
-        /// </summary>
-        /// <param name="ServiceName">name of the service to fetch data from</param>
-        /// <exception cref="ServiceNonExistentException">Is thrown if the service doesn't exist</exception>
-
+        
         public decimal GetServiceLimit(string ServiceName)
         {
             var Service = this.LookUpService(ServiceName);
@@ -363,11 +287,7 @@ namespace ButlerSDK
                 return Service.Reset;
         }
 
-        /// <summary>
-        /// Reset the inventory to the max for a service
-        /// </summary>
-        /// <param name="ServiceName">name of the service on whom to reset</param>
-        /// <exception cref="ServiceNonExistentException">Is thrown if the service doesn't exist</exception>
+      
         public void ResetServiceLimit(string ServiceName)
         {
             var Service = this.LookUpService(ServiceName);
@@ -379,12 +299,7 @@ namespace ButlerSDK
                 Service.Inventory = Service.Reset;
         }
 
-        /// <summary>
-        /// Get the current remaining inventory for a service
-        /// </summary>
-        /// <param name="ServiceName">name of the service to get info from</param>
-        /// <returns>returns the remaining number of calls left before going over budget</returns>
-        /// <exception cref="ServiceNonExistentException">Is thrown if the service doesn't exist</exception>
+        
         public decimal GetServiceInventory(string ServiceName)
         {
             var Service = this.LookUpService(ServiceName);
@@ -396,12 +311,7 @@ namespace ButlerSDK
                 return Service.Inventory;
         }
 
-        /// <summary>
-        /// Assign a new cost deducted from the shared budget for this service
-        /// </summary>
-        /// <param name="ServiceName">name of the service to assign a new cost too</param>
-        /// <param name="Cost">the new cost. Note this is deducted per call from <see cref="SharedBudget"/> when charging a service call</param>
-        /// <exception cref="ServiceNonExistentException">Is thrown if the service doesn't exist</exception>
+       
         public void AssignNewCost(string ServiceName, decimal Cost)
         {
             var Service = this.LookUpService(ServiceName);
@@ -413,11 +323,7 @@ namespace ButlerSDK
                 Service.CostPerCall = Cost;
         }
 
-        /// <summary>
-        /// Retrieve the current cost per call for this service
-        /// </summary>
-        /// <param name="ServiceName">name of the service to assign a new cost too</param>
-        /// <exception cref="ServiceNonExistentException">Is thrown if the service doesn't exist</exception>
+      
 
         public decimal GetCurrentCost(string ServiceName)
         {
@@ -430,9 +336,7 @@ namespace ButlerSDK
                 throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
         }
 
-        /// <summary>
-        /// How many services is this currently tracking?
-        /// </summary>
+     
 
         public int ServiceCount => Data.Count;
 

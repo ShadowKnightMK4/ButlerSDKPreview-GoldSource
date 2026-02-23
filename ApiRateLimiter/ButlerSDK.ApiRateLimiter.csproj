@@ -9,4 +9,8 @@
 	  
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -25,7 +25,7 @@ namespace ButlerSDK.Core
         /// </summary>
         public ToolSurfaceScope AllowedPermissions => base.ToolSurfaceScope;
         /// <summary>
-        /// If <see cref="AutoSysPromptToday"/> is true, this method is called to insert today's date/time as a system prompt each turn.
+        /// If <see cref="AutoSysPromptToday"/> is true, this method is called to insert today's date/time as a temporary system prompt each turn.
         /// </summary>
         /// <remarks>This method is overridable if you want to insert something else. IMPORTANT. Highly recommand you do NOT insert anything except temporary messages</remarks>
         protected virtual void HandleAutoSysPromptToday()
@@ -161,24 +161,8 @@ namespace ButlerSDK.Core
         }
 
         
-        public enum TrenchSupportFallback
-        {
-            /// <summary>
-            /// If the <see cref="ChatCollection"/> is not a <see cref="IButlerTrenchImplementation"/> subclass, we
-            /// </summary>
-            Throw = 0,
-            /// <summary>
-            /// If the <see cref="ChatCollection"/> is not of <see cref="IButlerTrenchImplementation"/>, we do not do the specific trench stuff (like post tool injection)
-            /// </summary>
-            Discard = 1
-        }
+      
 
-        private TrenchSupportFallback _TrenchFallback = TrenchSupportFallback.Throw;
-
-        /// <summary>
-        /// Choose how this instance of Butler will handle Not Trenchy support (aka PostToolCall, and Temporay message removal)
-        /// </summary>
-        public TrenchSupportFallback TrenchSupport => _TrenchFallback;
 
         internal void _HandleRemovingTemporaryMessages(IButlerChatCollection ChatCollection)
         {
@@ -188,10 +172,10 @@ namespace ButlerSDK.Core
             }
             else
             {
-                switch (_TrenchFallback)
+                switch (TrenchSupport)
                 {
                     case TrenchSupportFallback.Throw: throw new NotSupportedException("Butler class is using a IButlerChatCollection that currently doesn't support the Trenchcoat (did you use default TrenchCoat or use Custom one?) for temporary message removal");
-                    case TrenchSupportFallback.Discard: LogTap?.LogString("Discarding post too call action. Reason not supported"); break;
+                    case TrenchSupportFallback.DisableToolPromptSteering: LogTap?.LogString("Discarding post too call action. Reason not supported"); break;
                 }
             }
         }
@@ -207,10 +191,10 @@ namespace ButlerSDK.Core
             }
             else
             {
-                switch (_TrenchFallback)
+                switch (TrenchSupport)
                 {
                     case TrenchSupportFallback.Throw: throw new NotSupportedException("Butler class is using a IButlerChatCollection that currently doesn't support the Trenchcoat (did you use default TrenchCoat or use Custom one?) for post tool call follow message adding");
-                    case TrenchSupportFallback.Discard: LogTap?.LogString("Discarding post too call action. Reason not supported"); break;
+                    case TrenchSupportFallback.DisableToolPromptSteering: LogTap?.LogString("Discarding post too call action. Reason not supported"); break;
                 }
 
             }
@@ -499,14 +483,15 @@ namespace ButlerSDK.Core
                 OriginalContextWindowStart = _ChatCollection.Count -1;
             }
 
+            if (AutoSysPromptToday)
+            {
+
+                HandleAutoSysPromptToday();
+            }
 
             while (!TurnOver)
             {
-                if (AutoSysPromptToday)
-                {
 
-                    HandleAutoSysPromptToday();
-                }
                 AssistantTurnReply = new();
 
             ProviderErrorHandlerMark: // if the provider reports continuing, we execute the request and goto here.

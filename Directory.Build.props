@@ -1,16 +1,25 @@
 <Project>
- <PropertyGroup>
-   <!-- 
-     Tells every project: "When you pack, put the .nupkg here!" 
-     $(MSBuildThisFileDirectory) is the folder where this file lives.
-   -->
-      <PackageOutputPath>$(MSBuildThisFileDirectory)\NugetProjects\Package</PackageOutputPath>
-<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	  <IsPackable>true</IsPackable>
-   <IncludeSymbols>true</IncludeSymbols>
-   <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  <PropertyGroup>
+    <!-- Your Output & Symbol Settings -->
+    <Version>1.0.0-preview</Version>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)\NugetProjects\Package</PackageOutputPath>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
+    <!-- NEW: NuGet Package Metadata -->
+    <Authors>Thomas Betterly</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
 
+    <!-- NEW: Tells the NuGet package which file to use as the README -->
+    <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
+  </PropertyGroup>
 
- </PropertyGroup>
+  <!-- NEW: Physically bundles the README file from your root folder into every .nupkg file -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)NUGET_README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 </Project>

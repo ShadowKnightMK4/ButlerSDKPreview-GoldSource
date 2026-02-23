@@ -19,7 +19,7 @@ namespace GeminiProvider
         [TestInitialize]
         public void TestInitialize()
         {
-            dummy.AssignStringThenReadyOnly("HELLO");
+            dummy.AssignStringThenReadOnly("HELLO");
         }
             [TestMethod]
             public void CanCheckChatClient_ByProvider()

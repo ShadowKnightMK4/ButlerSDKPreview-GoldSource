@@ -22,7 +22,7 @@ namespace ButlerToolContract.DataTypes
     /// </summary>
     /// <remarks>To access the simulated list as an index just use [n] style access.</remarks>
     /// <example>TrenchCoatChatCollection y;    y.AddMessage(MSG);   Console.Write(y[0]); </example>
-    public class TrenchCoatChatCollection : ButlerChatCollectionBase , IButlerChatCollection
+    public class TrenchCoatChatCollection : ButlerChatCollectionBase , IButlerChatCollection, IButlerTrenchImplementation
     {
         public class ReadOnlyStitcher<ButlerChatMessage> : IReadOnlyList<ButlerChatMessage>
         {
@@ -555,6 +555,12 @@ namespace ButlerToolContract.DataTypes
                 }
             }
         }
+
+        public int CountSystemMessages => throw new NotImplementedException();
+
+        public int CountPromptInjection => throw new NotImplementedException();
+
+        public int CountRunningContextWindow => throw new NotImplementedException();
 
         private int _AgeOutContextWindowMessages_Counter = DefaultMaxContextWindowMessages;
         protected void AgeOutContextWindowMessages(int MaxMessages)

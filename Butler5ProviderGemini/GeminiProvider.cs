@@ -6,6 +6,9 @@ using GenerativeAI;
 using GenerativeAI.Types;
 using SecureStringHelper;
 using System.Collections;
+#if DEBUG
+using System.Diagnostics;
+#endif
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;

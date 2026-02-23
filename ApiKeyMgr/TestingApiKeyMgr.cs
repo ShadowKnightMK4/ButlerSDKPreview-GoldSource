@@ -27,6 +27,12 @@ namespace ButlerSDK.ApiKeyMgr
 
         public void Dispose()
         {
+            foreach (SecureString secureString in _keys.Values)
+            {
+                secureString.Dispose();
+            }
+            this._keys.Clear();
+            
             GC.SuppressFinalize(this);  
         }
 
@@ -49,7 +55,7 @@ namespace ButlerSDK.ApiKeyMgr
                 string? key = ApiKeyFolder.ReadKey(ID);
                 if (key is not null)
                 {
-                    ret.AssignStringThenReadyOnly(key);
+                    ret.AssignStringThenReadOnly(key);
 
                     _keys[ID] = ret;
                     return ret;
@@ -116,7 +122,7 @@ namespace ButlerSDK.ApiKeyMgr
                     return null;
             }
 
-            ret.AssignStringThenReadyOnly(Assigned!);
+            ret.AssignStringThenReadOnly(Assigned!);
             return ret;
         }
     }

@@ -54,7 +54,7 @@ namespace ApiKeyMgr
             if (val is not null)
             {
                 SecureString ret = new SecureString();
-                ret.AssignStringThenReadyOnly(val);
+                ret.AssignStringThenReadOnly(val);
                 val = null;
                 return ret;
             }

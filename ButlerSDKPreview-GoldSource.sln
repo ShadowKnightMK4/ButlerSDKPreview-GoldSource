@@ -104,6 +104,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.AzureMaps",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetTest", "Examples\NugetTest\NugetTest.csproj", "{EDE71A67-93F9-40C2-BA77-733E51A8010A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.ChatCollections", "ButlerSDK.ChatCollections\ButlerSDK.ChatCollections.csproj", "{6277C530-ADC8-4E7D-B6F1-811D935F3551}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -258,6 +260,10 @@ Global
 		{EDE71A67-93F9-40C2-BA77-733E51A8010A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EDE71A67-93F9-40C2-BA77-733E51A8010A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EDE71A67-93F9-40C2-BA77-733E51A8010A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6277C530-ADC8-4E7D-B6F1-811D935F3551}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6277C530-ADC8-4E7D-B6F1-811D935F3551}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6277C530-ADC8-4E7D-B6F1-811D935F3551}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6277C530-ADC8-4E7D-B6F1-811D935F3551}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -301,6 +307,7 @@ Global
 		{83FEA087-FCDA-45A3-A727-ED24F8532096} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{2EB9ABAE-1FF4-415F-90F0-B50B3DA82EF5} = {B0121799-2A6A-4C25-98AE-F3867E92836C}
 		{EDE71A67-93F9-40C2-BA77-733E51A8010A} = {90C68CD0-9657-46C7-865E-C27B83631C29}
+		{6277C530-ADC8-4E7D-B6F1-811D935F3551} = {362C5453-F0ED-480E-A297-F94779B3805F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E98753D-786C-427A-9051-6515CCB6B063}

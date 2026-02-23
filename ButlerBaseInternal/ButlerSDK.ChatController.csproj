@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\ButlerSDK.ChatCollections\ButlerSDK.ChatCollections.csproj" />
     <ProjectReference Include="..\ButlerToolBench\ButlerSDK.Tools.Bench.csproj" />
     <ProjectReference Include="..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
     <ProjectReference Include="..\ToolSurface\ButlerSDK.Tools.ToolSurface.csproj" />

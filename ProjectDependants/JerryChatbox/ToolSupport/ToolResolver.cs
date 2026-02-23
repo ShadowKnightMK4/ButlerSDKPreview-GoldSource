@@ -287,14 +287,15 @@ using ButlerSDK.Core;
                     {
                     bool ok = false;
                     ButlerChatToolCallMessage? result = null;
-#if DEBUG
-                    bool FakeId = true;
-                    if (FakeId && string.IsNullOrEmpty(Entry.ID.ToString()))
+
+
+                        // roll a guid if we're executing a tool if none there.
+                    if (string.IsNullOrWhiteSpace(Entry.ID.ToString()))
                     {
                         Entry.ID.Append("call-");
                         Entry.ID.Append(Guid.NewGuid().ToString());
                     }
-#endif
+
                     IButlerToolBaseInterface? TargetTool = QueryToolKit.GetTool(Entry.ToolName.ToString());
                     try
                     {

@@ -556,11 +556,11 @@ namespace ButlerToolContract.DataTypes
             }
         }
 
-        public int CountSystemMessages => throw new NotImplementedException();
+        public int CountSystemMessages => this.SystemPromptCount;
 
-        public int CountPromptInjection => throw new NotImplementedException();
+        public int CountPromptInjection => this.PromptInjectionCount;
 
-        public int CountRunningContextWindow => throw new NotImplementedException();
+        public int CountRunningContextWindow => this.RunningContextWindowCount;
 
         private int _AgeOutContextWindowMessages_Counter = DefaultMaxContextWindowMessages;
         protected void AgeOutContextWindowMessages(int MaxMessages)
@@ -697,13 +697,20 @@ namespace ButlerToolContract.DataTypes
 
 
 
-    public class ButlerChatCollection : ButlerChatCollectionBase
+    public class ButlerChatCollection : ButlerChatCollectionBase, IButlerChatCollection 
     {
         public ObservableCollection<ButlerChatMessage> Messages
         {
             get => base._Messages;
         }
+
+        public IReadOnlyList<ButlerChatMessage> GetSliceOfMessages(int LastUserMessageIndex, int LastAiTurnIndex)
+        {
+            var ret = new List<ButlerChatMessage>(Messages).Take(new Range(LastUserMessageIndex, LastAiTurnIndex));
+            return Messages.Take(new Range(LastUserMessageIndex, LastAiTurnIndex + 1)).ToList();
+        }
     }
+
 
 
 
@@ -711,7 +718,7 @@ namespace ButlerToolContract.DataTypes
     ///  Tracks a collection of <see cref="ChatMessage"/> in a way that can be bound to a UI control or just get notified a message was added or removed. Can pass as an IList too
     /// </summary>
     /// <remarks>Remeber to put a public access variable (SHOULD BE 'Message') that exports the <see cref="_Messages"/> To show example of why no - see <see cref="TrenchCoatChatCollection"/></remarks>
-    public class ButlerChatCollectionBase : INotifyPropertyChanged, IList<ButlerChatMessage>
+    public class ButlerChatCollectionBase :  INotifyPropertyChanged, IList<ButlerChatMessage>
     {
         protected ObservableCollection<ButlerChatMessage> _Messages = new ObservableCollection<ButlerChatMessage>();
 

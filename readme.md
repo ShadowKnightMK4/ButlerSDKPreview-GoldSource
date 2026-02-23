@@ -6,7 +6,7 @@
 
 **Robust, vendor-agnostic AI orchestration for .NET.**
 
-ButlerSDK transforms Large Language Models (LLMs) from unpredictable chatbots into reliable infrastructure components. It provides a unified abstraction layer over **OpenAI**, **Google Gemini**, and **Ollama**, while enforcing tool infrastructure, strict C# Tool typing, and opening the door to letting the developer intercept the streaming LLM to steer it or filter for agentic workflows.
+ButlerSDK aims to transform Large Language Models (LLMs) from unpredictable chatbots into reliable infrastructure components. It provides a unified abstraction layer over **OpenAI**, **Google Gemini**, and **Ollama**, while enforcing tool infrastructure, strict C# Tool typing, and opening the door to letting the developer intercept the streaming LLM to steer it or filter for agentic workflows.
 
 ---
 
@@ -68,7 +68,7 @@ foreach (ButlerChatMessage msg in butler.ChatCollection)
 ## 🛡️ Architecture & Features
 
 ### 1. The Post-Processing "Counter-Measures" (QoS)
-LLMs can hallucinate or fail to follow strict JSON schemas. ButlerSDK implements an `IButlerPostProcessorHandler` (specifically `ToolPostProcessing`) that acts as a Quality of Service (QOS) layer.
+LLMs can hallucinate or fail to follow strict JSON schemas. ButlerSDK implements an `IButlerPostProcessorHandler` (specifically `ToolPostProcessing`) that acts as a Quality of Service (QOS) layer. One can also create their own.
 
 *   **Detection:** It scans the stream for keywords indicating the AI *wanted* to use a tool but failed to generate the call.
 *   **Intervention:** It pauses the stream to the user.
@@ -91,11 +91,11 @@ Write your tools once. Run them anywhere.
 *To implement a custom provider, implement `IButlerChatClient` and `IButlerLLMProvider`. You'll also need to likely translate between Butler's messaging data and your LLM's own.*
 
 ### 3. Secure Key Management
-ButlerSDK rejects the practice of holding API keys in long-lived `string` variables.
+ButlerSDK rejects the practice of holding API keys in long-lived `string` variables for application life type.
 *   **Storage (At Rest):** Keys can be encrypted with DPAPI on Windows via the `WindowsVault`. 
-*   **Memory (In Use):** Keys in memory are handled via `SecureString`. The primary goal is encouraging deterministic disposal and reducing the lifetime of plaintext values in managed memory.
-*   **Ephemeral Access Pattern:** Tools utilize internal disposal helpers to access keys *only* for the duration of the HTTP request, minimizing the attack surface. 
-
+*   **Memory (In Use):** Keys in memory are handled via `SecureString`. The primary goal is encouraging deterministic disposal and reducing the lifetime of plaintext values in managed memory and not as a way to lean on it's platform specific encryption abilities.
+*   **Ephemeral Access Pattern:** Tools can utilize internal disposal helpers to access keys *only* for the duration of the HTTP request, minimizing the attack surface.  One such example is the azure map using tool [Here](https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource/blob/master/ButlerSDK.Tools.AzureMaps/ButlerTool_AzureApi_GetCountryCode.cs).
+*   **Disclaimer:** Butler's underlying SDK needs do eventually need a plain .NET string. Butler's Key managemenet is try keeping the string in memory bare minimum.
 ---
 
 ## 🛠️ Defining Tools
@@ -136,7 +136,8 @@ public class GetPublicIPTool : ButlerToolBase, IButlerToolAsyncResolver
 *   **.NET 8**: [Download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)  
 *   **Windows 10+** (Optional: Only required if using the native DPAPI Vault system. Non-Windows users can use `EnvironmentApiKeyMgr` or custom implementations).
 *   **Local Models:** Require [Ollama](https://ollama.com/download) (Recommended: 20GB+ free disk space, modern GPU).
-
+*   **Notice:** While the vault zip requires Windows, Butler itself should be workable outside that, providing one doesn't use the Windows specific. Feedback desired.
+  
 ### 🐙 Ollama Setup
 To use local models via the OpenAI wrapper, ensure Ollama runs in OpenAI compatibility mode. Create or edit the config file (`C:\Users\<yourname>\.ollama\config.toml` on Windows) and add:
 ```toml

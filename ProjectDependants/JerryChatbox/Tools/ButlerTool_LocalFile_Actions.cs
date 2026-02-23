@@ -34,7 +34,7 @@ namespace ButlerSDK.Tools
         },
         ""formatdiff"": {  
             ""type"": ""string"",
-            ""description"": ""Pass the format to act on with. Choose from 'utf8-txt' -> Unicode text. 'PDF' -> 'adobe PDF'""
+            ""description"": ""Pass the format to act on with. Choose from 'utf8-txt' -> Unicode text. 'format_ansi_text' -> ANSI text""
         },
         ""data"": {
             ""type"": ""string"",
@@ -80,8 +80,6 @@ namespace ButlerSDK.Tools
                         ret = new ButlerChatToolResultMessage(id, data);
                         return ret;
                     }
-                case "DOCX":
-                case "PDF": 
                 default: return new ButlerChatToolResultMessage(id, $"Error: This mode is not supported: {format}");
             }
         }
@@ -119,8 +117,6 @@ namespace ButlerSDK.Tools
                         }
                         return ret;
                     }
-                case "DOCX":
-                case "PDF":
                 default: return new ButlerChatToolResultMessage(id, $"Error: This mode is not supported: {format}");
             }
         }
@@ -162,7 +158,7 @@ namespace ButlerSDK.Tools
             }
         }
 
-        string[] ValidFormat = { "utf8-txt", "PDF", "docx" };
+        string[] ValidFormat = { "utf8-txt" };
         string[] ValidBaseAction = { "load", "save" };
         bool ValidateBaseActionWord(string action)
         {

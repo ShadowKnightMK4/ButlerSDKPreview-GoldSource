@@ -23,7 +23,7 @@ using ButlerSDK.Core;
     /*
      * The plan of the schedule is, any tools 
      */
-    public class ToolResolver
+    public class ToolResolver: IButlerToolResolver
     {
         /// <summary>
         /// This exception triggers by <see cref="ToolResolver"/> attempt to run schedule with no tools to run
@@ -66,7 +66,7 @@ using ButlerSDK.Core;
             public Thread? Self=null; // if we're running different thread ie spawned diff thread, this is us
             public ButlerChatToolCallMessage? Results;
             /// <summary>
-            /// see <see cref="ButlerToolContract.IButlerToolInPassing"/>. If set <see cref="ButlerPostProcessing.StreamResponseAsync(Butler.ChatMessageStreamHandler, ButlerSDK.ButlerPostProcessing.IButlerPostProcessorHandler?, bool, int, CancellationToken)"/> will not end the ai turn on this tool call
+            /// see <see cref="ButlerToolContract.IButlerToolInPassing"/>. If set <see cref="Butler.StreamResponseAsync(Butler.ChatMessageStreamHandler, ButlerSDK.ButlerPostProcessing.IButlerPostProcessorHandler?, bool, int, CancellationToken)"/> will not end the ai turn on this tool call
             /// </summary>
             public bool IsEnPassant; 
         }
@@ -95,7 +95,13 @@ using ButlerSDK.Core;
         }
 
 
-        public bool HasScheduledTools => !this.Que.IsEmpty;
+        public bool HasScheduledTools
+        {
+            get
+            {
+                return !this.Que.IsEmpty;
+            }
+        }
 
         public void ScheduleTool(JsonDocument PossibleTool, bool ExceptionOnInvalid = true)
         {
@@ -538,7 +544,13 @@ using ButlerSDK.Core;
 
 
 
-        public int ScheduledToolCount => Que.Count;
+        public int ScheduledToolCount
+        {
+            get
+            {
+                return Que.Count;
+            }
+        }
         ConcurrentQueue<ToolTimeSlot> Que = new();
 
 
@@ -551,14 +563,25 @@ using ButlerSDK.Core;
         {
             return ResolvedTool.Select(s => s.Results).ToArray();
         }
-        public int ResolvedToolCount => ResolvedTool.Count;
 
-        ConcurrentBag<ToolTimeSlot> ResolvedTool = new();
+
+    
+        public int ResolvedToolCount
+        {
+            get
+            {
+                return ResolvedTool.Count;
+            }
+        }
+
+
+            ConcurrentBag<ToolTimeSlot> ResolvedTool = new();
 
         /// <summary>
         /// If false, attempting to run a schedule with no tools in it will throw exception
         /// </summary>
         public bool EmptyScheduleRunFine { get; set; } = false;
+ 
     }
 
 

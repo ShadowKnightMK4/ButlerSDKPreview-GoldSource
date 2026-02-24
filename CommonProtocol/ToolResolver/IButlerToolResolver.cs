@@ -25,7 +25,7 @@ namespace ButlerSDK.ToolSupport
         public static abstract IButlerToolResolver CreateSchedule(string name);
 
 
-        public bool HasScheduledTools { get; set; }
+        public bool HasScheduledTools { get;  }
 
         public void ScheduleTool(JsonDocument PossibleTool, bool ExceptionOnInvalid = true);
 
@@ -84,7 +84,7 @@ namespace ButlerSDK.ToolSupport
 
 
 
-        public int ScheduledToolCount { get; set; }
+        public int ScheduledToolCount { get;  }
 
 
 
@@ -94,7 +94,7 @@ namespace ButlerSDK.ToolSupport
         /// </summary>
         /// <returns>if it works, the results of the each resulted tool call. Null on an issue</returns>
         public IReadOnlyList<ButlerChatToolCallMessage?> ResolvedToolResults();
-        public int ResolvedToolCount { get; set; }
+        public int ResolvedToolCount { get;  }
 
         
 

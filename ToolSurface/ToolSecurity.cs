@@ -11,6 +11,41 @@ namespace ButlerSDK.ToolSupport
 {
     public static class ToolSurfaceFlagChecking
     {
+
+        static ToolSurfaceScope NestedToolScopeCheck(IButlerToolBaseInterface Base)
+        {
+            /* 
+             * nesting doll plan:
+             * 1. LookupToolFlag calls this.
+             * 2. This sees it houses other tools, calls look up flag on each tool, which loops back to 1 if nested again
+             * 3. LookupToolFlag ends up with the flags of any tools the tool houses, IF it implemented virtual tool
+             * */
+            ToolSurfaceScope CombinedScope = ToolSurfaceScope.NoPermissions;
+            if (Base is IButlerToolContainsPrivateTools Contents)
+            {
+                
+                var sub_tools =  Contents.GetInterfaces();
+                foreach (string key in sub_tools.Keys)
+                {
+                    ToolSurfaceScope SingleToolScope = ToolSurfaceScope.NoPermissions;
+                    bool HasPerm = false;
+                    if (LookupToolFlag(sub_tools[key], out HasPerm, out SingleToolScope))
+                    {
+                        CombinedScope |= SingleToolScope;
+                    }
+                    else
+                    {
+                        CombinedScope = ToolSurfaceScope.MaxAvailablePermissions;
+                        return CombinedScope; // no point in adding more bit checks if all permission on
+                    }
+                }
+                return CombinedScope;
+            }
+            else
+            {
+                return ToolSurfaceScope.NoPermissions;
+            }
+        }
         
         public static bool LookupToolFlag(IButlerToolBaseInterface Tool, out bool AnyPermission, out ToolSurfaceScope Result)
         {
@@ -41,6 +76,8 @@ namespace ButlerSDK.ToolSupport
                 Result = ToolSurfaceScope.MaxAvailablePermissions;
                 return false;
             }
+
+            Result |= NestedToolScopeCheck(Tool);
             return true;
         }
 

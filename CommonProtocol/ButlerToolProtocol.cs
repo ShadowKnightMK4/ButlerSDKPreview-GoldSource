@@ -204,6 +204,10 @@ namespace ButlerToolContract
     /// </summary>
     public interface IButlerToolContainsPrivateTools
     {
+        /// <summary>
+        /// Expose the inner collection of tools this tool contains.
+        /// </summary>
+        /// <returns></returns>
         public Dictionary<string, IButlerToolBaseInterface> GetInterfaces();
     }
 

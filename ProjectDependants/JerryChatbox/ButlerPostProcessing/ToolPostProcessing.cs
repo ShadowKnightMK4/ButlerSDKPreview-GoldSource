@@ -323,7 +323,7 @@ namespace ButlerSDK.ButlerPostProcessing
 
  
 
-        public void Remedial(IButlerChatCollection Msgs, ToolResolver Resolver, IButlerToolBench Toolset)
+        public void Remedial(IButlerChatCollection Msgs, IButlerToolResolver Resolver, IButlerToolBench Toolset)
         {
 
             ButlerSystemChatMessage Alert = new(@"[ERROR] IT LOOKS LIKE YOU TALKED ABOUT CALLING A TOOL WITHOUT CALLING IT. [REMEDIAL STEPS] Look at the last user and assistant turn. Produce the json needed to answer with no other dialog! ");

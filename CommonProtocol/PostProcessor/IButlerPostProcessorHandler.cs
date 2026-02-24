@@ -91,6 +91,6 @@ namespace ButlerSDK.ButlerPostProcessing
         /// <param name="Resolver">the butler too scheduler</param>
         /// <param name="Toolset">the current tool set</param>
         /// <remarks>After calling this, the possible modified data presented to Remedial is resent. ALSO! Any messages you add that you don't want to persist (for example to guide the model, mark <see cref="ButlerChatMessage.IsTemporary"/> to true. They are removed at end of turn</remarks>
-        public void Remedial(IButlerChatCollection Msgs, ToolResolver Resolver, IButlerToolBench Toolset);
+        public void Remedial(IButlerChatCollection Msgs, IButlerToolResolver Resolver, IButlerToolBench Toolset);
     }
 }

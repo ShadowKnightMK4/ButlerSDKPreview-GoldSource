@@ -31,6 +31,14 @@ namespace SecureStringHelper
         }
 
 
+        public static void AssignStringThenReadOnly(this SecureString ret, MemoryStream Input, int len = -1)
+        {
+            using (var Reader = new StreamReader(Input))
+            {
+
+                AssignStringThenReadOnly(ret, Reader, len);
+            }
+        }
         /// <summary>
         /// Slightly more secure. Read specific length of string from the reader one char at a time
         /// </summary>
@@ -42,6 +50,8 @@ namespace SecureStringHelper
             ArgumentNullException.ThrowIfNull(ret);
             ArgumentNullException.ThrowIfNull(Input);
             bool ToEof = false;
+
+            
             if (len <= 0)
             {
                 ToEof = true;
@@ -53,13 +63,10 @@ namespace SecureStringHelper
          
                 if (ToEof)
                 {
+                    ret.AppendChar(read);
                     if (Input.EndOfStream)
                     {
                         break;
-                    }
-                    else
-                    {
-                        ret.AppendChar(read);     
                     }
                 }
                 else

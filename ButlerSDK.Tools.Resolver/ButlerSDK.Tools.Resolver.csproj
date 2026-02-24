@@ -4,15 +4,10 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-	  <IsPackable>true</IsPackable>
-	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	  <Version>1.0.1-preview</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ApiRateLimiter\ButlerSDK.ApiRateLimiter.csproj" />
     <ProjectReference Include="..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
-    <ProjectReference Include="..\ToolSurface\ButlerSDK.Tools.ToolSurface.csproj" />
   </ItemGroup>
 
 </Project>

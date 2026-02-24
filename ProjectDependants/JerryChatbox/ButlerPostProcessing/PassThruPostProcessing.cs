@@ -71,7 +71,7 @@ namespace ButlerSDK.ButlerPostProcessing
         /// <param name="Msgs"></param>
         /// <param name="Resolver"></param>
         /// <param name="Toolset"></param>
-        public void Remedial(IButlerChatCollection Msgs, ToolResolver Resolver, IButlerToolBench Toolset)
+        public void Remedial(IButlerChatCollection Msgs, IButlerToolResolver Resolver, IButlerToolBench Toolset)
         {
             throw new NotImplementedException();
         }

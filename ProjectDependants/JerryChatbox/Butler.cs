@@ -7,6 +7,7 @@ using ButlerSDK.ToolSupport;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using ButlerToolContracts.DataTypes;
+using System.Reflection;
 
 namespace ButlerSDK.Core
 {
@@ -19,7 +20,8 @@ namespace ButlerSDK.Core
         public const string NoApiKey = "";
         protected readonly IButlerPostProcessorHandler? PostProcessing;
         protected readonly IButlerChatPreprocessor? PreProcessing;
-       
+        protected IButlerToolResolver? ToolExec;
+        protected Type ToolExecType;
         /// <summary>
         /// What tool self reported permissions are allowed. A <see cref="SecurityException"/> will trigger on added tool
         /// </summary>
@@ -61,6 +63,11 @@ namespace ButlerSDK.Core
         {
             this.PostProcessing = PostProcessor;
             this.PreProcessing = PPR;
+            if (this.ToolExec is null)
+            {
+                this.ToolExec = ToolResolver.CreateSchedule("Default");
+                this.ToolExecType = typeof(ToolResolver);
+            }
         }
 
         /// <summary>
@@ -74,11 +81,23 @@ namespace ButlerSDK.Core
         /// <param name="PostProcessor">Optional post processor handler for guiding LLMs as they product data - see <see cref="IButlerPostProcessorHandler"/> and <see cref="ToolPostProcessing"/> for a way to use it</param>
         /// <param name="PPR">The pre processor. Optional. Provider can actually ignore if wanted - they need to exception if so. Before Translation from butler by provider, this is called to possibly alter a copy of the message</param>
         /// <param name="ChatHandler">The object that will be used for handler chat message lists. The default is <see cref="TrenchCoatChatCollection"/></param> If you do not specify one, default is used.
-        public Butler(IButlerVaultKeyCollection Key, IButlerLLMProvider Provider, IButlerChatCompletionOptions? Opts, string ModelChoice, string KeyVar, IButlerChatCollection ChatHandler, IButlerPostProcessorHandler? PostProcessor = null, IButlerChatPreprocessor? PPR = null) :
+        public Butler(IButlerVaultKeyCollection Key, IButlerLLMProvider Provider, IButlerChatCompletionOptions? Opts, string ModelChoice, string KeyVar, IButlerChatCollection ChatHandler, IButlerPostProcessorHandler? PostProcessor = null, IButlerChatPreprocessor? PPR = null, IButlerToolResolver? ToolResolveHandler=default) :
             base(Key, Provider, Opts, ModelChoice, KeyVar,ChatHandler)
         {
             this.PostProcessing = PostProcessor;
             this.PreProcessing = PPR;
+
+            if ( (ToolResolveHandler is null) || (ToolResolveHandler == default))
+            {
+                this.ToolExec = ToolResolver.CreateSchedule("Default");
+                this.ToolExecType = typeof(ToolResolver);
+            }
+            else
+            {
+                this.ToolExec = ToolResolveHandler;
+                this.ToolExecType = ToolResolveHandler.GetType();
+            }
+
         }
 
         /// <summary>
@@ -106,7 +125,7 @@ namespace ButlerSDK.Core
         /// <param name="Stats">Optional stat class <see cref="ToolResolverTelemetryStats"/> to get insight in execution</param>
         /// <returns>Task to await</returns>
 
-        internal async Task _TriggerToolCall(ToolResolver? Resolver, ToolResolverTelemetryStats? Stats)
+        internal async Task _TriggerToolCall(IButlerToolResolver? Resolver, ToolResolverTelemetryStats? Stats)
         {
             if (Resolver is not null)
             {
@@ -125,14 +144,28 @@ namespace ButlerSDK.Core
         /// If passed resolver is null, create it
         /// </summary>
         /// <param name="Resolver">ref to Resolver to create</param>
-        internal void _EnsureResolverIsActive(ref ToolResolver? Resolver)
+        internal void _EnsureResolverIsActive(ref IButlerToolResolver? Resolver)
         {
-                if (Resolver is null)
+            if (Resolver is null)
+            {
+                LogTap?.LogString("Created the Tool Resolver object");
+                MethodInfo? CreateMe = this.ToolExecType.GetMethod("CreateSchedule");
+                if (CreateMe == null)
                 {
-                    LogTap?.LogString("Created the Tool Resolver object");
-                    Resolver = ToolResolver.CreateSchedule("ResolveMe");
+                    throw new InvalidOperationException($"Unable to get create schedule method dispite matching data type. Check if it exists as STATIC and if the type used {ToolExecType.Name} has it.");
                 }
                 else
+                {
+                    Resolver = (IButlerToolResolver)CreateMe.Invoke(ToolExec, new object[] { "ResolveMe" } );
+                    if (Resolver is null)
+                    {
+                        throw new InvalidOperationException($"Fatal error: Unable to create tool scheduler clas (it returned null on create). Class name{ToolExecType.Name}");
+                    }
+                }
+            } /*
+                    Resolver = IButlerToolResolver.CreateSchedule("ResolveMe");
+                }
+                else*/
                 {
                     LogTap?.LogString("Not creating Tool Resolver object, it already exists.");
                 }
@@ -145,7 +178,7 @@ namespace ButlerSDK.Core
             /// <summary>
             /// THe resolver to schedule tool calls in
             /// </summary>
-            public ToolResolver? Resolver;
+            public IButlerToolResolver? Resolver;
             /// <summary>
             /// Gets set to true if a tool call was triggered in the packet <see cref="_HandleAToolCall(ButlerStreamingChatCompletionUpdate, _HandleToolPrologArgs)"/>
             /// </summary>

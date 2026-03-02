@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ButlerBaseInternal
 {
-    public interface ButlerTool_DiscoverResource
+    public interface IButlerTool_DiscoverResource
     {
         /// <summary>
         /// Initialize this resource. Your implementation should use the passed argument for any API key needs
@@ -48,28 +48,28 @@ namespace ButlerBaseInternal
     /// <summary>
     /// This special interface is for the discoverer tool that lets Butler spin up and shutdown tools in its cache
     /// </summary>
-    public interface ButlerTool_Discoverer : IButlerSystemToolInterface, IButlerToolSpinup
+    public interface IButlerTool_Discoverer : IButlerSystemToolInterface, IButlerToolSpinup
     {
         /// <summary>
         /// Assign the tool box to make tools live in.
         /// </summary>
         /// <param name="toolBox"></param>
-        public void AssignToolBox(ButlerToolBench toolBox);
+        public void AssignToolBox(IButlerToolBench toolBox);
         /// <summary>
         /// Get the current toolbox to make tools live in. If this returns null. That means no tool box is assigned this discover (WHY?) - do that by calling <see cref="AssignToolBox(ButlerToolBench)"/> with the instance you want
         /// </summary>
-        public ButlerToolBench? GetToolBox();
+        public IButlerToolBench? GetToolBox();
 
         /// <summary>
-        /// Clear assigned <see cref="ButlerTool_DiscoverResource"/>
+        /// Clear assigned <see cref="IButlerTool_DiscoverResource"/>
         /// </summary>
         public void ClearDiscoverSource();
 
-        public void AddButlerToolSource(ButlerTool_DiscoverResource e);
+        public void AddButlerToolSource(IButlerTool_DiscoverResource e);
 
         public void AddDefaultButlerSources(IButlerVaultKeyCollection KeyHandler);
 
-        public void AssignButler(ButlerBase Target);
+        public void AssignButler(IButlerChatSession Target);
 
     }
 }

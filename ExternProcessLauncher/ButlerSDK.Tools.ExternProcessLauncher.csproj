@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
     <ProjectReference Include="..\DiscovererTool\ButlerSDK.Tools.DiscovererTool.csproj" />
   </ItemGroup>
 

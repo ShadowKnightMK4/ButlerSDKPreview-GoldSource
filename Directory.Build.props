@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <!-- Your Output & Symbol Settings -->
-    <Version>1.0.0-preview</Version>
+    <Version>1.0.4-preview</Version>
     <PackageOutputPath>$(MSBuildThisFileDirectory)\NugetProjects\Package</PackageOutputPath>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>

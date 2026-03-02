@@ -1,4 +1,5 @@
-﻿using ButlerSDK.ToolSupport.Bench;
+﻿using ButlerLLMProviderPlatform.Protocol;
+using ButlerSDK.ToolSupport.Bench;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using System.Collections.Concurrent;
@@ -9,7 +10,10 @@ namespace ButlerSDK.ToolSupport
 {
     public interface IButlerToolResolver 
     {
-
+        /// <summary>
+        /// A provider assocated with this tool resollver, see - <see cref="IButlerLLMProvider_SpecificSpecificToolExecutionPostCall"/>
+        /// </summary>
+        public IButlerLLMProvider Provider { get; set; }
         /// <summary>
         /// Create a schedule to execute a collection of tools independently.  Examines
         /// requires in the Tool's json and attempts to order to resolve in a single call

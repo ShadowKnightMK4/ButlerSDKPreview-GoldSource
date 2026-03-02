@@ -70,7 +70,12 @@ namespace ButlerToolContract.DataTypes
             this.Content.Add(part);
         }
 
- 
+
+        /// <summary>
+        /// Generally you need not work this this directly, it's for Provider's to store specific things (like Gemini Thought object)
+        /// </summary>
+        public readonly Dictionary<string, string> ProviderSpecific = new();
+        
         /// <summary>
         /// Create a blank null message. will need to fill it out
         /// </summary>

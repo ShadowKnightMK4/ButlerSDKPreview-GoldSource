@@ -13,7 +13,7 @@ namespace ButlerSDK
         /// <summary>
         /// The paired tool kit your system tool should work with, check for null please
         /// </summary>
-        protected ButlerToolBench? MyTools;
+        protected IButlerToolBench? MyTools;
         /// <summary>
         /// The paired butler your tool should work with, check for null please
         /// </summary>
@@ -32,9 +32,9 @@ namespace ButlerSDK
         {
             if (UseMe is not null)
                 Jeeves = UseMe;
-            if ((ToolKit is not null) && (ToolKit is ButlerToolBench))
+            if ((ToolKit is not null) && (ToolKit is IButlerToolBench ToolStuff))
             {
-                MyTools = (ButlerToolBench)ToolKit;
+                MyTools = ToolStuff;
             }
         }
 

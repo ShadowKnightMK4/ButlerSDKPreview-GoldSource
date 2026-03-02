@@ -13,14 +13,14 @@
     <Compile Remove="ButlerBase.cs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
-    <ProjectReference Include="..\..\BasicToolStarterClass\ButlerSDK.Tools.ButlerToolBase.csproj" />
-    <ProjectReference Include="..\..\ButlerBaseInternal\ButlerSDK.ChatController.csproj" />
-    <ProjectReference Include="..\..\ButlerSDK.Tools.Resolver\ButlerSDK.Tools.Resolver.csproj" />
-    <ProjectReference Include="..\..\ButlerSystemToolBase\ButlerSDK.Tools.ButlerSystemToolBase.csproj" />
-    <ProjectReference Include="..\..\ButlerToolBench\ButlerSDK.Tools.Bench.csproj" />
-    <ProjectReference Include="..\..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+		<ProjectReference Include="..\..\BasicToolStarterClass\ButlerSDK.Tools.ButlerToolBase.csproj" />
+		<ProjectReference Include="..\..\ButlerBaseInternal\ButlerSDK.ChatController.csproj" />
+		<ProjectReference Include="..\..\ButlerSDK.Tools.Resolver\ButlerSDK.Tools.Resolver.csproj" />
+		<ProjectReference Include="..\..\ButlerSystemToolBase\ButlerSDK.Tools.ButlerSystemToolBase.csproj" />
+		<ProjectReference Include="..\..\ButlerToolBench\ButlerSDK.Tools.Bench.csproj" />
+		<ProjectReference Include="..\..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
+	</ItemGroup>
 
 </Project>

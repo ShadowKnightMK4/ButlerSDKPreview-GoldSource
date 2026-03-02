@@ -109,6 +109,7 @@ namespace ButlerSDK.ApiKeyMgr.WindowsVault
         }
         
 
+        
         public SecureString? ResolveKey(string ID)
         {
             if (!IsAuthorized)

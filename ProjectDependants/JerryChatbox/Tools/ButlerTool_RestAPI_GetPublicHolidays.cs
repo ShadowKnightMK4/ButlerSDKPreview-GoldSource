@@ -94,34 +94,46 @@ namespace ButlerSDK.Tools
             }
 
         // remove when done.
-        again:
-            string year;
-            string country;
 
-            try
-            {
-                year = FunctionCheck.RootElement.GetProperty("year").ToString();
-                country = FunctionCheck.RootElement.GetProperty("country").ToString();
-            }
-            catch (Exception)
-            {
-                goto again;
-            }
-            if (string.IsNullOrEmpty(year))
+            
+            if (!FunctionCheck.RootElement.TryGetProperty("year", out JsonElement Year))
             {
                 return false;
             }
-            if (!int.TryParse(year, out _))
+            if (!FunctionCheck.RootElement.TryGetProperty("country", out JsonElement country))
             {
                 return false;
             }
-
-            if (string.IsNullOrEmpty(country))
+          
+            if (Year.ValueKind == JsonValueKind.String)
+            {
+                if (!int.TryParse(Year.GetString(), out _))
+                {
+                    return false;
+                }
+            }
+            else if (Year.ValueKind != JsonValueKind.Number)
             {
                 return false;
             }
 
-            if (country.Length != 2)
+            
+
+            if (string.IsNullOrEmpty(Year.ToString()))
+            {
+                return false;
+            }
+            if (!int.TryParse(Year.ToString(), out _))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(country.ToString()))
+            {
+                return false;
+            }
+
+            if (country.ToString().Length != 2)
                 return false;
 
             return true;
@@ -132,7 +144,7 @@ namespace ButlerSDK.Tools
             return ResolveMyToolAsync(FunctionCallArguments, FuncId, Call).GetAwaiter().GetResult();
         }
 
-    
+
 
         public async Task<ButlerChatToolResultMessage?> ResolveMyToolAsync(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
         {
@@ -151,7 +163,7 @@ namespace ButlerSDK.Tools
                 throw new InvalidOperationException("FunctionCallArguments and FuncId need to but valid OR the ChatToolCall Call needs to be");
             }
 
-     
+
             if (!ValidateToolArgs(null, doc))
             {
                 return null;
@@ -160,15 +172,54 @@ namespace ButlerSDK.Tools
             {
 
                 var root = doc.RootElement;
-                year = root.GetProperty("year").ToString();
-                country = root.GetProperty("country").ToString();
-                if ((year == null) || (country == null))
+                if (!root.TryGetProperty("year", out JsonElement YearStr))
+                {
+                    return null;
+                }
+                if (!root.TryGetProperty("country", out JsonElement CountryStr))
+                {
+                    return null;
+                }
+                if (CountryStr.ValueKind != JsonValueKind.String)
+                {
+                    return null;
+                }
+                else
+                {
+                    country = CountryStr.GetString() ?? "";
+                }
+
+                if (country.Length != 2)
                 {
                     return null;
                 }
 
-
+                if (YearStr.ValueKind == JsonValueKind.Number)
+                {
+                    if (!YearStr.TryGetInt32(out var YearInt))
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        year = $"{YearInt}";
+                    }
+                }
+                else if (YearStr.ValueKind == JsonValueKind.String)
+                {
+                    year = YearStr.GetString() ?? "";
+                    if (!int.TryParse(year, out _))
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    return null;
+                }
             }
+
+        
 
 
 

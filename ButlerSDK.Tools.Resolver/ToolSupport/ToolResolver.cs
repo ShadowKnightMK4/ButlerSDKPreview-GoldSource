@@ -14,9 +14,10 @@ using ButlerToolContract;
 using System.Net.NetworkInformation;
 using ButlerSDK.ToolSupport.Bench;
 using ButlerSDK.Core;
+using ButlerLLMProviderPlatform.Protocol;
 
 
-    namespace ButlerSDK.ToolSupport
+namespace ButlerSDK.ToolSupport
 {
 
 
@@ -68,7 +69,12 @@ using ButlerSDK.Core;
             /// <summary>
             /// see <see cref="ButlerToolContract.IButlerToolInPassing"/>. If set <see cref="Butler.StreamResponseAsync(Butler.ChatMessageStreamHandler, ButlerSDK.ButlerPostProcessing.IButlerPostProcessorHandler?, bool, int, CancellationToken)"/> will not end the ai turn on this tool call
             /// </summary>
-            public bool IsEnPassant; 
+            public bool IsEnPassant;
+
+            /// <summary>
+            /// rider alone for specific providers
+            /// </summary>
+            public Dictionary<string, string> ProviderSpecific = new();
         }
         private ToolResolver() { }
         /// <summary>
@@ -94,6 +100,16 @@ using ButlerSDK.Core;
             return ret;
         }
 
+        public static IButlerToolResolver CreateSchedule(IButlerLLMProvider Provider, string name)
+        {
+            var ret = new ToolResolver() as IButlerToolResolver;
+            if (ret is null)
+            {
+                throw new InvalidOperationException("Warning: Unable to create ToolResolver and convert to interface. ");
+            }
+            ret.Provider = Provider;
+            return ret;
+        }
 
         public bool HasScheduledTools
         {
@@ -174,8 +190,13 @@ using ButlerSDK.Core;
                 exists = true;
             }
 
+
             if (Entry is not null)
             {
+                foreach (var prov in Tool.ProviderSpecific.Keys)
+                {
+                    Entry.ProviderSpecific[prov] = Tool.ProviderSpecific[prov];
+                }
                 Entry.ToolArgumentsPart.Append(Tool.FunctionArgumentsUpdate);
                 if (Tool.ToolCallid is not null)
                     Entry.ID.Append(Tool.ToolCallid);
@@ -509,7 +530,7 @@ using ButlerSDK.Core;
         /// <param name="MarkAsTemp">If true marks the tool pass and temporary, removing it from context window at end of ai turn</param>
         public void PlaceInChatLog(IList<ButlerChatMessage> Messages, bool MarkAsTemp)
         {
-
+            IButlerLLMProvider_SpecificSpecificToolExecutionPostCall? PostCall = Provider as IButlerLLMProvider_SpecificSpecificToolExecutionPostCall;
 
             // our general plan matches OpenAI because of familiarity. This routine grabs the tool call and results from our ToolTime class and puts out a Tool Call and Tool Result message in the passed list
             foreach (ToolTimeSlot tool in this.ResolvedTool)
@@ -519,7 +540,7 @@ using ButlerSDK.Core;
                 ButlerChatToolResultMessage? Result = (ButlerChatToolResultMessage?)tool.Results;
                 if (Result is not null)
                 {
-
+                    
                     var callData = ButlerChatToolCallMessage.CreateFunctionToolCall(tool.ID.ToString(), tool.ToolName.ToString(), tool.ToolArgumentsPart.ToString());
                     Messages.Add(callData);
                     Result.Id = tool.ID.ToString();
@@ -530,6 +551,11 @@ using ButlerSDK.Core;
                     {
                         callData.IsTemporary = true;
                         Result.IsTemporary = true;
+                    }
+                    if (PostCall is not null)
+                    {
+                        PostCall.HandlerToolExecuteMarkup(tool.ProviderSpecific, Result);
+                        PostCall.HandlerToolExecuteRequestMarkup(tool.ProviderSpecific, callData);
                     }
                 }
                 else
@@ -581,7 +607,7 @@ using ButlerSDK.Core;
         /// If false, attempting to run a schedule with no tools in it will throw exception
         /// </summary>
         public bool EmptyScheduleRunFine { get; set; } = false;
- 
+        public IButlerLLMProvider Provider { get; set; }
     }
 
 

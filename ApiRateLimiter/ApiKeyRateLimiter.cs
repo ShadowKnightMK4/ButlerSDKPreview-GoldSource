@@ -18,6 +18,10 @@ namespace ButlerSDK
         {
             public ServiceNonExistentException(string message) : base(message) { }
             public ServiceNonExistentException(string message, Exception Inner) : base(message, Inner) { }
+
+            public ServiceNonExistentException()
+            {
+            }
         }
         /// <summary>
         /// thrown by <see cref="ChargeService(string, int)"/> if the budget or inventory doesn't allow it.
@@ -33,6 +37,9 @@ namespace ButlerSDK
 
             }
 
+            public OverBudgetException()
+            {
+            }
         }
  
         public decimal SharedBudget
@@ -107,11 +114,11 @@ namespace ButlerSDK
         /// <returns>returns either an <see cref="ApiEntry"/> if found or null otherwise</returns>
         ApiEntry? LookUpService(string ServiceName)
         {
-            try
+            if (Data.TryGetValue(ServiceName, out ApiEntry? ret))
             {
-                return Data[ServiceName];
+                return ret;
             }
-            catch (KeyNotFoundException)
+            else
             {
                 return null;
             }
@@ -260,7 +267,7 @@ namespace ButlerSDK
        
         public bool DoesServiceExist(string ServiceName)
         {
-            return Data.ContainsKey(ServiceName);
+            return this.LookUpService(ServiceName) != null; 
         }
 
     
@@ -314,10 +321,11 @@ namespace ButlerSDK
        
         public void AssignNewCost(string ServiceName, decimal Cost)
         {
+            
             var Service = this.LookUpService(ServiceName);
             if (Service is null)
             {
-                throw new InvalidOperationException($"Service {ServiceName} doesn't exist.");
+                throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
             }
             else
                 Service.CostPerCall = Cost;

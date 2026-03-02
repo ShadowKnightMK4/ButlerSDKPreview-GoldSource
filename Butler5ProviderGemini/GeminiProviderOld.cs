@@ -1,6 +1,5 @@
 ﻿using ButlerLLMProviderPlatform.DataTypes;
 using ButlerLLMProviderPlatform.Protocol;
-using ButlerSDK.Providers.Gemini.Backup;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using GenerativeAI;
@@ -9,8 +8,6 @@ using SecureStringHelper;
 using System.Collections;
 #if DEBUG
 using System.Diagnostics;
-using System.Drawing;
-
 #endif
 using System.Runtime.CompilerServices;
 using System.Security;
@@ -18,16 +15,12 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace ButlerSDK.Providers.Gemini
+namespace ButlerSDK.Providers.Gemini.Backup
 {
 
     internal static class DebugMode
     {
-        static readonly JsonSerializerOptions Mode = new JsonSerializerOptions(JsonSerializerDefaults.General)
-        {
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-            WriteIndented = true // Makes the JSON pretty-printed in the console
-        };
+        static readonly JsonSerializerOptions Mode = new JsonSerializerOptions(JsonSerializerDefaults.General);
         static void Write(Stream target, string data)
         {
             var Output = Encoding.UTF8.GetBytes(data);
@@ -75,10 +68,10 @@ namespace ButlerSDK.Providers.Gemini
     /// </summary>
     public static class DebugSettings
     {
-        static FlagMode Mode = FlagMode.Off;
+        static FlagMode Mode= FlagMode.Off;
 
-        static Stream? SetTranslatorVerboseOutputMode_Butler = null;
-        static Stream? SetTranslatorVerboseOutputMode_Gemini = null;
+        static Stream? SetTranslatorVerboseOutputMode_Butler=null;
+        static Stream? SetTranslatorVerboseOutputMode_Gemini=null;
 
         public static void VerboseLogHandler(IList<ButlerChatMessage> msg, GenerateContentRequest GMS)
         {
@@ -109,13 +102,13 @@ public static class DebugSettings
         }
     }
 #endif
-    public class ButlerGeminiProvider : IButlerLLMProvider, IButlerChatCreationProvider, IButlerLLMProviderToolRequests, IButlerLLMProvider_SpecificSpecificToolExecutionPostCall
+    public class ButlerGeminiProvider : IButlerLLMProvider, IButlerChatCreationProvider, IButlerLLMProviderToolRequests
     {
         GenerativeAI.GoogleAi? api;
         /* has unit tests*/
-        public ButlerGeminiProvider()
+        public  ButlerGeminiProvider()
         {
-
+            
         }
         public IButlerChatCreationProvider ChatCreationProvider
         {
@@ -145,67 +138,50 @@ public static class DebugSettings
         {
             get
             {
-                return TranslatorChatCompletionObjects.TranslateFromProvider(new GenerationConfig());
+               return TranslatorChatCompletionObjects.TranslateFromProvider(new GenerationConfig());
             }
         }
 
-        static bool SetOK = false;
-        static JsonSerializerOptions Preferred = new();
-        
         public object CreateChatTool(IButlerToolBaseInterface butlerToolBase)
         {
-            // HELPER FUNCTION: Add this inside your ButlerGeminiProvider class
-               static void FixGeminiTypes(JsonNode? node)
-        {
-            if (node is JsonObject obj)
-            {
-                // If this object has a "type" property, force it to uppercase
-                if (obj.TryGetPropertyValue("type", out var typeNode) &&
-                    typeNode is JsonValue val &&
-                    val.TryGetValue<string>(out var typeStr))
-                {
-                    obj["type"] = typeStr.ToUpperInvariant();
-                }
-
-                // Recursively check all nested properties (e.g., inside "properties" or "items")
-                foreach (var kvp in obj)
-                {
-                    FixGeminiTypes(kvp.Value);
-                }
-            }
-            else if (node is JsonArray arr)
-            {
-                foreach (var item in arr)
-                {
-                    FixGeminiTypes(item);
-                }
-            }
-        }
-
-            if (!SetOK)
-            {
-                Preferred.PropertyNameCaseInsensitive = true;
-                Preferred.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                SetOK = true;
-            }
             FunctionDeclaration func = new FunctionDeclaration();
             func.Name = butlerToolBase.ToolName;
             //func.Behavior = Behavior.BLOCKING; // Gemini Provider supports blocking only for now as a description.
+            func.Behavior = Behavior.UNSPECIFIED; ; 
             func.Description = butlerToolBase.ToolDescription;
 
             JsonDocument? doc;
+            /*
             try
             {
-                var args = JsonNode.Parse(butlerToolBase.GetToolJsonString());
-                FixGeminiTypes(args);
-
-                func.Parameters = JsonSerializer.Deserialize<Schema>(args, Preferred);
+                doc = JsonDocument.Parse(butlerToolBase.GetToolJsonString());
+                func.ParametersJsonSchema = doc.RootElement.AsNode();
             }
             catch (JsonException)
             {
-                throw new InvalidOperationException($"Tool {butlerToolBase.ToolName} has invalid JSON schema. Ensure the JSON schema is valid and properly escaped if needed. Original json: {butlerToolBase.GetToolJsonString()}");
+                // temp 
+                var schemaDict1 = JsonSerializer.Deserialize<Dictionary<string, object>>(butlerToolBase.GetToolJsonString());
+                func.ParametersJsonSchema = JsonSerializer.Serialize( schemaDict1);
+                func.Parameters = null;
             }
+            */
+            try
+            {
+                var opts = new JsonSerializerOptions();
+                opts.PropertyNameCaseInsensitive = true;
+                opts.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                 doc = JsonDocument.Parse(butlerToolBase.GetToolJsonString());
 
+                func.Parameters = JsonSerializer.Deserialize<Schema>(doc, opts);
+            }
+            catch (JsonException)
+            {
+                // The Failsafe: Google demands an empty object schema for zero-parameter tools.
+                func.Parameters = new Schema
+                {
+                    Properties = new Dictionary<string, Schema>()
+                };
+            }
             return func;
         }
 
@@ -242,7 +218,7 @@ public static class DebugSettings
             {
                 throw new ArgumentException("Google Gemini Provider needs non empty key. Go set that API at https://aistudio.google.com/ and DO NOT hard code it in you source code if using source control (i.e. GitHub)");
             }
-
+                    
             if (api is null)
             {
                 api = new GoogleAi(x.DecryptString());
@@ -254,29 +230,7 @@ public static class DebugSettings
             }
         }
 
-        public void HandlerToolExecuteRequestMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolCallMessage Item)
-        {
-            if (ProviderSpecific.TryGetValue(GeminiAssist_ThoughtSigHelper.GeminiThoughSigKey, out string? Thinking))
-            {
-                if (Thinking is not null)
-                {
-                    Item.ProviderSpecific[GeminiAssist_ThoughtSigHelper.GeminiThoughSigKey] = Thinking;
-                }
-            }
-        }
 
-        public void HandlerToolExecuteMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolResultMessage Item)
-        {
-
-                if (ProviderSpecific.TryGetValue(GeminiAssist_ThoughtSigHelper.GeminiThoughSigKey, out string? Thinking))
-                {
-                    if (Thinking is not null)
-                    {
-                        Item.ProviderSpecific[GeminiAssist_ThoughtSigHelper.GeminiThoughSigKey] = Thinking;
-                    }
-                }
-            }
-        }
     }
 
 
@@ -329,26 +283,6 @@ public static class DebugSettings
             }
         }
 
-        internal static bool GeminiPartHasThought(Part Part)
-        {
-            if (Part.Thought == true)
-            {
-                if (Part.ThoughtSignature is not null)
-                {
-                    {
-                        return true;
-                    }
-                }
-            }
-            else
-            {
-                if (Part.ThoughtSignature is not null)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
         internal static void ButlerToGeminiThoughtFetch(ButlerChatMessageContentPart chatPart, Part part)
         {
             if (chatPart.ProviderSpecific.TryGetValue(GeminiThoughSigKey, out string? Thinking))
@@ -356,23 +290,6 @@ public static class DebugSettings
                 if (Thinking is not null)
                     part.ThoughtSignature = Thinking;
             }
-        }
-
-        internal static string? ReadSig(ButlerChatToolCallMessage callMe)
-            {
-            for (int i = 0; i < callMe.Content.Count;i++)
-            {
-                if (callMe.Content[i].ProviderSpecific.TryGetValue(GeminiThoughSigKey, out string? Thinking))
-                {
-                    return Thinking;
-                }
-            }
-
-            if (callMe.ProviderSpecific.TryGetValue(GeminiThoughSigKey, out string? ThinkingAlt))
-            {
-                return ThinkingAlt;
-            }
-            return null;
         }
     }
     public static class TranslatorChatCompletionObjects
@@ -409,7 +326,7 @@ public static class DebugSettings
 
             {
                 // Tools
-
+                
             }
 
 
@@ -475,7 +392,7 @@ public static class DebugSettings
             switch (role)
             {
                 case "user":
-                    return ButlerChatMessageRole.User;
+                    return  ButlerChatMessageRole.User;
                 case "model":
                     return ButlerChatMessageRole.Assistant;
                 //case "model":             /* important. This is here for completion sake. Yes Tool call is model role in Gemini */
@@ -499,7 +416,7 @@ public static class DebugSettings
                 case ButlerChatMessageRole.ToolCall:
                     return "model";
                 case ButlerChatMessageRole.ToolResult:
-                    return "user";// the question is why did function work in old code?
+                    return "function";
                 case ButlerChatMessageRole.System:
                     throw new InvalidOperationException("Gemini system messages exist in a separate area of  the Gemini request. Provider harvests system messages (Role= ButlerChatMessageRole.System) and moves them there. No equivalent system message");
                 default:
@@ -531,9 +448,9 @@ public static class DebugSettings
                         throw new InvalidOperationException("This part should not actually be called, system prompts are handled at the chat log level");
                     }
                 case ButlerChatMessageRole.ToolCall:
-                    {
+                {
                         GeminiProviderMsg.Role = "model";
-                        if (msg is ButlerChatToolCallMessage ToolCall)
+                        if (msg  is ButlerChatToolCallMessage ToolCall)
                         {
                             Part GeminiCall = new Part();
                             GeminiCall.FunctionCall = new FunctionCall(ToolCall.ToolName);
@@ -550,10 +467,10 @@ public static class DebugSettings
                         {
                             throw new InvalidOperationException("Tool call message isn't actually a ButlerToolCall was misplaced");
                         }
-                    }
+                }
             }
-
-
+            
+            
             // not a function call
             foreach (ButlerChatMessageContentPart p in msg.Content)
             {
@@ -577,10 +494,10 @@ public static class DebugSettings
                     throw new NotImplementedException("Currently Gemini Provider only supports text");
                 }
             }
-
+         
             return GeminiProviderMsg;
-
-        }
+            
+        }   
         public static ButlerChatMessage TranslateFromProvider2(GenerateContentResponse response)
         {
             ArgumentNullException.ThrowIfNull(nameof(response));
@@ -622,7 +539,7 @@ public static class DebugSettings
         /// <param name="ContextBuilt">where to place butler tools. Note places as single <see cref="GenerativeAI.Types.Tool"/> of multiple <see cref="GenerativeAI.Types.FunctionDeclaration"/></param>
         /// <param name="Options">looks here for <see cref="IButlerChatCompletionOptions.Tools"/></param>
         /// <param name="GeminiProvider">The LLM Provider <see cref="ButlerGeminiProvider"/> we use to create the tool object</param>
-        public static void TranslateTools(GenerateContentRequest ContextBuilt, IButlerChatCompletionOptions Options, IButlerLLMProvider GeminiProvider)
+        public static void TranslateTools(GenerateContentRequest ContextBuilt, IButlerChatCompletionOptions Options, IButlerLLMProvider GeminiProvider )
         {
             /*
              * Dear Reader:
@@ -634,241 +551,18 @@ public static class DebugSettings
             GeminiToolCollection.FunctionDeclarations = new List<FunctionDeclaration>();
             foreach (var ButlerTool in Options.Tools)
             {
-
+                
                 // in referent to dear reader: Butler's Gemini provider dumps the tools (from its pov) into a single tool with several functions.
-                var GeminiFunction = (FunctionDeclaration)GeminiProvider.CreateChatTool(ButlerTool);
+                 var GeminiFunction = (FunctionDeclaration)GeminiProvider.CreateChatTool(ButlerTool);
                 GeminiToolCollection.FunctionDeclarations.Add(GeminiFunction);
             }
             ContextBuilt.AddTool(GeminiToolCollection);
         }
     }
-
     public static class TranslatorChatLog
     {
-        enum tool_seeker
-        {
-            offline=0,
-            foundcall = 1,
-            foundreply = 2
-        }
-
-        static bool RoleValidCheck(ButlerChatMessageRole Current, ButlerChatMessageRole Last)
-        {
-            // the only postiive true always is if last is 0;
-            if (Last == ((ButlerChatMessageRole)(-1)))
-                return true;
-            else
-            {
-                if (Current == Last)
-                    return false;
-                else
-                    return true;
-            }
-        }
-
-        static void PlaceToolCall(GenerateContentRequest Target, ButlerChatToolCallMessage CallMe, ButlerChatToolResultMessage ReplyMe)
-        {
-            Content ToolCall = new();
-            Content ToolReply = new();
-            ToolCall.Role = TranslatorRole.TranslateToProvider(ButlerChatMessageRole.ToolCall);
-            ToolReply.Role = TranslatorRole.TranslateToProvider(ButlerChatMessageRole.ToolResult);
-            //for (int i =0; i < CallMe.Content.Count;i++)
-            {
-                
-                Part CPart = new Part();
-                CPart.ThoughtSignature = GeminiAssist_ThoughtSigHelper.ReadSig(CallMe);
-                CPart.FunctionCall = new();
-                CPart.FunctionCall.Name = CallMe.ToolName;
-                CPart.FunctionCall.Id = CallMe.Id;
-                CPart.FunctionCall.Args = JsonNode.Parse(CallMe.FunctionArguments);
-
-                ToolCall.Parts.Add(CPart);
-            }
-
-
-            //for (int i = 0; i < ReplyMe.Content.Count; i++)
-            {
-                Part CPart = new Part();
-             //   CPart.ThoughtSignature = GeminiAssist_ThoughtSigHelper.ReadSig(CallMe);
-                CPart.FunctionResponse = new();
-                CPart.FunctionResponse.Name = CallMe.ToolName;
-                CPart.FunctionResponse.Id = CallMe.Id;
-                Dictionary<string, object> Results= new();
-                Results["Result"] = ReplyMe.GetCombinedText();
-                CPart.FunctionResponse.Response = JsonNode.Parse(  JsonSerializer.Serialize(Results)).Root;
-                
-                ToolReply.Parts.Add(CPart);
-            }
-            
-            Target.Contents.Add(ToolCall);
-            Target.Contents.Add(ToolReply);
-        }
-         public static GenerateContentRequest TranslateToProvider(IList<ButlerChatMessage> Messages, IButlerChatCompletionOptions Options, IButlerLLMProvider GeminiProvider)
-        {
-            uint callcount = 0;
-            uint replycount = 0;
-            Queue<ButlerChatMessage> ToolBuffer = new();
-            List<ButlerChatMessage> SystemMessage = new();
-            GenerateContentRequest request = new();
-            tool_seeker tool_seek = tool_seeker.offline;
-            string tool_id =null;
-            ButlerChatMessageRole last_role =((ButlerChatMessageRole)(-1));
-            for (int i = 0; i < Messages.Count; i++)
-            {
-
-                switch (Messages[i].Role)
-                {
-                    case ButlerChatMessageRole.System:
-                    {
-                        SystemMessage.Add(Messages[i]);
-                        break;
-                    }
-                    case ButlerChatMessageRole.ToolCall:
-                        {
-                            tool_seek = tool_seeker.foundcall;
-                            callcount++;
-                            if (Messages[i] is ButlerChatToolCallMessage CallMe)
-                            {
-                                tool_id = CallMe.Id;
-                            }
-                            else
-                            {
-                                throw new InvalidDataException("A butler message is tagged as a tool call BUT cannot be cast to a tool call data type. Ensure the message is properly formed and classified."); 
-                            }
-                            ToolBuffer.Enqueue(Messages[i]);
-                            break;
-                        }
-                    case ButlerChatMessageRole.ToolResult:
-                        {
-                            tool_seek = tool_seeker.foundreply;
-                            replycount++;
-                            if (Messages[i] is ButlerChatToolResultMessage ReplyMe)
-                            {
-                                if (string.Compare(ReplyMe.Id, tool_id) == 0)
-                                {
-                                    ToolBuffer.Enqueue(Messages[i]);
-                                    PlaceToolCall(request, (ButlerChatToolCallMessage)ToolBuffer.Dequeue(), (ButlerChatToolResultMessage) ToolBuffer.Dequeue());
-                                }
-                                else
-                                {
-                                    throw new InvalidDataException("Unspected tool call id in message log. Gemini translater rqeuires tool calls and results to be in order and have matching IDs. Ensure the message log is properly ordered and formed.");
-                                }
-                            }
-                            else
-                            {
-                                throw new InvalidDataException("A butler message is tagged as a tool reply BUT cannot be cast to a tool call data type. Ensure the message is properly formed and classified.");
-                            }
-                            
-                            break;
-                        }
-                    case ButlerChatMessageRole.User:
-                        {
-                            Content UserEntry = new();
-                            UserEntry.Role = TranslatorRole.TranslateToProvider(ButlerChatMessageRole.User);
-                            foreach (var part in Messages[i].Content)
-                            {
-                                if (part.MessageType == ButlerChatMessageType.Text)
-                                {
-                                    Part GeminiPart = new Part();
-                                    if (part.Refusal is not null)
-                                    {
-                                        GeminiPart.Text = part.Refusal;
-                                    }
-                                    else
-                                    {
-                                        GeminiPart.Text = part.Text;
-                                    }
-                                    GeminiAssist_ThoughtSigHelper.ButlerToGeminiThoughtFetch(part, GeminiPart);
-                                    if (GeminiAssist_ThoughtSigHelper.GeminiPartHasThought(GeminiPart))
-                                    {
-                                        throw new InvalidDataException("Gemini User role does not accept model thoughts.");
-                                    }
-                             
-                                    UserEntry.AddPart(GeminiPart);
-                                }
-                                else
-                                {
-                                    throw new NotImplementedException("Currently Gemini Provider only supports text");
-                                }
-                            }
-
-                            request.Contents.Add(UserEntry);
-                            break;
-                        }
-                    case ButlerChatMessageRole.Assistant:
-                        {
-                            Content LLMResponse = new();
-                            LLMResponse.Role = TranslatorRole.TranslateToProvider(ButlerChatMessageRole.Assistant);
-                            foreach (var part in Messages[i].Content)
-                            {
-                                if (part.MessageType == ButlerChatMessageType.Text)
-                                {
-                                    Part GeminiPart = new Part();
-                                    if (part.Refusal is not null)
-                                    {
-                                        GeminiPart.Text = part.Refusal;
-                                    }
-                                    else
-                                    {
-                                        GeminiPart.Text = part.Text;
-                                    }
-                                    GeminiAssist_ThoughtSigHelper.ButlerToGeminiThoughtFetch(part, GeminiPart);
-                                    LLMResponse.AddPart(GeminiPart);
-                                }
-                                else
-                                {
-                                    throw new NotImplementedException("Currently Gemini Provider only supports text");
-                                }
-                            }
-                            request.Contents.Add(LLMResponse);
-                            break;
-                        }
-                }
-                last_role = Messages[i].Role;
-
-            }
-
-
-            string stext = string.Empty;
-            for (int i = 0; i < SystemMessage.Count; i++)
-            {
-                if (SystemMessage[i].Role == ButlerChatMessageRole.System)
-                {
-                    foreach (var part in SystemMessage[i].Content)
-                    {
-                        if (part.MessageType == ButlerChatMessageType.Text)
-                        {
-                            stext += part.Text + "\n";
-                        }
-                    }
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(stext) == false)
-            {
-                request.SystemInstruction = new Content();
-                request.SystemInstruction.AddText(stext);
-            }
-
-
-            
-            return request;
-        }
-
-        public static GenerateContentRequest TranslateToProvider(IList<ButlerChatMessage> pPRMSG)
-        {
-            return TranslateToProvider(pPRMSG, new ButlerChatCompletionOptions(), new ButlerGeminiProvider());
-        }
-    }
-    public static class TranslatorChatLog_old4
-    {
-
-        /// <summary>
-        /// DEBUG ONLY AND MANY BE REMOVED IN FUTURE: After translating, this strips IDs of tools in final object.
-        /// </summary>
-        public static bool InternalDropIdPostTranslator = true;
         static readonly JsonNode? NoArgsGeminiParse = JsonNode.Parse("{}");
-        const string ToolReplyCastingErrorMessageState = "Data conversion (cast) error. ButlerMessage is flagged as a Tool reply via the role BUT can't cast it to a ButlerChatToolResultMessage type";
+        const string ToolReplyCastingErrorMessageState  = "Data conversion (cast) error. ButlerMessage is flagged as a Tool reply via the role BUT can't cast it to a ButlerChatToolResultMessage type";
         const string ToolCallCastingErrorMessageState = "Data conversion (cast) error. ButlerMessage is flagged as a Tool Call via the role BUT can't cast it to a ButlerChatToolCallMessage type";
         const string IDNullErrorMessageToolCall = "Please Ensure the tool call ID is not null nor empty. Note the normal tool resolver will actually ensure non null on scheduling.";
         const string IDNullErrorMessageToolResult = "Please Ensure the tool results ID is not null nor empty. Note the normal tool resolver will actually ensure non null on scheduling.";
@@ -880,11 +574,11 @@ public static class DebugSettings
         /// For tool calls, this * the call id serve to hold the place of a tool call before the translator plugs it in.
         /// </summary>
         const string MarkerCallIndex = "PlaceHolderCall";
-        public static GenerateContentRequest TranslateToProvider(IList<ButlerChatMessage> Messages)
+ public static GenerateContentRequest TranslateToProvider(IList<ButlerChatMessage> Messages)
         {
-
+            
             ArgumentNullException.ThrowIfNull(Messages);
-
+            
             static void UpdateCallMe(
                 Dictionary<string,
                                   (ButlerChatToolCallMessage CallMe,
@@ -924,8 +618,8 @@ public static class DebugSettings
                     }
                 }
                 /* generate idea with above code is if the tool all or reply is NOT null but ID is, complain. Then assign ID string*/
-
-
+                
+                
 
                 (ButlerChatToolCallMessage CallMe, ButlerChatToolResultMessage CallMeResult) Entry;
                 if (DB.TryGetValue(ID, out Entry))
@@ -969,7 +663,7 @@ public static class DebugSettings
              * then go create the parts that have everything in Gemini *; &*/
             Dictionary<string, (ButlerChatToolCallMessage CallMe, ButlerChatToolResultMessage CallMeResult)> toolCalls = new();
 
-
+            
             for (int i = 0; i < Messages.Count; i++)
             {
                 ButlerChatMessage msg = Messages[i];
@@ -1002,7 +696,9 @@ public static class DebugSettings
                         if (
                             ((ToolWanted.Content is not null) && (request.Contents is not null)) && ((ToolWanted.Content.Count != 0) && (request.Contents.Count != 0))
                            )
+                        {
                             GeminiAssist_ThoughtSigHelper.ButlerToGeminiThoughtFetch(ToolWanted.Content[0], request.Contents[0].Parts[0]);
+                        }
                         continue;
                     }
                     else
@@ -1031,8 +727,9 @@ public static class DebugSettings
                         if (
                           ((ToolResult.Content is not null) && (request.Contents is not null)) && ((ToolResult.Content.Count != 0) && (request.Contents.Count != 0))
                          )
+                        {
                             GeminiAssist_ThoughtSigHelper.ButlerToGeminiThoughtFetch(ToolResult.Content[0], request.Contents[0].Parts[0]);
-
+                        }
                         continue;
                     }
                     else
@@ -1048,28 +745,25 @@ public static class DebugSettings
             }
             // Build the system prompt. Note we only care about a prompt for system in the provider IF it is text
 
-            if (sys.Count >= 1)
+            if (sys.Count is not 0)
             {
                 request.SystemInstruction = new Content();
                 foreach (var SystemPromptMessage in sys)
                 {
-                    if (SystemPromptMessage.Content.Count > 0)
+                    if (SystemPromptMessage.Content.Count != 0)
                     {
                         foreach (var data in SystemPromptMessage.Content)
                         {
                             if (data.MessageType == ButlerChatMessageType.Text)
                             {
                                 if (data.Text is not null)
-                                {
                                     request.SystemInstruction.AddText(data.Text);
-                                    //      request.SystemInstruction.Role = "system";
-                                }
                             }
                         }
                     }
                 }
-
             }
+
             // bit of a sanity ensure null doesn't trigger detonation
             if (request.Contents is null)
             {
@@ -1081,10 +775,22 @@ public static class DebugSettings
                 // hard coded user prompt to prompt Gemini to get going
                 request.AddPart(new Part("Hello"));
             }
+            else
+            {
+                if (request.Contents[0].Role != "user")
+                {
+                    var dummy_content = new List<Content>();
+                    dummy_content.Add(new Content());
+                    dummy_content[0].AddPart(new Part("Hello"));
+
+                    request.Contents.Insert(0, dummy_content[0]);
+                    dummy_content[0].Role = "user";
+                }
+            }
 
             if (TicketOrder.Count != 0)
             {
-                while (TicketOrder.Count > 0)
+                while (TicketOrder.Count != 0)
                 {
                     Content ToolCallRequest = new();
                     Content ToolCallReply = new();
@@ -1098,36 +804,42 @@ public static class DebugSettings
                     ToolRequestPart.FunctionCall = new();
                     ToolRequestPart.FunctionCall.Name = OrderUp.CallMe.ToolName;
                     ToolRequestPart.FunctionCall.Id = NextTicker; // which is  the id
-
-
+                    if (OrderUp.CallMe.Content != null)
+                    {
+                        if (OrderUp.CallMe.Content.Count != 0)
+                        {
+                            GeminiAssist_ThoughtSigHelper.ButlerToGeminiThoughtFetch(OrderUp.CallMe.Content[0], ToolRequestPart);
+                        }
+                    }
                     try
                     {
+                        /*
                         if (OrderUp.CallMe.FunctionArguments is not null)
                         {
-                            // possible questionable temporary fix 123
-                            var DictionaryTmp = JsonSerializer.Deserialize<Dictionary<string, object>>(JsonNode.Parse(OrderUp.CallMe.FunctionArguments));
+                            // possible questionable temporary fix
+                            var DictionaryTmp = JsonSerializer.Deserialize<Dictionary<string, string>>(JsonNode.Parse(OrderUp.CallMe.FunctionArguments));
 
 
                             ToolRequestPart.FunctionCall.Args = JsonSerializer.SerializeToNode(DictionaryTmp);
                         }
                         else
                         {
-                            ToolRequestPart.FunctionCall.Args = TranslatorChatLog_old4.NoArgsGeminiParse;
-                        }
-
+                            ToolRequestPart.FunctionCall.Args = TranslatorChatLog.NoArgsGeminiParse;
+                        }*/
+                        
                         // original code
-                        //ToolRequestPart.FunctionCall.Args = JsonNode.Parse(OrderUp.CallMe.FunctionArguments);
+                        ToolRequestPart.FunctionCall.Args = JsonNode.Parse(OrderUp.CallMe.FunctionArguments);
                     }
                     catch (JsonException)
                     {
                         // guard against a tool having null as arguments. we swap a blank arg
-                        ToolRequestPart.FunctionCall.Args = TranslatorChatLog_old4.NoArgsGeminiParse;
+                        ToolRequestPart.FunctionCall.Args = TranslatorChatLog.NoArgsGeminiParse;
                     }
 
                     // don't forget to add
                     ToolCallRequest.AddPart(ToolRequestPart);
 
-
+                    
                     // plug in the replacement for the place holder reply
                     ToolReplyPart.FunctionResponse = new();
                     ToolReplyPart.FunctionResponse.Name = OrderUp.CallMe.ToolName;
@@ -1138,38 +850,38 @@ public static class DebugSettings
                     /* while a tool can and likely should return json node level strictness
                      *  we can't assume it. Failure to parse punts it to a general json results message aka [result] = "original tool reply"
                      *  */
-                    try
-                    {
-                        JsonNode? JsonParseAttempt = null;
-                        if (OrderUp.CallMeResult.Message is not null)
+                        try
                         {
-                            JsonParseAttempt = JsonNode.Parse(OrderUp.CallMeResult.Message);
-                        }
+                            JsonNode? JsonParseAttempt=null;
+                            if (OrderUp.CallMeResult.Message is not null)
+                            {
+                              JsonParseAttempt   = JsonNode.Parse(OrderUp.CallMeResult.Message);
+                            }
 
-                        if (JsonParseAttempt is null)
+                            if (JsonParseAttempt is null)
+                            {
+                                ToolReplyPart.FunctionResponse.Response = new JsonObject
+                                {
+                                    ["result"] = OrderUp.CallMeResult.Message
+                                };
+                            }
+                            else
+                            {
+                                ToolReplyPart.FunctionResponse.Response = JsonParseAttempt;
+                            }
+                           
+                        }
+                        catch (JsonException)
                         {
                             ToolReplyPart.FunctionResponse.Response = new JsonObject
                             {
                                 ["result"] = OrderUp.CallMeResult.Message
                             };
                         }
-                        else
-                        {
-                            ToolReplyPart.FunctionResponse.Response = JsonParseAttempt;
-                        }
 
-                    }
-                    catch (JsonException)
-                    {
-                        ToolReplyPart.FunctionResponse.Response = new JsonObject
-                        {
-                            ["result"] = OrderUp.CallMeResult.Message
-                        };
-                    }
-
-
-                    ToolCallRequest.Role = TranslatorRole.TranslateToProvider(ButlerChatMessageRole.ToolCall); // the function call is a request *from the model*
-                    ToolCallReply.Role = TranslatorRole.TranslateToProvider(ButlerChatMessageRole.ToolResult); // the function reply is input *outside the model*
+                    
+                    ToolCallRequest.Role = "model"; // the function call is a request *from the model*
+                    ToolCallReply.Role = "function"; // the function reply is input *outside the model*
 
 
                     for (int i = 0; i < request.Contents.Count; i++)
@@ -1177,44 +889,41 @@ public static class DebugSettings
                         var checkThis = request.Contents[i];
                         if (checkThis.Parts.Count == 1)
                         {
-                            if (checkThis.Role == ToolCallRequest.Parts[0].FunctionCall.Id)
+ 
+                            // we set the function call and reply earlier in the routine, the ! is justified i think
+                            if ( (checkThis.Role == ToolCallRequest.Parts[0].FunctionCall!.Id) && (checkThis.Parts[0].Text == MarkerCallIndex))
                             {
-                                request.Contents[i] = ToolCallRequest;
-                                i++;
-                                if (i >= request.Contents.Count)
                                 {
-                                    throw new InvalidDataException("MISMEATCHED TOOLCALL/ TOOLREPLY to translate");
+                                    request.Contents[i] = null!; // remove the place holder
+                                    request.Contents[i] = ToolCallRequest; // put the real one
                                 }
-                                checkThis = request.Contents[i];
-                                if (checkThis.Parts.Count == 1)
-                                {
-                                    if (checkThis.Role == ToolCallReply.Parts[0].FunctionResponse.Id)
+                                
+                            }
+                            else
+                            {
+                                if ( (checkThis.Role == ToolCallReply.Parts[0].FunctionResponse!.Id) && (checkThis.Parts[0].Text == MarkerReplyIndex))
                                     {
-                                        request.Contents[i] = ToolCallReply;
+                                    
+                                    {
+                                        request.Contents[i] = null!; // remove the place holder
+                                        request.Contents[i] = ToolCallReply; // put real one
                                     }
                                 }
-                                // finally strip the id out
-                                ToolCallReply.Parts[0].FunctionResponse.Id
-                                     = ToolCallRequest.Parts[0].FunctionCall.Id =
-                                    null;
 
-                                        
                             }
-                            
-                            
                         }
                     }
+                 
 
-
+ 
                 }
-
-
-
             }
+
             DebugSettings.VerboseLogHandler(Messages, request);
             return request;
+            
         }
-
+       
     }
 
     /// <summary>
@@ -1247,13 +956,13 @@ public static class DebugSettings
         }
     }
 
-    public class ButlerGeminiChatClient : IButlerChatClient
+    public class ButlerGeminiChatClient: IButlerChatClient
     {
         IGenerativeModel Client;
         IButlerLLMProvider Source;
         IButlerChatPreprocessor? PPR;
         //ChatSession Session;
-
+        
         public ButlerGeminiChatClient(IGenerativeModel Client, IButlerLLMProvider Source, IButlerChatPreprocessor? PPR)
         {
             ArgumentNullException.ThrowIfNull(Client);
@@ -1263,7 +972,7 @@ public static class DebugSettings
             this.Client = Client;
             this.Source = Source;
             this.PPR = PPR;
-
+          
         }
 
         public IButlerClientResult CompleteChat(IList<ButlerChatMessage> msg)
@@ -1302,8 +1011,8 @@ public static class DebugSettings
             // Gemini is a call Translator. code 
             var chat = TranslatorChatLog.TranslateToProvider(PPRMSG);
             // this function adds the blasted tools to Gemini's data source so it knows to call them
-            TranslatorChatTools.TranslateTools(chat, options, this.Source);
-
+           TranslatorChatTools.TranslateTools(chat, options, this.Source);
+      
 
             // send this to Gemini and return the wrapper to process it
             var response = Client.StreamContentAsync(chat);
@@ -1335,33 +1044,30 @@ public static class DebugSettings
 
 
             // Gemini is a call translator. code 
-            var chat = TranslatorChatLog.TranslateToProvider(PPRMSG, options, this.Source);
+            var chat = TranslatorChatLog.TranslateToProvider(PPRMSG);
             // this function adds the blasted tools to Gemini's data source so it knows to call them
-            //TranslatorChatTools.TranslateTools(chat, options, this.Source);
+            TranslatorChatTools.TranslateTools(chat, options, this.Source);
 
 
             // send this to Gemini and return the wrapper to process it
             var response = Client.StreamContentAsync(chat);
-#if DEBUG
-        Console.BackgroundColor = ConsoleColor.Black; Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine("\r\n");
-        Console.BackgroundColor = ConsoleColor.Red;
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("DEBUG ONLY: This is json of what's been end to the gemini end point");
-            Console.WriteLine(JsonSerializer.Serialize(chat, new JsonSerializerOptions() { WriteIndented = true, DefaultIgnoreCondition= System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull }));
-        Console.BackgroundColor = ConsoleColor.Black; Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine("\r\n");
-#endif
+            ButlerStreamingChatCompletionUpdate butlerPart = null;
 
-        await foreach (var reply in response.WithCancellation(cancelMe))
+            await foreach (var reply in response.WithCancellation(cancelMe))
+            {
+                if (reply is not null)
                 {
-                    if (reply is not null)
-                    {
-                        var butlerPart = TranslatorStreamingChatUpdate.TranslateFromProvider(reply);
-                        yield return butlerPart;
-                    }
-                    continue;
+                    butlerPart = TranslatorStreamingChatUpdate.TranslateFromProvider(reply);
+                    yield return butlerPart;  // this is here to let the debugger inspect the butler part before its returned in debug mode. Note this does not fire in release mode
+
                 }
+                continue;
+            }
+
+
+
+
+
 
 
         }
@@ -1394,7 +1100,7 @@ public static class DebugSettings
                 }
                 return ret;
             }
-        }
+        }   
     }
 
     public static class TranslatorFinishReason
@@ -1407,7 +1113,7 @@ public static class DebugSettings
             }
             else
             {
-                switch (FINISH)
+               switch (FINISH)
                 {
                     case FinishReason.BLOCKLIST:
                     case FinishReason.RECITATION:
@@ -1424,13 +1130,13 @@ public static class DebugSettings
                         throw new NotImplementedException();
                 }
             }
-            throw new NotImplementedException();
+                throw new NotImplementedException();
         }
 
-    }
+     }
+        
 
-
-
+    
     public static class TranslatorStreamingChatUpdate
     {
         static void TranslateCandidate(ButlerStreamingChatCompletionUpdate update, GenerativeAI.Types.Candidate reply)
@@ -1439,58 +1145,11 @@ public static class DebugSettings
             // for Gemini pain, we collect the message parts and this lets the debugger (user) inspect as it goes
             List<ButlerChatStreamingPart> DebugParts = new();
 #endif
-
-
-            
-            {
-                update.FinishReason = TranslatorFinishReason.TranslateFromProvider(reply.FinishReason);
-                
-
-            }
-
-            if (reply.Content is not null)
-            {
-                if (reply.Content.Role is not null)
-                {
-                    update.Role = TranslatorRole.TranslateFromProvider(reply.Content.Role);
-                 }
-                int sanity_check = 0;
-                foreach (Part P in reply.Content.Parts)
-                {
-                    if (P.FunctionCall is not null)
-                    {
-                        var ToolHit = new ButlerStreamingToolCallUpdatePart(P.FunctionCall.Name, P.FunctionCall.Args.ToJsonString(), 0, "function", P.FunctionCall.Id);
-                        ToolHit.ProviderSpecific[GeminiAssist_ThoughtSigHelper.GeminiThoughSigKey] = P.ThoughtSignature;
-
-                        update.EditableToolCallUpdates.Add(ToolHit);
-                        sanity_check++;
-                    }
-
-                    
-                    if (P.Text is not null)
-                    {
-                        var chatPart = new ButlerChatStreamingPart();
-                        chatPart.Text = P.Text;
-                        if (!string.IsNullOrEmpty(chatPart.Text))
-                        {
-                            update.EditorableContentUpdate.Add(chatPart);
-                        }
-                        sanity_check++;
-                    }
-
-                    if (sanity_check != 1)
-                    {
-                        throw new InvalidOperationException("Received a part with multi non empty settings.");
-                    }
-                }
-            }
-
-            return;
             if (reply.FinishReason is not null)
             {
                 update.FinishReason = TranslatorFinishReason.TranslateFromProvider(reply.FinishReason);
             }
-
+            
             List<FunctionCall> functionCallCollection = new List<FunctionCall>();
             if (reply.Content is not null)
             {
@@ -1521,21 +1180,7 @@ public static class DebugSettings
                     }
                     else
                     {
-                        if (part.FunctionCall is not null)
-                        {
-                            var toolPart = new ButlerStreamingToolCallUpdatePart(part.FunctionCall.Name, part.FunctionCall.Args.ToString(), 0, "function", part.FunctionCall.Id);
-                            update.EditableToolCallUpdates.Add(toolPart);
-                            if (part.ThoughtSignature is not null)
-                            {
-                                var DummyThought = new ButlerChatStreamingPart();
-                                GeminiAssist_ThoughtSigHelper.GeminiToButlerThoughtStore(part, DummyThought);
-                                update.EditorableContentUpdate.Add(DummyThought);
-                            }
-                        }
-                        else
-                        {
-                            update.EditorableContentUpdate.Add(new ButlerChatStreamingPart());
-                        }
+                     
                     }
 
                 }
@@ -1543,10 +1188,10 @@ public static class DebugSettings
 
             if (functionCallCollection.Count is not 0)
             {
-                for (int step = 0; step < functionCallCollection.Count; step++)
+                for (int step=0; step < functionCallCollection.Count; step++)
                 {
-
-
+                   
+                    
                     update.FunctionName = functionCallCollection[step].Name;
                     if ((functionCallCollection[step] is not null) && (functionCallCollection[step].Args is not null))
                     {
@@ -1556,14 +1201,14 @@ public static class DebugSettings
                     {
                         update.FunctionArgumentsUpdate = null;
                     }
-                    update.Id = functionCallCollection[step].Id;
+                        update.Id = functionCallCollection[step].Id;
                     var ButlerToolPart = new ButlerStreamingToolCallUpdatePart(update.FunctionName, update.FunctionArgumentsUpdate, update.Index, "Function", functionCallCollection[step].Id!);
                     ButlerToolPart.FunctionArgumentsUpdate = update.FunctionArgumentsUpdate;
                     ButlerToolPart.FunctionName = update.FunctionName;
                     ButlerToolPart.Index = update.Index;
                     ButlerToolPart.ToolCallid = functionCallCollection[step].Id!; //  questionable at best. My thinking is that the pathway to this translator is the tool scheduler ensures its not null when converting and the messaging system in theory should fix it later
 
-             //       update.EditableToolCallUpdates.Add(ButlerToolPart);
+                    update.EditableToolCallUpdates.Add(ButlerToolPart);
 
 
                     /*var ButlerToolPart = new ButlerStreamingToolCallUpdatePart();
@@ -1603,12 +1248,11 @@ public static class DebugSettings
                     TranslateCandidate(update, result);
                 }
             }
+
             
-
-
             update.CompletionId = response.ResponseId;
-
-
+            
+      
             return update;
         }
     }
@@ -1630,11 +1274,11 @@ public static class DebugSettings
             // 1. Get the async enumerator
             var walk = Response.ToBlockingEnumerable();
 
-
-            foreach (var item in walk)
-            {
-                yield return TranslatorStreamingChatUpdate.TranslateFromProvider(item);
-            }
+            
+                    foreach (var item in walk)
+                    {
+                        yield return TranslatorStreamingChatUpdate.TranslateFromProvider(item);
+                    }
 
         }
 
@@ -1687,3 +1331,4 @@ public static class DebugSettings
             return ButlerClientResultType.String;
         }
     }
+}

@@ -1,0 +1,22 @@
+Some of these also show a little sooner.
+1.04
+
+Class changes:
+Trenchcoat is know an implenentation of an interface
+Butler supports swapping alternatives - Implenent Trench for full powe or IButlerChatCollection for minimal.
+
+
+Unit testing:
+Adding a few tests for Windows Vault Working to encrypt and decrypt  the happy path
+
+
+Bug Fix:
+If the Provider triggered an exception (such as rejecting an API KEY) in middle of a stream, Butler's loop was silenetly breaking if provider didn't recovery interface.  It now correctly rethrows  the exception if the provider doens't say how to resolve the error
+
+Fixed bug introducsed on ToolSurfaceScope add. MaxPermssion set actually adds the tool on Butler.AddTool()
+
+Theoritical loop on ButlerTool_RestAPI_GetPublicHolidays refactored away
+
+
+Current Bug targets:
+Gemini tool call triggers exceptions again. It's a work in progress

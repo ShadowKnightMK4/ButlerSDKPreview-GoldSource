@@ -1,4 +1,5 @@
 ﻿using ButlerToolContract.DataTypes;
+using System.Text;
 
 namespace ButlerSDK
 {
@@ -13,62 +14,7 @@ namespace ButlerSDK
 
         
         
-        public void Append(ButlerChatStreamingPart Part)
-        {
-            bool lifted_last_message = false;
-            ButlerChatMessageContentPart? last = null;
-            if (BuildingMessage.Content.Count > 0)
-            {
-                last = BuildingMessage.Content[BuildingMessage.Content.Count-1];
-                lifted_last_message = true;
-            }
-            else
-            {
-                last = null;
-            }
-
-            if (last == null)
-            {
-                last = new ButlerChatMessageContentPart();
-            }
-            else
-            {
-
-                // this logic filters if we're getting diff match
-                if (last?.MessageType !=  ButlerChatMessagePartKindConverter.Convert(Part.Kind))
-                {
-                    last = null;
-                }
-                
-            }
-
-                // next compare
-           if (last == null)
-            {
-                last = new();
-            }
-           // dear future me: when you add video and more, you'll need to account for more than
-           // one data type here.
-            if (last.MessageType == ButlerChatMessageType.Unknown)
-            {
-                last.MessageType = Part.MessageType;
-            }
-
-            if (last.MessageType == ButlerChatMessageType.Unknown)
-            {
-                if (Part.Text is not null)
-                {
-                    last.MessageType = ButlerChatMessageType.Text;
-                }
-            }
-   
-            last.Text += Part.Text;
-
-            
-
-            if (!lifted_last_message)
-                BuildingMessage.Content.Add(last);
-        }
+     
 
         static bool HasContent(ButlerStreamingToolCallUpdatePart Part)
         {
@@ -91,38 +37,83 @@ namespace ButlerSDK
             if (part.ProviderSpecfic.Count is not 0) return true;
             return false;
         }
-        public void Append(ButlerStreamingChatCompletionUpdate Part )
-       {
 
-            if (Part.ToolCallUpdates.Count != 0)
+        public void Append(ButlerStreamingChatCompletionUpdate Part)
+        {
+            if (Part.FunctionArgumentsUpdate is not null)
             {
-
-                var ReplacementGoldish = ButlerChatToolCallMessage.CreateFunctionToolCall(
-                    Part.ToolCallUpdates[0].ToolCallid,
-                    Part.ToolCallUpdates[0].FunctionName,
-                    Part.ToolCallUpdates[0].FunctionArgumentsUpdate!); // ! reason: Null or not, it's fine. We're passing as it
-                foreach (var content in BuildingMessage.Content)
-                {
-                    ReplacementGoldish.Content.Add(content);
-                }
-                ReplacementGoldish.Message = BuildingMessage.Message;
-                this.BuildingMessage = ReplacementGoldish;
-                return;
+                // nothing
             }
-            else
+            
+            
+
+
+
+            
+            
+
+            if (! string.IsNullOrWhiteSpace(Part.Id))
             {
-                for (int i = 0; i < Part.ContentUpdate.Count; i++)
+                if (BuildingMessage.Id is not null)
                 {
-                    if (HasContent(Part.ContentUpdate[i]))
+                    BuildingMessage.Id = Part.Id;
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(Part.Id))
                     {
-                        Append(Part.ContentUpdate[i]);
-                        
+                        BuildingMessage.Id += Part.Id;
                     }
                 }
-                if (Part.Role is not null)
-                    this.BuildingMessage.Role = (ButlerChatMessageRole) Part.Role;
             }
+
+
+            if (! string.IsNullOrWhiteSpace(Part.Model))
+            {
+                //BuildingMessage.Model = Part.Model;
+            }
+
+            foreach (string key in Part.ProviderSpecificComponents.Keys)
+            {
+                BuildingMessage.ProviderSpecific[key] =Part.ProviderSpecificComponents[key];
+            }
+
+            if ( !string.IsNullOrWhiteSpace(Part.RefusalUpdate))
+            {
+                
+            }
+
+            if (Part.Role is not null)
+            {
+                BuildingMessage.Role = (ButlerChatMessageRole)Part.Role;
+            }
+
+            if (Part.ToolCallUpdates is not null)
+            {
+                for (int i = 0; i < Part.ToolCallUpdates.Count; i++)
+                {
+                    var NewMsg = ButlerChatToolCallMessage.CreateFunctionToolCall(Part.ToolCallUpdates[i].ToolCallid, Part.ToolCallUpdates[i].FunctionName, Part.ToolCallUpdates[i].FunctionArgumentsUpdate);
+
+                    NewMsg.Role = BuildingMessage.Role;
+                    NewMsg.Message = BuildingMessage.Message;
+                    foreach (var part in BuildingMessage.ProviderSpecific.Keys)
+                    {
+                        NewMsg.ProviderSpecific[part] = BuildingMessage.ProviderSpecific[part];
+                    }
+                    foreach (var part in Part.ToolCallUpdates[i].ProviderSpecific.Keys)
+                    {
+                        NewMsg.ProviderSpecific[part] = Part.ToolCallUpdates[i].ProviderSpecific[part];
+                    }
+                    BuildingMessage = NewMsg;
+                    
+
+                }
+            }
+
+
         }
+
+
         public ButlerChatMessage GetMessage(ButlerChatMessageRole? ForceRoll=null)
         {
             

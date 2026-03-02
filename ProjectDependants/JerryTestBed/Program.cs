@@ -1,20 +1,83 @@
-﻿using ButlerSDK.Tools;
-using ButlerToolContract.DataTypes;
-using ButlerSDK.Debugging;
-using System.Diagnostics;
+﻿using ApiKeys;
+using Azure.Identity;
+using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK.ButlerPostProcessing;
-using ButlerSDK;
-using ButlerSDK.Providers.OpenAI;
-using System.Text.Json;
 using ButlerSDK.Core;
+using ButlerSDK.Debugging;
 using ButlerSDK.Providers.Gemini;
-
+using ButlerSDK.Tools;
+using ButlerToolContract.DataTypes;
+using SecureStringHelper;
+using System.Diagnostics;
+using System.Reflection;
+using System.Security;
 /*
  * A word. The TestBed project you see here is how I did manually testing aka edit and run.
  */
 #pragma warning disable
 namespace ButlerTestBed
 {
+    /// <summary>
+    /// Stricty for this project. Pulls keys from arbitary folder by location
+    /// </summary>
+    public class TestingFileApiKeyMgr : IButlerVaultKeyCollection
+    {
+        string dir;
+        readonly Dictionary<string, SecureString> _keys = new();
+        public bool Authenticate(Assembly Target)
+        {
+            return true;
+        }
+
+        public void Dispose()
+        {
+            foreach (SecureString secureString in _keys.Values)
+            {
+                secureString.Dispose();
+            }
+            this._keys.Clear();
+
+            GC.SuppressFinalize(this);
+        }
+
+        public void InitVault(string location)
+        {
+            if (Directory.Exists(location))
+            {
+                dir = location;
+            }
+            else
+            {
+                throw new AuthenticationFailedException("Vault location invalid. Does not seem to exist"); 
+            }
+        }
+
+        public SecureString? ResolveKey(string ID)
+        {
+#pragma warning disable CA1854 // Prefer the 'IDictionary.TryGetValue(TKey, out TValue)' method
+            if (_keys.ContainsKey(ID))
+            {
+                return _keys[ID];
+            }
+            else
+            {
+                SecureString ret = new();
+
+                string? key = File.ReadAllText(Path.Combine(dir, ID)); 
+                if (key is not null)
+                {
+                    ret.AssignStringThenReadOnly(key);
+
+                    _keys[ID] = ret;
+                    return ret;
+                }
+                return null;
+            }
+#pragma warning restore CA1854 // Prefer the 'IDictionary.TryGetValue(TKey, out TValue)' method
+        }
+    }
+
+
     internal class Program
     {
         static bool NoneNullCall = false;
@@ -33,16 +96,28 @@ namespace ButlerTestBed
                 }
                 else
                 {
+
                     NoneNullCall = true;
-                    Console.Write("<Image Removed>");
+                    if (ContentPart.Kind == ButlerChatMessagePartKind.Image)
+                    {
+                        Console.Write("<Image Removed>");
+                    }
+                    if (ContentPart.Kind == ButlerChatMessagePartKind.Unspecified)
+                    {
+                        // nothing
+                    }
                 }
             }
             return true;
         }
         static async Task Main(string[] args)
         {
+            if (args.Length == 0)
+            {
+                Console.WriteLine("WARNING: No vault file passed. Unable to proceed");
+            }
           
-            ButlerSDK.ApiKeyMgr.WindowsVault.WindowsVault  DevBuild = new();
+            TestingFileApiKeyMgr DevBuild = new();
             ButlerSDK.Providers.OpenAI.ButlerOpenAiProvider OpenAi;
             //            var Llama = new Butler.Providers.LlamaProvider.Butler5ProviderLlama(new  DeepSeekV2PPr(), null);
             var Llama = new ButlerSDK.Providers.OpenAI.Ollama.OllamaOpenAiProvider(null);
@@ -51,11 +126,11 @@ namespace ButlerTestBed
             DevBuild.Authenticate(System.Reflection.Assembly.GetExecutingAssembly());
 
             // swap this to the vault you want to use
-            DevBuild.InitVault(@"C:\Users\Thoma\source\repos\ProjectJerry\ApiKeyVaultCreation\bin\Debug\net8.0-windows\Test.zip");
+            DevBuild.InitVault(@"C:\Users\Thoma\source\repos\ProjectJerry\ApiKeys\keys");
 
 
 
-     
+
             /*
             testme.AddSystemChatMessage(@"You are a helpful llm. You do not need to tell
 the user of your tool list, however if asked, it's ok. Do tell them if revealing your tool list,
@@ -103,7 +178,7 @@ that the tools may change depending on the chat as needed.
             //var target = "butler-8k:latest"; DO BOOT 
             //var target = "llama3.1:latest"; da boot
             //var target = "gpt-oss:20b";  WORKS
-            var target = "models/gemini-flash-latest"; //WORKS
+            var target = "models/gemini-flash-latest"; //USED TO WORK
             //var target = "gpt-4o"; //WORKS
             //var testme = new ButlerSDK.Butler(DevBuild, Llama, null, "models/gemini-flash-latest", "GEMINI.KEY");
             //var testme = new ButlerSDK.ButlerPostProcessing(DevBuild, Llama, null, target, "GEMINI.KEY", null, null); 
@@ -115,29 +190,31 @@ that the tools may change depending on the chat as needed.
             //var testme = new Butler5(DevBuild, Llama, null, "C:\\Users\\Thoma\\Downloads\\DeepSeek-Coder-V2-Lite-Instruct-Q8_0_L.gguf", null);
             //            testme.ChatModel = "gpt-4o-mini"; // TODO: Maybe let the provider offer a default mode? Cloud offers preset strings, local just supported files;
 
+            // important noteL: this pretty lets any tool in if all access
+            testme.ToolSurfaceScope = ButlerProtocolBase.ToolSecurity.ToolSurfaceScope.AllAccess;
 
             testme.AddTool(new ButlerTool_DeviceAPI_GetLocalDateTime(DevBuild));
-            testme.AddTool(new ButlerTool_RestAPI_GetPublicIP(DevBuild));
-            testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessNetworkAdaptor(DevBuild));
-            testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessIpConfig_FlushDNS(DevBuild));
-            testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessRenewDns(DevBuild));
-            testme.AddTool(new ButlerTool_LocalFile_Load(DevBuild));
-            testme.AddTool(new ButlerTool_AzureApi_GetCountryCode(DevBuild));
-            testme.AddTool(new ButlerTool_RestAPI_GetPublicHolidays(DevBuild));
-            testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessPing(DevBuild));
-            testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessTraceRoute(DevBuild));
+            //testme.AddTool(new ButlerTool_RestAPI_GetPublicIP(DevBuild));
+            //testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessNetworkAdaptor(DevBuild));
+            //testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessIpConfig_FlushDNS(DevBuild));
+            //testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessRenewDns(DevBuild));
+            //testme.AddTool(new ButlerTool_LocalFile_Load(DevBuild));
+            //testme.AddTool(new ButlerTool_AzureApi_GetCountryCode(DevBuild));
+            //testme.AddTool(new ButlerTool_RestAPI_GetPublicHolidays(DevBuild));
+            //testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessPing(DevBuild));
+            //testme.AddTool(new ButlerTool_DeviceAPI_ExternProcessTraceRoute(DevBuild));
             //testme.AddTool(new ButlerTool_Expirement_VisitUrl(DevBuild));
-            testme.AddTool(new ButlerTool_AzureApi_ResolveGPSAddress(DevBuild));
+            //testme.AddTool(new ButlerTool_AzureApi_ResolveGPSAddress(DevBuild));
             //testme.AddTool(new ButlerTool_ExtendedChatWindow(DevBuild));
             
 
              
-            testme.TheToolBox = new ButlerSDK.ToolSupport.DiscoverTool.ButlerTool_DiscoverTools(DevBuild);
-            testme.TheToolBox.AddDefaultButlerSources(DevBuild);
+            //testme.TheToolBox = new ButlerSDK.ToolSupport.DiscoverTool.ButlerTool_DiscoverTools(DevBuild);
+            //testme.TheToolBox.AddDefaultButlerSources(DevBuild);
             // this is just a way for it to can the running module (us) for tools
-            testme.TheToolBox.AddDefaultButlerSources(DevBuild);
-            testme.TheToolBox.AssignButler(testme);
-            testme.AddTool(testme.TheToolBox);
+            //testme.TheToolBox.AddDefaultButlerSources(DevBuild);
+            //testme.TheToolBox.AssignButler(testme);
+            //testme.AddTool(testme.TheToolBox);
             
 
 
@@ -157,10 +234,10 @@ that the tools may change depending on the chat as needed.
 
             
             testme.AddSystemMessage("You are an helpful ai and have a set of tools. Call them as needed to answer input.  Consider the user input as granting permission for you to call any tool to answer. Additionally, built your responses based off the ##personality## filter in the next message and the guiding of the user preferences.");
-           
-          
 
 
+
+            testme.AddUserMessage("Hello. What time is it");
 
 
 
@@ -180,7 +257,7 @@ that the tools may change depending on the chat as needed.
                 while (true)
                 {
 
-                    T = testme.StreamResponseAsync(HandlerChatMessageStreamHandler, new ToolPostProcessing(), false, 5, cancelMe: default);
+                    T = testme.StreamResponseAsync(HandlerChatMessageStreamHandler, null, false, 5, cancelMe: default);
                     await T;
                     if (T.IsCompleted == false)
                     {

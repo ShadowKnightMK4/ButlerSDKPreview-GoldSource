@@ -1,6 +1,10 @@
 ﻿
-# ButlerSDK - Preview 1 - component - ButlerSDK.Tools.Resolver
+# ButlerSDK - Preview 1 - component of ButlerSDK.
 * Github is here https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource
+* Recommend grabbing ButlerSDK.Core and its varients as needed.
+* You can also clone it from its Github.
+
+
 ---
 
 What this is:
@@ -9,10 +13,7 @@ ToolResolver is ButlerSDK's tool scheduler/ runner.
 
 
 
-Changes:
-This originally was part of ButlerSDK.Core. The interface was created/moved to ButlerSDK.Core.Abstractions (IButlerToolResolver) as of 	
-<Version>1.0.3-preview</Version> for that Nuget and Both ToolResolver and its interface as of <Version>1.0.3-preview</Version> are NO LONGER
-in ButlerSDK.Core.   Core brings this Nuget automatically as part of installing it though/
+
 ### 📄 License
 
 

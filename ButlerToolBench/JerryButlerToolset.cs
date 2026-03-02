@@ -150,6 +150,10 @@ namespace ButlerSDK.ToolSupport.Bench
                     {
                         throw new SecurityException($"Tool {tool.ToolName} has no attributes set. ScopeSurface passed not max requested. Rejecting it");
                     }
+                    else
+                    {
+                        Tools.Add(name, tool);
+                    }
                 }
 
 

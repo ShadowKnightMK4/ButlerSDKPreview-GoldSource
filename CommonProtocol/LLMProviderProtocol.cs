@@ -52,6 +52,14 @@ namespace ButlerLLMProviderPlatform.Protocol
     }
 
     /// <summary>
+    /// If you require something (SUCH AS A THOUGHT SIGNATURE) to be patched into a call post tool call, implement this and return true to have Butler5 call your routine with the tool call info and the chat info to let you patch in whatever you need. This is called after each tool call if implemented and you return true for it to be called.
+    /// </summary>
+    public interface IButlerLLMProvider_SpecificSpecificToolExecutionPostCall
+    {
+        public void HandlerToolExecuteRequestMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolCallMessage Item);
+        public void HandlerToolExecuteMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolResultMessage Item);
+    }
+    /// <summary>
     /// Optional to control Butler streaming action. If you don't implement it, default is treat as <see cref="IButlerLLMProvider.ToolProviderCallBehavior.StreamAccumulation"/>
     /// </summary>
     public interface IButlerLLMProviderToolRequests

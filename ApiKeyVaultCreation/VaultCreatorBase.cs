@@ -117,6 +117,54 @@ namespace ApiKeyVaultCreation
                 Entry.Write(Encoding.Unicode.GetBytes(VersionString));
             }
         }
+
+        public void SaveVault(Stream Target, SaveMode Mode, VersionData? Data=null)
+        {
+            Arch?.Dispose();
+            Arch = null;
+            if (Mode == SaveMode.PassThru)
+            {
+                inmem.Position = 0;
+               
+                {
+
+                    inmem.Position = 0;
+                    inmem.Flush();
+                    inmem.Position = 0;
+                    inmem.CopyTo(Target);
+                    Target.Flush();
+                }
+            }
+            var Scope = (DataProtectionScope)int.MaxValue;
+            if (Mode.HasFlag(SaveMode.EncryptToLocalMachine))
+            {
+                Scope = DataProtectionScope.LocalMachine;
+            }
+            else
+            {
+                if (Mode.HasFlag(SaveMode.EncryptToLocalUser))
+                {
+                    Scope = DataProtectionScope.CurrentUser;
+                }
+            }
+            if (Scope == (DataProtectionScope)int.MaxValue)
+            {
+                throw new InvalidOperationException("Unspecified DPAPI Choice");
+            }
+            inmem.Position = 0;
+
+            var Bytes = inmem.ToArray();
+            Bytes = ProtectedData.Protect(Bytes, null, Scope);
+
+
+
+            { 
+
+                Target.Write(Bytes);
+            }
+
+
+        }
         public void SaveVaultToDisk(string location, SaveMode Mode, VersionData? VerData = null)
         {
             Arch?.Dispose();
@@ -134,19 +182,32 @@ namespace ApiKeyVaultCreation
                     Output.Flush();
                 }
             }
+            var Scope = (DataProtectionScope) int.MaxValue;
             if (Mode.HasFlag(SaveMode.EncryptToLocalMachine))
             {
-
-                inmem.Position = 0;
+                Scope = DataProtectionScope.LocalMachine;
+            }
+            else
+            {
+                if (Mode.HasFlag(SaveMode.EncryptToLocalUser))
+                {
+                    Scope = DataProtectionScope.CurrentUser;
+                }
+            }
+            if (Scope == (DataProtectionScope)int.MaxValue)
+            {
+                throw new InvalidOperationException("Unspecified DPAPI Choice");
+            }
+            inmem.Position = 0;
 
                 var Bytes = inmem.ToArray();
-                Bytes = ProtectedData.Protect(Bytes, null, DataProtectionScope.LocalMachine);
+                Bytes = ProtectedData.Protect(Bytes, null, Scope);
                 using (var Output = File.OpenWrite(location))
                 {
 
                     Output.Write(Bytes);
                 }
-            }
+            
         }
 
  

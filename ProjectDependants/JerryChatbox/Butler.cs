@@ -65,7 +65,7 @@ namespace ButlerSDK.Core
             this.PreProcessing = PPR;
             if (this.ToolExec is null)
             {
-                this.ToolExec = ToolResolver.CreateSchedule("Default");
+                this.ToolExec = ToolResolver.CreateSchedule(Provider, "Default");
                 this.ToolExecType = typeof(ToolResolver);
             }
         }
@@ -89,7 +89,7 @@ namespace ButlerSDK.Core
 
             if ( (ToolResolveHandler is null) || (ToolResolveHandler == default))
             {
-                this.ToolExec = ToolResolver.CreateSchedule("Default");
+                this.ToolExec = ToolResolver.CreateSchedule(Provider, "Default");
                 this.ToolExecType = typeof(ToolResolver);
             }
             else
@@ -149,14 +149,14 @@ namespace ButlerSDK.Core
             if (Resolver is null)
             {
                 LogTap?.LogString("Created the Tool Resolver object");
-                MethodInfo? CreateMe = this.ToolExecType.GetMethod("CreateSchedule");
+                MethodInfo? CreateMe = this.ToolExecType.GetMethod("CreateSchedule", new Type[] { typeof(IButlerLLMProvider), typeof(string) });
                 if (CreateMe == null)
                 {
                     throw new InvalidOperationException($"Unable to get create schedule method dispite matching data type. Check if it exists as STATIC and if the type used {ToolExecType.Name} has it.");
                 }
                 else
                 {
-                    Resolver = (IButlerToolResolver)CreateMe.Invoke(ToolExec, new object[] { "ResolveMe" } );
+                    Resolver = (IButlerToolResolver?)CreateMe.Invoke(ToolExec, new object[] { Provider,  "ResolveMe" } );
                     if (Resolver is null)
                     {
                         throw new InvalidOperationException($"Fatal error: Unable to create tool scheduler clas (it returned null on create). Class name{ToolExecType.Name}");
@@ -674,7 +674,17 @@ namespace ButlerSDK.Core
                 catch (Exception ex)
                 {
                     // marker comment "NetworkRecoveryCODE1235" to help people know where the recover logic is at
-
+#if DEBUG
+                    DebugTap?.LogString("____EXCEPTION TRIGGER DATA______\r\n");
+                    Exception? Train = ex;
+                    int level = 0;
+                    while (Train is not null)
+                    {
+                        DebugTap?.LogString($"Level {level} exception. Msg= {Train.Message}\r\n");
+                        Train = Train.InnerException;
+                    }
+                    DebugTap?.LogString($"Total {level} exceptions walked\r\n");
+#endif
 
 
                     int SleepTime = 0;
@@ -704,24 +714,29 @@ namespace ButlerSDK.Core
                             }
 
                         }
-                    }
 
-                    if ( (NetworkErrorStateHandling == NetworkErrorAction.SleepAction))
+                        if ((NetworkErrorStateHandling == NetworkErrorAction.SleepAction))
+                        {
+                            if (CurrentNetworkAttempts < NetworkErrorMaxRetries)
+                            {
+                                NetworkErrorStateHandling++;
+                                LogTap?.LogString($"Attempting recoverable C# exception in mid ai turn. Used {CurrentNetworkAttempts} out of a max of {NetworkErrorMaxRetries} so far");
+                                await Task.Delay(SleepTime, cancelMe);
+                                goto ProviderErrorHandlerMark;
+                            }
+                            else
+                            {
+                                LogTap?.LogString($"Provider indicated C# exception recoverable BUT we're out of recovery attempts. Currently at {CurrentNetworkAttempts} out of a max of {NetworkErrorStateHandling} so are. Passing exception up the chain");
+                                throw;
+                            }
+
+                        }
+                    }
+                    else
                     {
-                        if ( CurrentNetworkAttempts < NetworkErrorMaxRetries)
-                        {
-                            NetworkErrorStateHandling++;
-                            LogTap?.LogString($"Attempting recoverable C# exception in mid ai turn. Used {CurrentNetworkAttempts} out of a max of {NetworkErrorMaxRetries} so far");
-                            await Task.Delay(SleepTime, cancelMe);
-                            goto ProviderErrorHandlerMark;
-                        }
-                        else
-                        {
-                            LogTap?.LogString($"Provider indicated C# exception recoverable BUT we're out of recovery attempts. Currently at {CurrentNetworkAttempts} out of a max of {NetworkErrorStateHandling} so are. Passing exception up the chain");
-                            throw;
-                        }
-
+                        throw;
                     }
+                    
                     
                 }
 
@@ -739,7 +754,7 @@ namespace ButlerSDK.Core
                                 LogTap?.LogString($"EOS says OK. Butler is discarding temporary messages. If not a tool call turn, LLM turn is over\r\n");
                                 //this.ChatCollection.RemoveTemporaryMessages();
                                 _HandleRemovingTemporaryMessages(this._ChatCollection);
-                                if (FinishReason == ButlerChatFinishReason.ToolCalls)
+                                if ( (FinishReason == ButlerChatFinishReason.ToolCalls) || (ToolTriggered))
                                 {
 
                                     TurnOver = false;
@@ -874,7 +889,7 @@ namespace ButlerSDK.Core
                     if ((Msg.Content is null) || (Msg.Content.Count == 0) || (string.IsNullOrWhiteSpace(Msg.GetCombinedText())))
                     {
 
-                        if (FinishReason == ButlerChatFinishReason.ToolCalls)
+                        if ( (FinishReason == ButlerChatFinishReason.ToolCalls) || (ToolTriggered))
                         {
                             LogTap?.LogString("Turn over via tool call per LLM. Results added to list earlier. Turn is NOT OVER");
                             TurnOver = false;

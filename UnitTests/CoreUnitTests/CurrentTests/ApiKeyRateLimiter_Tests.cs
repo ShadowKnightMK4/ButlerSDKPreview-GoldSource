@@ -4,6 +4,49 @@ using ButlerSDK;
 namespace UnitTests.CurrentTests
 {
     [TestClass]
+    public class ApiKeyExceptionTests
+    {
+        [TestMethod]
+        public void CreateServiceNonExistant_ByString()
+        {
+            var test_string = "Non Existing service";
+            var testme = new ApiKeyRateLimiter.ServiceNonExistentException(test_string);
+
+            Assert.AreEqual(test_string, testme.Message);
+        }
+
+        [TestMethod]
+        public void CreateServiceNonExistant_ByString_HasInner()
+        {
+            var test_string = "Non Existing service";
+            var Inner = new AggregateException();
+            var testme = new ApiKeyRateLimiter.ServiceNonExistentException(test_string, Inner);
+
+            Assert.AreEqual(test_string, testme.Message);
+            Assert.AreEqual(Inner, testme.InnerException);
+        }
+
+        [TestMethod]
+        public void CreateOverBudgetException_ByString()
+        {
+            var test_string = "Out of budget";
+            var testme = new ApiKeyRateLimiter.OverBudgetException(test_string);
+
+            Assert.AreEqual(test_string, testme.Message);
+        }
+
+        [TestMethod]
+        public void CreateOverBudgetExceptionByString_HasInner()
+        {
+            var test_string = "Out of budget";
+            var Inner = new AggregateException();
+            var testme = new ApiKeyRateLimiter.OverBudgetException(test_string, Inner);
+
+            Assert.AreEqual(test_string, testme.Message);
+            Assert.AreEqual(Inner, testme.InnerException);
+        }
+    }
+    [TestClass]
     public class ApiKeyRateLimiter_Tests
     {
         /// <summary>
@@ -14,6 +57,103 @@ namespace UnitTests.CurrentTests
         {
             Assert.IsNotNull(new ApiKeyRateLimiter());
         }
+
+        [TestMethod]
+        public void AssignNewServiceLimit_NonExistService_ThrowsException()
+        {
+            ApiKeyRateLimiter Test = new();
+            Assert.ThrowsException<ApiKeyRateLimiter.ServiceNonExistentException>(() => { Test.AssignNewServiceLimit("DOESNOTEXSIST", 2616); }); ;
+        }
+
+        [TestMethod]
+        public void GetServiceLimit_NonExistService_ThrowsException()
+        {
+            ApiKeyRateLimiter Test = new();
+            Assert.ThrowsException<ApiKeyRateLimiter.ServiceNonExistentException>(() => { var _ = Test.GetServiceLimit("DOESNOTEXIST"); }); ;
+        }
+
+        [TestMethod]
+        public void GetServiceInventory_NonExistService_ThrowsException()
+        {
+            ApiKeyRateLimiter Test = new();
+            Assert.ThrowsException<ApiKeyRateLimiter.ServiceNonExistentException>(() => { var _ = Test.GetServiceInventory("DOESNOTEXIST"); }); ;
+        }
+
+
+        [TestMethod]
+        public void AssignNewCost_NonExistService_ThrowsException()
+        {
+            ApiKeyRateLimiter Test = new();
+            Assert.ThrowsException<ApiKeyRateLimiter.ServiceNonExistentException>(() => { Test.AssignNewCost("DOESNOTEXIST", 12); }); ;
+        }
+
+
+
+        [TestMethod]
+        public void GetCurrentCost_NonExistService_ThrowsException()
+        {
+            ApiKeyRateLimiter Test = new();
+            Assert.ThrowsException<ApiKeyRateLimiter.ServiceNonExistentException>(() => { var _ = Test.GetCurrentCost("DOESNOTEXIST"); }); ;
+        }
+
+
+        [TestMethod]
+        public void ResetServiceLimit_NonExistService_ThrowsException()
+        {
+            ApiKeyRateLimiter Test = new();
+            Assert.ThrowsException<ApiKeyRateLimiter.ServiceNonExistentException>(() => { Test.ResetServiceLimit("DOESNOTEXIST"); }); ;
+        }
+
+
+        [TestMethod]
+        public void CheckForCallPermission_NonExistService_ThrowsException()
+        {
+            ApiKeyRateLimiter Test = new();
+            Assert.ThrowsException<ApiKeyRateLimiter.ServiceNonExistentException>(() => { var _ = Test.CheckForCallPermission("DOESNOTEXIST",215); }); ;
+        }
+
+        [TestMethod]
+        public void RemoveService_NonExistService_PanicIsTrue_ThrowsException()
+        {
+            ApiKeyRateLimiter Test = new();
+            Assert.ThrowsException<ApiKeyRateLimiter.ServiceNonExistentException>(() => { Test.RemoveService("DOESNOTEXIST", true); }); ;
+        }
+
+        [TestMethod]
+        public void CheckForCallPermission_CostZero_AlwaysAllowed()
+        {
+            ApiKeyRateLimiter Test = new();
+            Test.AddService("TEST", 2000, 100, 100, ButlerApiLimitType.PerCall, false);
+            Assert.IsTrue(Test.CheckForCallPermission("TEST", 0));
+        }
+
+        [TestMethod]
+        public void CheckForCallPermission_CostNotZero_NoLimitType_AlwaysAllowed()
+        {
+            ApiKeyRateLimiter Test = new();
+            Test.AddService("TEST", 2000, 100, 100, ButlerApiLimitType.none, false);
+            Assert.IsTrue(Test.CheckForCallPermission("TEST", 125));
+        }
+
+
+        [TestMethod]
+        public void RemoveService_NonExistService_PanicIsFalse_DoesNotThrow()
+        {
+            ApiKeyRateLimiter Test = new();
+            {
+                Test.RemoveService("DOESNOTEXIST", false);
+            }
+        }
+
+
+        [TestMethod]
+        public void ChargeService_NonExistService_ThrowsException()
+        {
+            ApiKeyRateLimiter Test = new();
+            Assert.ThrowsException<ApiKeyRateLimiter.ServiceNonExistentException>(() => { Test.ChargeService("DOESNOTEXIST",215); }); ;
+        }
+
+
 
         /// <summary>
         /// Can we add a service, it doesn't go boom and test if it exists and count = 1

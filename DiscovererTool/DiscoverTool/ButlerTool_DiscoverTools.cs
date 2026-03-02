@@ -1,25 +1,11 @@
-﻿using ButlerSDK.ApiKeyMgr.Contract;
-using ButlerLLMProviderPlatform.DataTypes;
+﻿using ButlerBaseInternal;
+using ButlerSDK.ApiKeyMgr.Contract;
+using ButlerSDK.Core;
+using ButlerSDK.ToolSupport.Bench;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net.Http.Headers;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using ButlerSDK;
-using ButlerSDK.ToolSupport;
-using System.Security;
-using ButlerSDK.ToolSupport.Bench;
-using ButlerSDK.Core;
-using ButlerBaseInternal;
 
 
 namespace ButlerSDK.ToolSupport.DiscoverTool
@@ -28,9 +14,9 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
     
 
     /// <summary>
-    /// The default implementation of the <see cref="ButlerTool_DiscoverResource"/> that <see cref="ButlerTool_DiscoverTools"/> uses. It'll scan the loaded assemblies for any <see cref="IButlerToolBaseInterface"/>, add them to its kit if  <see cref="ButlerTool_DiscoverAttributes"/> don't forbid it and let the butler pick as needed
+    /// The default implementation of the <see cref="IButlerTool_DiscoverResource"/> that <see cref="ButlerTool_DiscoverTools"/> uses. It'll scan the loaded assemblies for any <see cref="IButlerToolBaseInterface"/>, add them to its kit if  <see cref="ButlerTool_DiscoverAttributes"/> don't forbid it and let the butler pick as needed
     /// </summary>
-    public class DefaultButlerTool_DiscoverResource : ButlerTool_DiscoverResource
+    public class DefaultButlerTool_DiscoverResource : IButlerTool_DiscoverResource
     {
         readonly List<IButlerToolBaseInterface> ToolCollection = [];
 
@@ -148,7 +134,7 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
     /// <summary>
     /// This is a special exception. To use with <see cref="Butler4"/>, you'll need to assign it to both <see cref="Butler4."/>
     /// </summary>
-    public class ButlerTool_DiscoverTools : ButlerSystemToolBase,  ButlerTool_Discoverer
+    public class ButlerTool_DiscoverTools : ButlerSystemToolBase,  IButlerTool_Discoverer
     {
 
         public const string SearchModeName = "Search";
@@ -157,14 +143,14 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
         /// <summary>
         /// the active toolbox we use.
         /// </summary>
-        ButlerToolBench? toolbox;
+        IButlerToolBench? toolbox;
         /// <summary>
         /// The list of discover sources we scan/use/
         /// </summary>
-        List<ButlerTool_DiscoverResource> toolCollectionSource = [];
+        List<IButlerTool_DiscoverResource> toolCollectionSource = [];
 
 
-        public ButlerTool_DiscoverTools(IButlerVaultKeyCollection KeyHandler): base(KeyHandler)
+        public ButlerTool_DiscoverTools(IButlerVaultKeyCollection? KeyHandler): base(KeyHandler)
         {
             //this.KeyHandler = KeyHandler;
         }
@@ -541,7 +527,7 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
         /// Assign the toolbox we're working with with this tool instance
         /// </summary>
         /// <param name="toolBox"></param>
-        public void AssignToolBox(ButlerToolBench toolBox)
+        public void AssignToolBox(IButlerToolBench toolBox)
         {
             toolbox = toolBox;
         }
@@ -551,7 +537,7 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
         /// </summary>
         /// <param name="toolBox"></param>
         /// <returns></returns>
-        public ButlerToolBench? GetToolBox()
+        public IButlerToolBench? GetToolBox()
         {
             return toolbox ;
         }
@@ -570,7 +556,7 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
         /// </summary>
         /// <param name="e"></param>
         /// <remarks>With discoverer implementing  <see cref="Initialize"/> you'll get your sources initialize called on first use. Any more beyond that, you'll need to manual call initialize if needed.</remarks>
-        public void AddButlerToolSource(ButlerTool_DiscoverResource e, IButlerVaultKeyCollection KeyHandler)
+        public void AddButlerToolSource(IButlerTool_DiscoverResource e, IButlerVaultKeyCollection KeyHandler)
         {
             toolCollectionSource.Add(e);
         }
@@ -593,15 +579,16 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
             AddButlerToolSource(new DefaultButlerTool_DiscoverResource(), KeyHandler);
         }
 
-        public void AssignButler(ButlerBase Target)
+        public void AssignButler(IButlerChatSession Target)
         {
             base.Jeeves = Target;
         }
 
-        public void AddButlerToolSource(ButlerTool_DiscoverResource e)
+        public void AddButlerToolSource(IButlerTool_DiscoverResource e)
         {
             toolCollectionSource.Add(e);
         }
 
+     
     }
 }

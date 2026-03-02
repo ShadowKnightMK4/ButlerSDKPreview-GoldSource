@@ -1,16 +1,18 @@
-﻿using ButlerLLMProviderPlatform.Protocol;
-using System.Diagnostics;
-using System.Security;
+﻿using ButlerBaseInternal;
+using ButlerLLMProviderPlatform.Protocol;
+using ButlerProtocolBase.ToolSecurity;
+using ButlerSDK.ApiKeyMgr.Contract;
+using ButlerSDK.ButlerPostProcessing;
+using ButlerSDK.Debugging;
+using ButlerSDK.ToolSupport;
+using ButlerSDK.ToolSupport.Bench;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
-using System.Diagnostics.CodeAnalysis;
 using ButlerToolContracts.DataTypes;
-using ButlerSDK.Debugging;
-using ButlerSDK.ApiKeyMgr.Contract;
-using ButlerSDK.ToolSupport.Bench;
-using ButlerBaseInternal;
-using ButlerSDK.ToolSupport;
-using ButlerProtocolBase.ToolSecurity;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Security;
+using System.Xml.Linq;
 
 
 
@@ -25,13 +27,27 @@ namespace ButlerSDK.Core
     /// </summary>
     public abstract class ButlerBase: IButlerChatSession
     {
+        /// <summary>
+        /// The Required tool scope. <see cref="AddTool(IButlerToolBaseInterface)"/> and by ext <see cref="AddSystemTool(IButlerSystemToolInterface)"/> will reject tools added that request flags not set here. 
+        /// </summary>
+        /// <remarks>Implementation detail: <see cref="ToolSet"/> and the default <see cref="ButlerToolBench"/> are were that part lives</remarks>
         protected ToolSurfaceScope _MinToolScope = ToolSurfaceScope.StandardReading;
 
         /// <summary>
         /// The ToolSurfaceScope acts as as gatekeeper. Tool indicates at compile time what it reports to do.
         /// </summary>
-        /// <remarks>Do be accurate. a future roadmap is on the horizon where I aim for these to be enforced.</remarks>
-        public ToolSurfaceScope ToolSurfaceScope => _MinToolScope;
+        /// <remarks>Do be accurate. a future roadmap is on the horizon where I aim for these to be enforced.. Note it should be inforced at <see cref="ButlerToolBench"/> / <see cref="IButlerToolBench"/> level</remarks>
+        public ToolSurfaceScope ToolSurfaceScope
+        {
+            get
+            {
+                return _MinToolScope;
+            }
+            set
+            {
+                _MinToolScope = value;
+            }
+        }
         
         #region Required Interface/ dependent classes
         /// <summary>
@@ -74,6 +90,9 @@ namespace ButlerSDK.Core
             }
         }
 
+        /// <summary>
+        /// backing variable for <see cref="ChatModel"/>
+        /// </summary>
         internal string? ChatModel_Internal = null;
 
 
@@ -238,17 +257,27 @@ namespace ButlerSDK.Core
         /// When using that tool, be sure to set it to *here* and also <see cref="AddTool(IButlerToolBaseInterface)"/>. Doing so will hook the LLM up to let it discover tools provided its live atm tools
         /// </summary>
 
-        public ButlerTool_Discoverer? TheToolBox = null;
+        public IButlerTool_Discoverer? TheToolBox = null;
        
+        /// <summary>
+        /// The <see cref="IButlerLLMProvider"/> specific class for holding <see cref="ButlerChatCompletionOptions"/>
+        /// </summary>
         public IButlerChatCompletionOptions MainOptions { get => _MainOptions; }
+        /// <summary>
+        /// Backing baraible for <see cref="MainOptions"/>
+        /// </summary>
         IButlerChatCompletionOptions _MainOptions;
-        protected IButlerToolBench ToolSet = new ButlerToolBench();
+        protected IButlerToolBench ToolSet = (IButlerToolBench) new ButlerToolBench();
+
+        /// <summary>
+        /// We disposed?
+        /// </summary>
         private bool disposedValue;
 
         /// <summary>
         /// Default true. What this does after each changing call to add or remove a tool, redo the list we send to open ai.
-        /// 
         /// </summary>
+        /// <remarks>If you have multi tools to add and readjust set this to false and then true when done. true means after each add <see cref="RecalcTools"/> is called</remarks>
         public bool AutoUpdateTooList { get; set; } = true;
         
 
@@ -258,6 +287,7 @@ namespace ButlerSDK.Core
         /// <summary>
         /// Normally will not need to call this. updating the tool list triggers a call to this if <see cref="AutoUpdateTooList"/> is true. This will update the LLM specific tool  class that the tools present as.
         /// </summary>
+        /// <remarks>If a <see cref="IButlerToolPromptInjection"/> tool is added BUT the underyling is *not* <see cref="IButlerTrenchImplementation"/>, that's when <see cref="TrenchSupport"/> setting comes into play</remarks>
         public void RecalcTools()
         {
             IButlerTrenchImplementation? Trenchy = _ChatCollection as IButlerTrenchImplementation;
@@ -319,6 +349,9 @@ namespace ButlerSDK.Core
         }
 
 
+        /// <summary>
+        /// backing variable for <see cref="TrenchSupport"/>
+        /// </summary>
         private TrenchSupportFallback _TrenchFallback = TrenchSupportFallback.Throw;
 
         /// <summary>
@@ -339,13 +372,14 @@ namespace ButlerSDK.Core
         /// <summary>
         /// Placed in <see cref="AddTool(IButlerToolBaseInterface)"/>
         /// </summary>
-        /// <param name="x"></param>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <param name="x">tool to check</param>
+        /// <exception cref="InvalidOperationException">conditionally thrown depending on <see cref="TrenchSupport"/> and it tool is <see cref="IButlerToolPromptInjection"/> tool</exception>
         internal void ValidateTrenchyToolNeedAndNotify(IButlerToolBaseInterface x)
         {
             bool IsTrenchy = this.ChatCollection is IButlerTrenchImplementation TestThis;
             if (IsTrenchy)
             {
+                // we're full power, skip the rest
                 return;
             }
             ArgumentNullException.ThrowIfNull(x);
@@ -402,15 +436,18 @@ namespace ButlerSDK.Core
         
         #endregion
         /// <summary>
-        /// IF set, invalid names will not trigger an exception by butler4, you may get an exception triggered via OpenAI .net sdk if your name doesn't follow it's converting of Strictly A-z range, with 0-9 in there. The only allowed symbol is _ and nothing else, not even spaces in the tool name.
+        /// If set, invalid names will not trigger an exception by butler4, you may get an exception triggered via OpenAI .net sdk / gemini if your name doesn't follow it's converting of Strictly A-z range, with 0-9 in there. The only allowed symbol is _ and nothing else, not even spaces in the tool name.
         /// </summary>
+        /// <remarks>For the default <see cref="ButlerToolBench"/>, see <see cref="ButlerToolBench.ValidateToolName(IButlerToolBaseInterface, bool)"/></remarks>
         public bool AllowUnvalidedToolNames { get; set; }
 
 
         /// <summary>
         /// add a tool following the interface
         /// </summary>
-        /// <param name="tool"></param>
+        /// <param name="tool">tool to add to the <see cref="MainOptions"/></param>
+        /// <exception cref="ArgumentNullException">Thrown if passed tool is null</exception>
+        /// <remarks>If you pass <see cref="IButlerSystemToolInterface"/>, this routine will call <see cref="AddSystemTool(IButlerSystemToolInterface)"/> instead</remarks>
         public void AddTool(IButlerToolBaseInterface tool)
         {
             
@@ -442,6 +479,12 @@ namespace ButlerSDK.Core
         }
 
         
+        /// <summary>
+        /// Add a system tool and pair both this <see cref="IButlerChatSession"/> and its <see cref="IButlerToolBench"/>
+        /// </summary>
+        /// <param name="systemTool">the system tool to add</param>
+        /// <exception cref="ArgumentNullException">Triggers if the passed tool is null</exception>
+        /// <remarks>The main thing a system tool gets is a reference to the supported butler and tool kit - essentially root or kernel level access to butler instance</remarks>
         public void AddSystemTool(IButlerSystemToolInterface systemTool)
         {
             ArgumentNullException.ThrowIfNull(systemTool);
@@ -460,43 +503,49 @@ namespace ButlerSDK.Core
         /// Search for a tool by name. returns null if not there.
         /// </summary>
         /// <param name="Name">name to search for</param>
-        /// <returns>null if not found or the tool as a IButlerToolBaseInterface</returns>
+        /// <returns>null if not found or the tool as a <see cref="IButlerToolBaseInterface"/></returns>
+        /// <exception cref="ArgumentNullException">This triggers if passed string is null</exception>
+        /// <exception cref="ArgumentException">Can trigger if string is empty or white space.</exception>
         public IButlerToolBaseInterface? SearchTool(string Name)
         {
-            ArgumentNullException.ThrowIfNull(Name);
+            ArgumentException.ThrowIfNullOrWhiteSpace(Name);
             return ToolSet.GetTool(Name);
         }
 
         /// <summary>
-        /// Does this tool exist
+        /// Does this tool exist?
         /// </summary>
-        /// <param name="Name"></param>
-        /// <returns></returns>
+        /// <param name="Name">name of the tool to check</param>
+        /// <returns>true if it does and false if not</returns>
+        /// <exception cref="ArgumentNullException">This triggers if passed string is null</exception>
+        /// <exception cref="ArgumentException">Can trigger if string is empty or white space.</exception>
         public bool ExistsTool(string Name)
         {
-            ArgumentNullException.ThrowIfNull(Name);
+            ArgumentException.ThrowIfNullOrWhiteSpace(Name);
             return ToolSet.ExistsTool(Name);
         }
         #endregion
 
         #region deleting tools
         /// <summary>
-        /// Delete this tool from our list and trigger cleanup if indicated.
+        /// Delete this tool from our list and trigger cleanup if indicated while optionally not removing system tools
         /// </summary>
         /// <param name="name">name of tool</param>
         /// <param name="TriggerCleanup">if true, triggers WindDown and Dispose if implemented</param>
         /// <param name="SkipSystemTools">If Set, tools that are of interface type <see cref="IButlerSystemToolInterface"/> are skipped</param>
         /// <remarks>if you're sharing tool class instances, you may want to set trigger to false BUT the default is true for ease of use</remarks>
-        public void DeleteTool(string name, bool TriggerCleanup = true, bool SkipSystemTools = true)
+        /// <exception cref="ArgumentNullException">This triggers if passed string is null</exception>
+        /// <exception cref="ArgumentException">Can trigger if string is empty or white space.</exception>
+        public void DeleteTool(string Name, bool TriggerCleanup = true, bool SkipSystemTools = true)
         {
-            ArgumentNullException.ThrowIfNull(name);
-            ToolSet.RemoveTool(name, TriggerCleanup, SkipSystemTools);
+            ArgumentException.ThrowIfNullOrWhiteSpace(Name);
+            ToolSet.RemoveTool(Name, TriggerCleanup, SkipSystemTools);
             if (AutoUpdateTooList) RecalcTools();
         }
 
 
         /// <summary>
-        /// delate all tools
+        /// delate all tools, default triggering clean up and skipping  system tools.
         /// </summary>
         /// <param name="TriggerCleanup">if true, triggers WindDown and Dispose if implemented</param>
         /// <param name="SkipSystemTools">If Set, tools that are of interface type <see cref="IButlerSystemToolInterface"/> are skipped</param>
@@ -509,15 +558,16 @@ namespace ButlerSDK.Core
 
         #region Replace Tool
         /// <summary>
-        /// way to functionally update a tool in list with new one
+        /// Change a tool to a new instance.
         /// </summary>
-        /// <param name="name">name of the tool to replace</param>
+        /// <param name="Name">name of the tool to replace</param>
         /// <param name="NewOne">The tool to swap it out with (or tool instance)</param>
         /// <param name="TriggerCleanup">Trigger cleanup on the old tool?</param>
-        public void UpdateTool(string name, IButlerToolBaseInterface NewOne, bool TriggerCleanup = true)
+        /// <remarks>Behind the seens this currently deletes the old tool and adds the new instance</remarks>
+        public void UpdateTool(string Name, IButlerToolBaseInterface NewOne, bool TriggerCleanup = true)
         {
-            ArgumentNullException.ThrowIfNull(name);
-            DeleteTool(name, TriggerCleanup);
+            ArgumentException.ThrowIfNullOrWhiteSpace(Name);
+            DeleteTool(Name, TriggerCleanup);
             AddTool(NewOne);
         }
         #endregion
@@ -527,16 +577,23 @@ namespace ButlerSDK.Core
         /// <summary>
         /// This delegate is call back for <see cref="ButlerBase.StreamResponse(ChatMessageStreamHandler, bool)"/> to let you get content as it arrives
         /// </summary>
-        /// <param name="content"></param>
-        /// <param name="msg"></param>
-        /// <returns></returns>
+        /// <param name="content">the next packet of streamed data for you to look at and potentially deal with</param>
+        /// <param name="msg">the current message list</param>
+        /// <returns>You should return true to keep going and false if you want o bail out</returns>
         public delegate bool ChatMessageStreamHandler(ButlerStreamingChatCompletionUpdate content, IList<ButlerChatMessage> msg);
 
 
 
+        /// <summary>
+        /// Your subclass should provide your own or in the case of <see cref="Butler"/> in the code does an async flavor and forwards a call here to that.
+        /// </summary>
+        /// <param name="Handler"></param>
+        /// <param name="SkipAddingLLMResponse"></param>
+        /// <returns></returns>
         public abstract ButlerChatFinishReason? StreamResponse(ChatMessageStreamHandler Handler, bool SkipAddingLLMResponse = false);
 
 
+        
         #region How butler does chat for stuff like Maui
         //public readonly FilterdButlerChatCollection ChatCollection = new();
         //public readonly TrenchCoatChatCollection ChatCollection = new();
@@ -585,6 +642,7 @@ namespace ButlerSDK.Core
                 {
                     this.DeleteAllTools(true);
                     this.ToolSet.Dispose();
+                    if (Chat is IDisposable disposable) disposable.Dispose();
                     this.Chat = null;
                     this.ChatFactory = null!;
                     this.Keys.Dispose();

@@ -40,7 +40,7 @@ namespace SecureStringTests
         }
 
         [TestMethod]
-        public void SecureStringExt_AssignString_ByStream_Ok()
+        public void SecureStringExt_AssignString_ByStream_WholeStream()
         {
             using (SecureString Demo = new())
             {
@@ -57,6 +57,27 @@ namespace SecureStringTests
                 Assert.AreEqual(DemoString, Demo.DecryptString());
             }
             
+        }
+
+        [TestMethod]
+        public void SecureStringExt_AssignString_ByStream_SeverCharRead()
+        {
+            string slice = DemoString.Substring(0, 7);
+            using (SecureString Demo = new())
+            {
+                using (MemoryStream DemoData = new())
+                {
+                    var Dat = Encoding.UTF8.GetBytes(DemoString);
+                    DemoData.Position = 0;
+                    DemoData.Write(Dat);
+                    DemoData.Position = 0;
+                    Demo.AssignStringThenReadOnly(new StreamReader(DemoData), 7);
+                }
+                string decryp = Demo.DecryptString();
+                Assert.AreEqual(slice, decryp);
+                Assert.AreEqual(slice, Demo.DecryptString());
+            }
+
         }
 
         [TestMethod]

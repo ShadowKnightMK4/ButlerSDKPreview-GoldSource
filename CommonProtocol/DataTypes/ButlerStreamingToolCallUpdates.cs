@@ -28,5 +28,7 @@ namespace ButlerToolContract.DataTypes
         public int Index;
         public string Kind;
         public string ToolCallid;
+
+        public readonly Dictionary<string, string> ProviderSpecific = new();
     }
 }

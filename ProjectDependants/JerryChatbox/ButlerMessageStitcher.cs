@@ -1,5 +1,6 @@
 ﻿using ButlerToolContract.DataTypes;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ButlerSDK
 {
@@ -107,6 +108,60 @@ namespace ButlerSDK
                     BuildingMessage = NewMsg;
                     
 
+                }
+            }
+
+            if (Part.ContentUpdate is not null)
+            {
+                for (int i =0; i< Part.ContentUpdate.Count; i++)
+                {
+                    ButlerChatMessageContentPart SubPart = new();
+                    SubPart.Text = Part.ContentUpdate[i].Text;
+                    SubPart.MessageType = Part.ContentUpdate[i].MessageType;
+                    // dear future: this code is needing changing once supporting models that do non text
+                    SubPart.MessageType = ButlerChatMessageType.Text;
+                    foreach (string key in Part.ContentUpdate[i].ProviderSpecfic.Keys)
+                    {
+                        SubPart.ProviderSpecific[key] = Part.ContentUpdate[i].ProviderSpecfic[key];
+                    }
+
+                  
+  
+
+                    if (!string.IsNullOrEmpty(SubPart.Text))
+                    {
+                        if (BuildingMessage.Content.Count != 0)
+                        {
+                           BuildingMessage.Content[i].Text += SubPart.Text;
+                        }
+                        else
+                        {
+                            BuildingMessage.Content.Add(SubPart);
+             
+                        }
+                    }
+
+                    if (SubPart.MessageType != ButlerChatMessageType.Text)
+                    {
+                        switch (SubPart.MessageType)
+                        {
+                            case ButlerChatMessageType.Refusal:
+                                {
+                                    Part.ContentUpdate[i].MessageType = ButlerChatMessageType.Refusal;
+                                    break;
+                                }
+                            case ButlerChatMessageType.Unknown:
+                            case ButlerChatMessageType.File:
+                            case ButlerChatMessageType.Image:
+                            case ButlerChatMessageType.Audio:
+                                throw new NotImplementedException("Unsupported Gemini part type. While Gemini models support images/audio ect..., butler currently does not supprt any part type except text");
+                            default:
+                                throw new NotImplementedException("Unspecified message type");
+
+                        }
+                        
+                    }
+                  
                 }
             }
 

@@ -11,9 +11,9 @@ namespace ButlerSDK.ToolSupport
     public interface IButlerToolResolver 
     {
         /// <summary>
-        /// A provider assocated with this tool resollver, see - <see cref="IButlerLLMProvider_SpecificSpecificToolExecutionPostCall"/>
+        /// A provider assocated with this tool resollver, see - <see cref="IButlerLLMProvider_SpecificToolExecutionPostCall"/>
         /// </summary>
-        public IButlerLLMProvider Provider { get; set; }
+        public IButlerLLMProvider? Provider { get; set; }
         /// <summary>
         /// Create a schedule to execute a collection of tools independently.  Examines
         /// requires in the Tool's json and attempts to order to resolve in a single call
@@ -29,8 +29,16 @@ namespace ButlerSDK.ToolSupport
         public static abstract IButlerToolResolver CreateSchedule(string name);
 
 
+        /// <summary>
+        /// Returns true if pending Scheduled tools
+        /// </summary>
         public bool HasScheduledTools { get;  }
 
+        /// <summary>
+        /// Schedule a tool via json
+        /// </summary>
+        /// <param name="PossibleTool"></param>
+        /// <param name="ExceptionOnInvalid"></param>
         public void ScheduleTool(JsonDocument PossibleTool, bool ExceptionOnInvalid = true);
 
 
@@ -81,12 +89,24 @@ namespace ButlerSDK.ToolSupport
 
 
 
-        public void PlaceInChatLog(IList<ButlerChatMessage> Messages);
         /// <summary>
+        /// Place the tool messages into the chat log
+        /// </summary>
+        /// <param name="Messages">list to add messages too</param>
+        public void PlaceInChatLog(IList<ButlerChatMessage> Messages);
+
+        /// <summary>
+        /// Place the tool messages into the chat log and optionally marking them as temporary (do not persist after ai turn) if set
+        /// </summary>
+        /// <param name="Messages">list to add messages too</param>
+        /// <param name="MarkAsTemp">true to mark as temporary</param>
         public void PlaceInChatLog(IList<ButlerChatMessage> Messages, bool MarkAsTemp);
 
 
 
+        /// <summary>
+        /// How many scheduled tools?
+        /// </summary>
 
         public int ScheduledToolCount { get;  }
 

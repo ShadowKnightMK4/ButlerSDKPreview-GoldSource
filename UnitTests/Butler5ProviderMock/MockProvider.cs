@@ -96,12 +96,8 @@ namespace ButlerSDK.Providers.UnitTesting.MockProvider
 
         public new async IAsyncEnumerable<ButlerStreamingChatCompletionUpdate> CompleteChatStreamingAsync(IList<ButlerChatMessage> msg, IButlerChatCompletionOptions options, [EnumeratorCancellation] CancellationToken cancelMe = default)
         {
-            throw ExceptionToThrow;
-            foreach (ButlerStreamingChatCompletionUpdate MockPart in MockReplay)
-            {
-                yield return MockPart;
-            }
-            yield break;
+            yield return new ButlerStreamingChatCompletionUpdate();
+            throw ExceptionToThrow; 
         }
     }
     public class MockChatClient : IButlerChatClient

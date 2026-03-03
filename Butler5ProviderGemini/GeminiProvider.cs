@@ -1,6 +1,6 @@
 ﻿using ButlerLLMProviderPlatform.DataTypes;
 using ButlerLLMProviderPlatform.Protocol;
-using ButlerSDK.Providers.Gemini.Backup;
+using ButlerSDK.Providers.Gemini;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using GenerativeAI;
@@ -9,7 +9,6 @@ using SecureStringHelper;
 using System.Collections;
 #if DEBUG
 using System.Diagnostics;
-using System.Drawing;
 
 #endif
 using System.Runtime.CompilerServices;
@@ -109,7 +108,7 @@ public static class DebugSettings
         }
     }
 #endif
-    public class ButlerGeminiProvider : IButlerLLMProvider, IButlerChatCreationProvider, IButlerLLMProviderToolRequests, IButlerLLMProvider_SpecificSpecificToolExecutionPostCall
+    public class ButlerGeminiProvider : IButlerLLMProvider, IButlerChatCreationProvider, IButlerLLMProviderToolRequests, IButlerLLMProvider_SpecificToolExecutionPostCall
     {
         GenerativeAI.GoogleAi? api;
         /* has unit tests*/
@@ -193,7 +192,6 @@ public static class DebugSettings
             //func.Behavior = Behavior.BLOCKING; // Gemini Provider supports blocking only for now as a description.
             func.Description = butlerToolBase.ToolDescription;
 
-            JsonDocument? doc;
             try
             {
                 var args = JsonNode.Parse(butlerToolBase.GetToolJsonString());
@@ -319,7 +317,7 @@ public static class DebugSettings
         /// <summary>
         /// This maps to the thought signification that Gemini wants for content. It gets placed in <see cref="ButlerChatMessageContentPart.ProviderSpecific"/> if used. Should not *not* need Gemini specific, leave it alone
         /// </summary>
-        public const string GeminiThoughSigKey = "GenModelThinking";
+        public const string GeminiThoughSigKey = "GeminiModelThinking";
 
         internal static void GeminiToButlerThoughtStore(Part part, ButlerChatStreamingPart chatPart)
         {
@@ -680,9 +678,16 @@ public static class DebugSettings
                 CPart.FunctionCall = new();
                 CPart.FunctionCall.Name = CallMe.ToolName;
                 CPart.FunctionCall.Id = CallMe.Id;
-                CPart.FunctionCall.Args = JsonNode.Parse(CallMe.FunctionArguments);
+                if (!string.IsNullOrEmpty(CallMe.FunctionArguments))
+                {
+                    CPart.FunctionCall.Args = JsonNode.Parse(CallMe.FunctionArguments);
+                }
+                else
+                {
+                                   CPart.FunctionCall.Args = null;
+                }
 
-                ToolCall.Parts.Add(CPart);
+            ToolCall.Parts.Add(CPart);
             }
 
 
@@ -695,7 +700,27 @@ public static class DebugSettings
                 CPart.FunctionResponse.Id = CallMe.Id;
                 Dictionary<string, object> Results= new();
                 Results["Result"] = ReplyMe.GetCombinedText();
-                CPart.FunctionResponse.Response = JsonNode.Parse(  JsonSerializer.Serialize(Results)).Root;
+            try
+            {
+                var Doc = JsonSerializer.Serialize(Results);
+                if (Doc is not null)
+                {
+                    var Node = JsonNode.Parse(Doc);
+                    if (Node is not null)
+                    {
+                        CPart.FunctionResponse.Response = Node.Root;
+                    }
+                }
+                //CPart.FunctionResponse.Response = JsonNode.Parse(JsonSerializer.Serialize(Results)).Root;
+                if (CPart.FunctionResponse.Response is not null)
+                {
+                    throw new InvalidOperationException("Successful json parse BUT did not assign ok to response");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to parse tool result into Gemini expected format. Ensure the tool result is properly formed and that the Gemini provider can handle the output. Original error: {ex.Message}");
+            }
                 
                 ToolReply.Parts.Add(CPart);
             }
@@ -710,8 +735,7 @@ public static class DebugSettings
             Queue<ButlerChatMessage> ToolBuffer = new();
             List<ButlerChatMessage> SystemMessage = new();
             GenerateContentRequest request = new();
-            tool_seeker tool_seek = tool_seeker.offline;
-            string tool_id =null;
+            string? tool_id =null;
             ButlerChatMessageRole last_role =((ButlerChatMessageRole)(-1));
             for (int i = 0; i < Messages.Count; i++)
             {
@@ -725,8 +749,7 @@ public static class DebugSettings
                     }
                     case ButlerChatMessageRole.ToolCall:
                         {
-                            tool_seek = tool_seeker.foundcall;
-                            callcount++;
+                        callcount++;
                             if (Messages[i] is ButlerChatToolCallMessage CallMe)
                             {
                                 tool_id = CallMe.Id;
@@ -740,8 +763,7 @@ public static class DebugSettings
                         }
                     case ButlerChatMessageRole.ToolResult:
                         {
-                            tool_seek = tool_seeker.foundreply;
-                            replycount++;
+                        replycount++;
                             if (Messages[i] is ButlerChatToolResultMessage ReplyMe)
                             {
                                 if (string.Compare(ReplyMe.Id, tool_id) == 0)
@@ -850,6 +872,25 @@ public static class DebugSettings
                 request.SystemInstruction.AddText(stext);
             }
 
+        if (request.Contents is null)
+        {
+            request.Contents = new List<Content>();
+        }
+        if (request.Contents.Count == 0)
+        {
+            request.AddText("Hello");
+        }
+        else
+        {
+            // always have the 1st user message if the caller didn't state it.s
+            if (request.Contents[0].Role != TranslatorRole.TranslateToProvider(ButlerChatMessageRole.User))
+            {
+                var Dummy = new Content();
+                Dummy.AddText("Hello");
+                request.Contents.Insert(0, Dummy);
+                Dummy.Role = TranslatorRole.TranslateToProvider(ButlerChatMessageRole.User);
+            }
+        }
          TranslatorChatTools.TranslateTools(request, Options, GeminiProvider);
             
             return request;
@@ -1105,8 +1146,29 @@ public static class DebugSettings
                 {
                     if (P.FunctionCall is not null)
                     {
-                        var ToolHit = new ButlerStreamingToolCallUpdatePart(P.FunctionCall.Name, P.FunctionCall.Args.ToJsonString(), 0, "function", P.FunctionCall.Id);
+                    string? Args=null;
+                    if (P.FunctionCall.Args is not null)
+                    {
+                        Args =P.FunctionCall.Args.ToJsonString();
+                    }
+                    else
+                    {
+                        JsonNode? part = JsonNode.Parse("{}");
+                        if (part is not null)
+                        {
+                            Args = part.ToJsonString();
+                        }
+                    }
+
+                        var ToolHit = new ButlerStreamingToolCallUpdatePart(P.FunctionCall.Name, Args, 0, "function", P.FunctionCall.Id);
+                    if (P.ThoughtSignature is not null)
+                    {
                         ToolHit.ProviderSpecific[GeminiAssist_ThoughtSigHelper.GeminiThoughSigKey] = P.ThoughtSignature;
+                    }
+                    else
+                    {
+                        ToolHit.ProviderSpecific[GeminiAssist_ThoughtSigHelper.GeminiThoughSigKey] = null!;// json when sending back should drop this entry
+                    }
 
                         update.EditableToolCallUpdates.Add(ToolHit);
                         sanity_check++;
@@ -1133,110 +1195,6 @@ public static class DebugSettings
             }
 
             return;
-            if (reply.FinishReason is not null)
-            {
-                update.FinishReason = TranslatorFinishReason.TranslateFromProvider(reply.FinishReason);
-            }
-
-            List<FunctionCall> functionCallCollection = new List<FunctionCall>();
-            if (reply.Content is not null)
-            {
-                for (int i = 0; i < reply.Content.Parts.Count; i++)
-                {
-                    var part = reply.Content.Parts[i];
-                    ButlerChatStreamingPart chatPart = new ButlerChatStreamingPart();
-#if DEBUG
-                    DebugParts.Add(chatPart);
-#endif
-                    chatPart.Text = part.Text;
-                    chatPart.Kind = ButlerChatMessagePartKind.Text;
-
-
-                    if (part.ThoughtSignature is not null)
-                    {
-                        GeminiAssist_ThoughtSigHelper.GeminiToButlerThoughtStore(part, chatPart);
-                    }
-                    if (part.FunctionCall is not null)
-                    {
-                        functionCallCollection.Add(part.FunctionCall);
-                        //continue;
-                    }
-
-                    if ((!((string.IsNullOrEmpty(chatPart.Text)))))
-                    {
-                        update.EditorableContentUpdate.Add(chatPart);
-                    }
-                    else
-                    {
-                        if (part.FunctionCall is not null)
-                        {
-                            var toolPart = new ButlerStreamingToolCallUpdatePart(part.FunctionCall.Name, part.FunctionCall.Args.ToString(), 0, "function", part.FunctionCall.Id);
-                            update.EditableToolCallUpdates.Add(toolPart);
-                            if (part.ThoughtSignature is not null)
-                            {
-                                var DummyThought = new ButlerChatStreamingPart();
-                                GeminiAssist_ThoughtSigHelper.GeminiToButlerThoughtStore(part, DummyThought);
-                                update.EditorableContentUpdate.Add(DummyThought);
-                            }
-                        }
-                        else
-                        {
-                            update.EditorableContentUpdate.Add(new ButlerChatStreamingPart());
-                        }
-                    }
-
-                }
-            }
-
-            if (functionCallCollection.Count is not 0)
-            {
-                for (int step = 0; step < functionCallCollection.Count; step++)
-                {
-
-
-                    update.FunctionName = functionCallCollection[step].Name;
-                    if ((functionCallCollection[step] is not null) && (functionCallCollection[step].Args is not null))
-                    {
-                        update.FunctionArgumentsUpdate = functionCallCollection[step].Args!.ToString(); // ! seemingly justified cause the if statement this is in
-                    }
-                    else
-                    {
-                        update.FunctionArgumentsUpdate = null;
-                    }
-                    update.Id = functionCallCollection[step].Id;
-                    var ButlerToolPart = new ButlerStreamingToolCallUpdatePart(update.FunctionName, update.FunctionArgumentsUpdate, update.Index, "Function", functionCallCollection[step].Id!);
-                    ButlerToolPart.FunctionArgumentsUpdate = update.FunctionArgumentsUpdate;
-                    ButlerToolPart.FunctionName = update.FunctionName;
-                    ButlerToolPart.Index = update.Index;
-                    ButlerToolPart.ToolCallid = functionCallCollection[step].Id!; //  questionable at best. My thinking is that the pathway to this translator is the tool scheduler ensures its not null when converting and the messaging system in theory should fix it later
-
-             //       update.EditableToolCallUpdates.Add(ButlerToolPart);
-
-
-                    /*var ButlerToolPart = new ButlerStreamingToolCallUpdatePart();
-                    
-                    update.FunctionName = functionCallCollection[step].Name;
-                    if ((functionCallCollection[step] is not null) && (functionCallCollection[step].Args is not null))
-                    {
-                        update.FunctionArgumentsUpdate = functionCallCollection[step].Args!.ToString(); // ! seemingly justified cause the if statement this is in
-                    }
-                    else
-                    {
-                        update.FunctionArgumentsUpdate = null;
-                    }
-                        update.Id = functionCallCollection[step].Id;
-
-                    ButlerToolPart.FunctionArgumentsUpdate = update.FunctionArgumentsUpdate;
-                    ButlerToolPart.FunctionName = update.FunctionName;
-                    ButlerToolPart.Index = update.Index;
-                    ButlerToolPart.ToolCallid = functionCallCollection[step].Id!; //  questionable at best. My thinking is that the pathway to this translator is the tool scheduler ensures its not null when converting and the messaging system in theory should fix it later
-
-                    update.EditableToolCallUpdates.Add(ButlerToolPart);*/
-
-                }
-                update.FinishReason = ButlerChatFinishReason.ToolCalls;
-            }
-            return; // for breakpoint
         }
 
         public static ButlerStreamingChatCompletionUpdate TranslateFromProvider(GenerateContentResponse response)

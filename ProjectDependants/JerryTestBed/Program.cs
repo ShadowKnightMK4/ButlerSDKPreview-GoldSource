@@ -237,7 +237,7 @@ that the tools may change depending on the chat as needed.
 
 
 
-            testme.AddUserMessage("Hello. What time is it");
+         //   testme.AddUserMessage("Hello. What time is it");
 
 
 

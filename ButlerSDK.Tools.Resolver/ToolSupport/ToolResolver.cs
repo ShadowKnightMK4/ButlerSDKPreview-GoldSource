@@ -530,7 +530,7 @@ namespace ButlerSDK.ToolSupport
         /// <param name="MarkAsTemp">If true marks the tool pass and temporary, removing it from context window at end of ai turn</param>
         public void PlaceInChatLog(IList<ButlerChatMessage> Messages, bool MarkAsTemp)
         {
-            IButlerLLMProvider_SpecificSpecificToolExecutionPostCall? PostCall = Provider as IButlerLLMProvider_SpecificSpecificToolExecutionPostCall;
+            IButlerLLMProvider_SpecificToolExecutionPostCall? PostCall = Provider as IButlerLLMProvider_SpecificToolExecutionPostCall;
 
             // our general plan matches OpenAI because of familiarity. This routine grabs the tool call and results from our ToolTime class and puts out a Tool Call and Tool Result message in the passed list
             foreach (ToolTimeSlot tool in this.ResolvedTool)
@@ -607,7 +607,7 @@ namespace ButlerSDK.ToolSupport
         /// If false, attempting to run a schedule with no tools in it will throw exception
         /// </summary>
         public bool EmptyScheduleRunFine { get; set; } = false;
-        public IButlerLLMProvider Provider { get; set; }
+        public IButlerLLMProvider? Provider { get; set; }
     }
 
 

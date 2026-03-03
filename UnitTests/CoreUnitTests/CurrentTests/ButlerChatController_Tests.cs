@@ -31,7 +31,7 @@ namespace CoreUnitTests.CurrentTests
             Assert.ThrowsException<ErrorMockClient.MockException>(async () =>
             {
                 await TestMe.StreamResponseAsync
-                (null, null, false, 5, 5, default);
+                (null!, null, false, 5, 5, default); // the ! is because we want this to be null and go boom
             }
             );
         }

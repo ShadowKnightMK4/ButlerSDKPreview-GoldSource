@@ -13,6 +13,7 @@ using System.Collections;
 
 namespace CoreUnitTests.CurrentTests
 {
+#pragma warning disable 649
     class DummyList : IButlerChatCollection
     {
         public ButlerChatMessage this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
@@ -21,7 +22,13 @@ namespace CoreUnitTests.CurrentTests
 
         public bool IsReadOnly => throw new NotImplementedException();
 
-        public event PropertyChangedEventHandler? PropertyChanged;
+
+        // explicit interface implementation to avoid CS0067 (event never used) in test dummy
+        event PropertyChangedEventHandler? INotifyPropertyChanged.PropertyChanged
+        {
+            add { }
+            remove { }
+        }
 
         public void Add(ButlerChatMessage item)
         {
@@ -93,6 +100,7 @@ namespace CoreUnitTests.CurrentTests
             return GetEnumerator();
         }
     }
+#pragma warning restore 649
     [TestClass]
     public class ButlerClass_TrenchCoat_Tests
     {

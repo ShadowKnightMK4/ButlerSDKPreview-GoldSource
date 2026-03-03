@@ -1,22 +1,44 @@
-Some of these also show a little sooner.
-1.04
 
-Class changes:
-Trenchcoat is know an implenentation of an interface
-Butler supports swapping alternatives - Implenent Trench for full powe or IButlerChatCollection for minimal.
+🚀 Release Notes: ButlerSDK v1.1.0-preview
+
+Summary:
+This release focuses heavily on Architectural Decoupling, Security Governance, and Provider Stability. It formally introduces the Tool Surface Scope security model and entirely decouples the Memory Engine from the Core Logic.
+
+Note: Upgrading to v1.1.0-preview or higher is strongly recommended due to breaking enhancements in the ButlerSDK.Core.Abstraction data types and provider-specific storage objects.
+
+🔒 Security & Governance
+
+Capability-Based Security (ToolSurfaceScope): Tools are now recommanded to declare their operational intent via the [ToolSurfaceCapabilities] attribute (e.g., NetworkRead, DiskWrite, ArbitraryExecution). 
+
+Active Firewalling: Butler.AddTool() now actively enforces security perimeters. If a tool requests permissions exceeding the Butler instance's allowed scope, the system immediately rejects it and throws a SecurityException.
+
+Zero-Trust by Default: Untagged tools are safely assumed to require MaxPermissions and are blocked by default unless the hosting environment explicitly grants broad access.
+
+Memory Hardening: Updated SecureStringHelper to support secure, character-by-character reading directly from Streams, minimizing memory exposure.
+
+🏗 Architecture & Core Decoupling
+
+Memory Engine Dependency Injection: The Butler constructor now accepts custom implementations of IButlerChatCollection. This allows developers to seamlessly swap the default sliding-window memory logic for custom, distributed persistence (e.g., Redis, SQL) while leaving the core orchestration intact.
+
+TrenchCoat Engine Refactor: The default TrenchCoatChatCollection has been refactored to implement the new IButlerTrenchImplementation interface, which is required to support advanced tool-prompt steering and directives.
+
+Context Window Age-Out: Introduced automatic state trimming. As new messages enter the running context window, the oldest standard messages are aged out and dropped to preserve token limits, without affecting critical System Prompts or injected Tool Directives. This does not effect the audit log.
+
+Provider Metadata Hooks: Introduced a new lifecycle hook to handle Provider-Specific Tool Execution. This prevents state loss between turns by allowing providers to inject and persist highly specific metadata into the tool-call history.
+
+🤖 Provider Updates
+
+Google Gemini State Persistence: Fixed a critical state-loss issue where Gemini's internal "Thought Traces" were dropped during tool execution, which previously resulted in subsequent "Invalid Function" errors and HTTP error 400.
+
+Google Gemini Pragmatic Shims: Added a conversation history validator. To prevent HTTP 400 errors from the Gemini API when history starts with a Model/System response, Butler now seamlessly injects a placeholder User message ("Hello") if the the chat log is empty (not counting system messages) or starts with a assistant role.
+
+Reserved Keyword Notice: "GeminiModelThinking" is now a reserved provider-specific keyword used to route model thought-traces. Custom provider implementations should avoid utilizing this specific key in the ProviderSpecific dictionary to prevent collision if hot-swapping to Gemini. To be clear this this keyword is using in the dictionary<string,string> that houses provider specific strings.
 
 
-Unit testing:
-Adding a few tests for Windows Vault Working to encrypt and decrypt  the happy path
+Exception Propagation: Fixed a critical fault where mid-stream provider exceptions (such as API Key rejections or rate limits) were being silently swallowed. Butler now correctly surfaces unrecoverable provider errors directly to the calling application.
 
+🐛 Bug Fixes
 
-Bug Fix:
-If the Provider triggered an exception (such as rejecting an API KEY) in middle of a stream, Butler's loop was silenetly breaking if provider didn't recovery interface.  It now correctly rethrows  the exception if the provider doens't say how to resolve the error
+Core: Hardened the logic within ButlerMessageStitcher to robustly handle fragmented and malformed stream packets.
 
-Fixed bug introducsed on ToolSurfaceScope add. MaxPermssion set actually adds the tool on Butler.AddTool()
-
-Theoritical loop on ButlerTool_RestAPI_GetPublicHolidays refactored away
-
-
-Current Bug targets:
-Gemini tool call triggers exceptions again. It's a work in progress
+Tooling: Refactored state evaluation in ButlerTool_RestAPI_GetPublicHolidays to eliminate an infinite loop vulnerability caused by invalid JSON payloads.

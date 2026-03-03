@@ -49,7 +49,7 @@ namespace ButlerSDK.Core
         public bool AutoSysPromptToday = true;
 
         /// <summary>
-        /// Entry point
+        /// Entry point, using the default chat collection.  See other overload for custom chat collection.
         /// </summary>
         /// <param name="Key">This is used to source needed API keys needed.  </param>
         /// <param name="Provider">An implementation of the provider that Butler will use to communicate with the LLM of your choice - see <see cref="IButlerLLMProvider"/> </param>
@@ -63,11 +63,10 @@ namespace ButlerSDK.Core
         {
             this.PostProcessing = PostProcessor;
             this.PreProcessing = PPR;
-            if (this.ToolExec is null)
-            {
-                this.ToolExec = ToolResolver.CreateSchedule(Provider, "Default");
-                this.ToolExecType = typeof(ToolResolver);
-            }
+
+            this.ToolExec = ToolResolver.CreateSchedule(Provider, "Default");
+            this.ToolExecType = typeof(ToolResolver);
+   
         }
 
         /// <summary>
@@ -81,7 +80,7 @@ namespace ButlerSDK.Core
         /// <param name="PostProcessor">Optional post processor handler for guiding LLMs as they product data - see <see cref="IButlerPostProcessorHandler"/> and <see cref="ToolPostProcessing"/> for a way to use it</param>
         /// <param name="PPR">The pre processor. Optional. Provider can actually ignore if wanted - they need to exception if so. Before Translation from butler by provider, this is called to possibly alter a copy of the message</param>
         /// <param name="ChatHandler">The object that will be used for handler chat message lists. The default is <see cref="TrenchCoatChatCollection"/></param> If you do not specify one, default is used.
-        public Butler(IButlerVaultKeyCollection Key, IButlerLLMProvider Provider, IButlerChatCompletionOptions? Opts, string ModelChoice, string KeyVar, IButlerChatCollection ChatHandler, IButlerPostProcessorHandler? PostProcessor = null, IButlerChatPreprocessor? PPR = null, IButlerToolResolver? ToolResolveHandler=default) :
+        public Butler(IButlerVaultKeyCollection Key, IButlerLLMProvider Provider, IButlerChatCompletionOptions? Opts, string ModelChoice, string KeyVar, IButlerChatCollection? ChatHandler, IButlerPostProcessorHandler? PostProcessor = null, IButlerChatPreprocessor? PPR = null, IButlerToolResolver? ToolResolveHandler=default) :
             base(Key, Provider, Opts, ModelChoice, KeyVar,ChatHandler)
         {
             this.PostProcessing = PostProcessor;

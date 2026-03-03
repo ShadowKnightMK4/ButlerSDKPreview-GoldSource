@@ -54,7 +54,7 @@ namespace ButlerLLMProviderPlatform.Protocol
     /// <summary>
     /// If you require something (SUCH AS A THOUGHT SIGNATURE) to be patched into a call post tool call, implement this and return true to have Butler5 call your routine with the tool call info and the chat info to let you patch in whatever you need. This is called after each tool call if implemented and you return true for it to be called.
     /// </summary>
-    public interface IButlerLLMProvider_SpecificSpecificToolExecutionPostCall
+    public interface IButlerLLMProvider_SpecificToolExecutionPostCall
     {
         public void HandlerToolExecuteRequestMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolCallMessage Item);
         public void HandlerToolExecuteMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolResultMessage Item);
@@ -67,7 +67,7 @@ namespace ButlerLLMProviderPlatform.Protocol
         public IButlerLLMProvider.ToolProviderCallBehavior GetToolMode();
     }
     /// <summary>
-    /// TODOL By default, if you implement this, Butler5 will call this *instead* of <see cref="IButlerChatCreationProvider.Initialize(SecureString)"/> if an empty key is passed for it to load
+    /// By default, if you implement this, Butler will call this *instead* of <see cref="IButlerChatCreationProvider.Initialize(SecureString)"/> if an empty key is passed for it to load
     /// </summary>
     public interface IButlerChatCreationProvider_NoApiNeeded
     {
@@ -93,12 +93,12 @@ namespace ButlerLLMProviderPlatform.Protocol
     public interface IButlerChatCreationProvider
     {
         /// <summary>
-        /// Butler5 calls this with a string and an TDB options object.
+        /// Butler calls this with a string and an TDB options object.
         /// </summary>
-        /// <param name="model"></param>
-        /// <param name="Options"></param>
+        /// <param name="model">model to request from the provider</param>
+        /// <param name="Options">chat creation options</param>
         /// <param name="PPR">If non null, the chat should call this interface first before normal translation</param>
-        /// <returns></returns>
+        /// <returns>return a provider specific chat client</returns>
         /// <remarks>If you're mentally linking this to OpenAI c# classes, it should return the ChatClient object</remarks>
         /// <exception cref="ModuleNotFoundException">You should throw this if the module requested isn't available</exception>
         public IButlerChatClient? GetChatClient(string model, object? Options, IButlerChatPreprocessor? PPR);
@@ -113,6 +113,9 @@ namespace ButlerLLMProviderPlatform.Protocol
         /// <param name="x"></param>
         public void Initialize(SecureString x);
 
+        /// <summary>
+        /// This should return your default chat options object.
+        /// </summary>
         public IButlerChatCompletionOptions DefaultOptions { get; }
     }
 

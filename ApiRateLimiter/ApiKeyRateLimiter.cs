@@ -4,6 +4,9 @@
  * inherits Butler's LICENCE.
   */
 
+using System.Collections.Concurrent;
+using System.Runtime.Intrinsics.X86;
+
 namespace ButlerSDK
 {
     /// <summary>
@@ -60,6 +63,10 @@ namespace ButlerSDK
                 }
             }
         }
+
+        public int ServiceCount => Data.Count;
+
+        Dictionary<string, ApiEntry> Data = new();
 
         /// <summary>
         /// Private object of the budget.
@@ -178,75 +185,122 @@ namespace ButlerSDK
       
         public void AddService(string ServiceName, decimal CostPerCall, ulong CurrentInventory, ulong MaxInventory, ButlerApiLimitType LimitKind, bool ReplaceIfExists = false)
         {
-            if (Data.ContainsKey(ServiceName) && ReplaceIfExists == false)
+            lock (SynchObject)
             {
-                throw new InvalidOperationException($"The service {ServiceName} does exist already. ");
+                if (Data.ContainsKey(ServiceName) && ReplaceIfExists == false)
+                {
+                    throw new InvalidOperationException($"The service {ServiceName} does exist already. ");
+                }
+                ApiEntry NewEntry;
+                NewEntry = new ApiEntry()
+                {
+                    ServiceName = ServiceName,
+                    CostPerCall = CostPerCall,
+                    Inventory = CurrentInventory,
+                    Reset = MaxInventory,
+                    Limit = LimitKind
+                };
+                Data[ServiceName] = NewEntry;
             }
-            ApiEntry NewEntry;
-            NewEntry = new ApiEntry()
-            {
-                ServiceName = ServiceName,
-                CostPerCall = CostPerCall,
-                Inventory = CurrentInventory,
-                Reset = MaxInventory,
-                Limit = LimitKind
-            };
-            Data[ServiceName] = NewEntry;
         }
 
         public void RemoveService(string ServiceName, bool PanicIfNonExistent=false)
         {
-            bool check = Data.Remove(ServiceName);
-            if (!check && PanicIfNonExistent)
+            lock (SynchObject)
             {
-                throw new ServiceNonExistentException($"Attempt to Remove Unknown Service of name {ServiceName}");
+                bool check = Data.Remove(ServiceName, out var _);
+                if (!check && PanicIfNonExistent)
+                {
+                    throw new ServiceNonExistentException($"Attempt to Remove Unknown Service of name {ServiceName}");
+                }
             }
         }
 
         public void ChargeService(string ServiceName, int CallNumber)
         {
-
-            ApiEntry? Service = LookUpService(ServiceName);
-            if (Service is null)
+            lock (SynchObject)
             {
-                throw new ServiceNonExistentException($"Attempt to Charge Unknown Service of name {ServiceName} {CallNumber} number of calls. Ensure the service is defined fist ");
-            }
-            else
-            {
-                decimal CallCharge;
-                decimal Inv;
-                if (Service.Limit.HasFlag(ButlerApiLimitType.SharedBudget))
+                ApiEntry? Service = LookUpService(ServiceName);
+                if (Service is null)
                 {
-                    CallCharge = Service.CostPerCall * CallNumber;
+                    throw new ServiceNonExistentException($"Attempt to Charge Unknown Service of name {ServiceName} {CallNumber} number of calls. Ensure the service is defined fist ");
                 }
                 else
                 {
-                    CallCharge = 0;
-                }
+                    bool BudgetOk = false;
+                    bool InventoryOk = false;
+                    decimal CallCharge;
+                    decimal Inv;
+                    if (Service.Limit.HasFlag(ButlerApiLimitType.SharedBudget))
+                    {
+                        CallCharge = Service.CostPerCall * CallNumber;
+                    }
+                    else
+                    {
+                        CallCharge = 0;
+                    }
 
-                if (Service.Limit.HasFlag(ButlerApiLimitType.PerCall))
-                {
-                    Inv = CallNumber;
-                }
-                else
-                {
-                    Inv = 0;
-                }
-                if (SharedBudget - CallCharge < 0)
-                {
-                    throw new OverBudgetException($"Calling Tool or Service {ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase budget in the software.");
-                }
-                else
-                {
-                    SharedBudget -= CallCharge;
-                }
-                if (Service.Inventory - Inv < 0)
-                {
-                    throw new OverBudgetException($"Calling Tool or Service {ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase inventory in the software.");
-                }
-                else
-                {
-                    Service.Inventory -= Inv;
+                    if (Service.Limit.HasFlag(ButlerApiLimitType.PerCall))
+                    {
+                        Inv = CallNumber;
+                    }
+                    else
+                    {
+                        Inv = 0;
+                    }
+
+
+                    if (SharedBudget - CallCharge < 0)
+                    {
+                        throw new OverBudgetException($"Calling Tool or Service {ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase budget in the software.");
+                    }
+                    else
+                    {
+                        BudgetOk = true;
+                    }
+                    if (Service.Inventory - Inv < 0)
+                    {
+                        throw new OverBudgetException($"Calling Tool or Service {ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase inventory in the software.");
+                    }
+                    else
+                    {
+                        InventoryOk = true;
+                    }
+
+                    if (InventoryOk && BudgetOk)
+                    {
+                        SharedBudget -= CallCharge;
+                        Service.Inventory -= Inv;
+                    }
+                    else
+                    {
+                        if (!BudgetOk)
+                        {
+                            throw new OverBudgetException($"Calling Tool or Service {ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase budget in the software.");
+                        }
+                        if (!InventoryOk)
+                        {
+                            throw new OverBudgetException($"Calling Tool or Service {ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase inventory in the software.");
+                        }
+                    }
+
+                    /*
+                    if (SharedBudget - CallCharge < 0)
+                    {
+                        throw new OverBudgetException($"Calling Tool or Service {ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase budget in the software.");
+                    }
+                    else
+                    {
+                        SharedBudget -= CallCharge;
+                    }
+                    if (Service.Inventory - Inv < 0)
+                    {
+                        throw new OverBudgetException($"Calling Tool or Service {ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase inventory in the software.");
+                    }
+                    else
+                    {
+                        Service.Inventory -= Inv;
+                    }*/
                 }
             }
         }
@@ -255,100 +309,122 @@ namespace ButlerSDK
      
         public bool CheckForCallPermission(string ServiceName, int CallCount=1)
         {
-            ApiEntry? Service = LookUpService(ServiceName);
-            if (Service is null)
+            lock (SynchObject)
             {
-                throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                ApiEntry? Service = LookUpService(ServiceName);
+                if (Service is null)
+                {
+                    throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                }
+                return IsCallAfforded(Service, CallCount);
             }
-            return IsCallAfforded(Service, CallCount);
         }
 
 
        
         public bool DoesServiceExist(string ServiceName)
         {
-            return this.LookUpService(ServiceName) != null; 
+            lock (SynchObject)
+            {
+                return this.LookUpService(ServiceName) != null;
+            }
         }
 
     
         public void AssignNewServiceLimit(string ServiceName, ulong Limit)
         {
-            var Service = this.LookUpService(ServiceName);
-            if (Service is null)
+            lock (SynchObject)
             {
-                throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                var Service = this.LookUpService(ServiceName);
+                if (Service is null)
+                {
+                    throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                }
+                else
+                    Service.Reset = Limit;
             }
-            else
-                Service.Reset = Limit;
         }
 
         
         public decimal GetServiceLimit(string ServiceName)
         {
-            var Service = this.LookUpService(ServiceName);
-            if (Service is null)
+            lock (SynchObject)
             {
-                throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                var Service = this.LookUpService(ServiceName);
+                if (Service is null)
+                {
+                    throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                }
+                else
+                    return Service.Reset;
             }
-            else
-                return Service.Reset;
         }
 
       
         public void ResetServiceLimit(string ServiceName)
         {
-            var Service = this.LookUpService(ServiceName);
-            if (Service is null)
+            lock (SynchObject)
             {
-                throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                var Service = this.LookUpService(ServiceName);
+                if (Service is null)
+                {
+                    throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                }
+                else
+                    Service.Inventory = Service.Reset;
             }
-            else
-                Service.Inventory = Service.Reset;
         }
 
         
         public decimal GetServiceInventory(string ServiceName)
         {
-            var Service = this.LookUpService(ServiceName);
-            if (Service is null)
+            lock (SynchObject)
             {
-                throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                var Service = this.LookUpService(ServiceName);
+                if (Service is null)
+                {
+                    throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                }
+                else
+                    return Service.Inventory;
             }
-            else
-                return Service.Inventory;
         }
 
        
         public void AssignNewCost(string ServiceName, decimal Cost)
         {
-            
-            var Service = this.LookUpService(ServiceName);
-            if (Service is null)
+            lock (SynchObject)
             {
-                throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+
+                var Service = this.LookUpService(ServiceName);
+                if (Service is null)
+                {
+                    throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                }
+                else
+                    Service.CostPerCall = Cost;
             }
-            else
-                Service.CostPerCall = Cost;
         }
 
       
 
         public decimal GetCurrentCost(string ServiceName)
         {
-            var Service = this.LookUpService(ServiceName);
-            if (Service is not null)
+            lock (SynchObject)
             {
-                return Service.CostPerCall;
+                var Service = this.LookUpService(ServiceName);
+                if (Service is not null)
+                {
+                    return Service.CostPerCall;
+                }
+                else
+                    throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
             }
-            else
-                throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
         }
 
      
 
-        public int ServiceCount => Data.Count;
-
-        Dictionary<string, ApiEntry> Data = new();
+  
 
     }
 }

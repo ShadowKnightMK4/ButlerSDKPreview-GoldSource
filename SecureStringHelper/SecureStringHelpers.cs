@@ -33,7 +33,7 @@ namespace SecureStringHelper
 
         public static void AssignStringThenReadOnly(this SecureString ret, MemoryStream Input, int len = -1)
         {
-            using (var Reader = new StreamReader(Input))
+            using (var Reader = new StreamReader(Input, leaveOpen: true))
             {
 
                 AssignStringThenReadOnly(ret, Reader, len);
@@ -59,24 +59,38 @@ namespace SecureStringHelper
             
             while (true)
             {
-                char read = (char) Input.Read();
+                int read =  Input.Read();
          
                 if (ToEof)
                 {
-                    ret.AppendChar(read);
-                    if (Input.EndOfStream)
+                    if (read != -1)
+                    {
+                        ret.AppendChar((char)read);
+                        if (Input.EndOfStream)
+                        {
+                            break;
+                        }
+                    }
+                    else
                     {
                         break;
                     }
                 }
                 else
                 {
-                    if (!Input.EndOfStream)
+                    if (read != -1)
                     {
-                        ret.AppendChar(read);
+                        if (!Input.EndOfStream)
+                        {
+                            ret.AppendChar((char)read);
 
-                        len -= 1;
-                        if (len < 1)
+                            len -= 1;
+                            if (len < 1)
+                            {
+                                break;
+                            }
+                        }
+                        else
                         {
                             break;
                         }

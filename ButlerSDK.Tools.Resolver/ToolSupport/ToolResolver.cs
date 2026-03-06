@@ -279,7 +279,7 @@ namespace ButlerSDK.ToolSupport
             IButlerToolKitCallable? CallableToolKit = ToolCollection as IButlerToolKitCallable;
 
             ArgumentNullException.ThrowIfNull(QueryToolKit, "The passed tool collection MUST Implement IButlerToolKitQueryAndGet interface in full");
-            ArgumentNullException.ThrowIfNull(CallableToolKit, "The passed tool collection MUST Implement IButlerToolKitQueryAndGet interface in full");
+            ArgumentNullException.ThrowIfNull(CallableToolKit, "The passed tool collection MUST Implement IButlerToolKitCallable interface in full");
 
             List<(string CallID, IButlerToolBaseInterface ToolUsed)>? UsedTools=null;
             if (Stats is not null)

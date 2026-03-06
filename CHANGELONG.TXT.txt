@@ -42,3 +42,9 @@ Exception Propagation: Fixed a critical fault where mid-stream provider exceptio
 Core: Hardened the logic within ButlerMessageStitcher to robustly handle fragmented and malformed stream packets.
 
 Tooling: Refactored state evaluation in ButlerTool_RestAPI_GetPublicHolidays to eliminate an infinite loop vulnerability caused by invalid JSON payloads.
+
+ApiKeyRateLimiter (ButlerSDK's limiter for runaway LLM calls): fixed a case where if call budget is ok but not of inventory, budget was *still* subtracted instead of failing fully.
+
+ApiKeyRateLimiter (ButlerSDK's limiter for runaway LLM calls): Each public api currently synchs via a private object for the class now. This should help prevent multh threading issues.
+
+

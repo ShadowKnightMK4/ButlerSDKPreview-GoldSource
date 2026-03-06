@@ -7,9 +7,6 @@
 
 ---
 
-What this is:
-
-ToolResolver is ButlerSDK's tool scheduler/ runner.  
 
 
 

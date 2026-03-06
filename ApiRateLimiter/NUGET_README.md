@@ -1,17 +1,14 @@
 ﻿
-# ButlerSDK - Preview 1 - component - ButlerSDK
+# ButlerSDK - Preview 1 - component of ButlerSDK - ApiKeyRateLimiter
 * Github is here https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource
+* Recommend grabbing ButlerSDK.Core and its varients as needed.
+* You can also clone it from its Github.
+
+
 ---
 
-What this is:
-
-ToolResolver is ButlerSDK's ApiKeyRateLimiter. 
 
 
-## Change log:
-
-Changes:
-ApiKeyRateLimit.AssignNewCost throw InvalidOperationExceptionrather than ServiceNonExistentException to pref document
 
 
 ### 📄 License

@@ -44,7 +44,10 @@ namespace ButlerSDK
             {
             }
         }
- 
+
+        /// <summary>
+        /// The Shared Budget is the budget that is shared across all services. If a service has a cost per call, then that cost gets deducted from the shared budget when the service is charged. If the shared budget is not enough to cover the cost of the call, then the call is not allowed and an exception is thrown. 
+        /// </summary>
         public decimal SharedBudget
         {
             get

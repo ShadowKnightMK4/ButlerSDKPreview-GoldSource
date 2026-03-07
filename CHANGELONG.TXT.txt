@@ -26,6 +26,14 @@ Context Window Age-Out: Introduced automatic state trimming. As new messages ent
 
 Provider Metadata Hooks: Introduced a new lifecycle hook to handle Provider-Specific Tool Execution. This prevents state loss between turns by allowing providers to inject and persist highly specific metadata into the tool-call history.
 
+
+The Bench (the tool collection):  Multithread Guard is made obsolete. It's always active now. This Effects the public AddTool routines, updating tool call 
+budget/limits,  Removing tools, GetTool(), Exist Tool().  Notable this does *not* effect Async calling but *does* effect Sync based tool calling.
+
+The Bench (the tool collection): New Feature. Supply your ApiKeyRateLimiter flavor thru Dependency Injection in the constructer. It also rejects null.
+
+Tool Discoverer (reflection based tool scanner): Respects tool surface scope by default if assigned permssion. It also now has a dependancy on ButlerSDK.Tools.ToolSurface
+
 🤖 Provider Updates
 
 Google Gemini State Persistence: Fixed a critical state-loss issue where Gemini's internal "Thought Traces" were dropped during tool execution, which previously resulted in subsequent "Invalid Function" errors and HTTP error 400.

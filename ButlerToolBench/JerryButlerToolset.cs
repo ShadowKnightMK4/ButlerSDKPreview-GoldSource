@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Security;
 using ButlerProtocolBase.ToolSecurity;
+using System.Data.SqlTypes;
 
 
 namespace ButlerSDK.ToolSupport.Bench
@@ -15,6 +16,16 @@ namespace ButlerSDK.ToolSupport.Bench
     /// </summary>
     public class ButlerToolBench: IButlerToolBench
     {
+        public ButlerToolBench()
+        {
+            Limiter = new ApiKeyRateLimiter();
+        }
+
+        public ButlerToolBench(IApiKeyRateLimiter CustomLimiter)
+        {
+            ArgumentNullException.ThrowIfNull(CustomLimiter, nameof(CustomLimiter));    
+            Limiter = CustomLimiter;
+        }
         /// <summary>
         /// When a tool does not have the attribute set, treat it as this attribute.
         /// </summary>
@@ -25,7 +36,7 @@ namespace ButlerSDK.ToolSupport.Bench
         const string EmptyTool = "A tool in the list is actually blank. This is a a software error.";
         const string ToolValidateFailureArg = "The tool's validation code rejected the arguments presented.";
         #endregion
-        ApiKeyRateLimiter Limiter = new();
+        IApiKeyRateLimiter Limiter;
         Dictionary<string, IButlerToolBaseInterface> Tools = new();
         private bool disposedValue;
 
@@ -34,10 +45,11 @@ namespace ButlerSDK.ToolSupport.Bench
         /// </summary>
         public int ToolCount => Tools.Count;
 
+        [Obsolete("MultiThread Guard is always active in this version. This property is a no-op and will be removed in a future version.")]
         /// <summary>
         /// If enabled, public routines should use lock() to sync access. Why Default? Butler3 uses individual instances of this rather than shared
         /// </summary>
-        public bool MultiThreadGuard { get; set; } = false;
+        public bool MultiThreadGuard { get; set; } = true;
 
 
         /// <summary>
@@ -245,7 +257,10 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <returns></returns>
         public bool ExistsTool(string name)
         {
-            return Tools.ContainsKey(name);
+            lock (Tools)
+            {
+                return Tools.ContainsKey(name);
+            }
         }
 
 
@@ -256,12 +271,15 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <returns>returns the tool or null if it doesn't exist</returns>
         public IButlerToolBaseInterface? GetTool(string name)
         {
-            IButlerToolBaseInterface? ret = null;
-            if (Tools.TryGetValue(name, out ret))
+            lock (Tools)
             {
+                IButlerToolBaseInterface? ret = null;
+                if (Tools.TryGetValue(name, out ret))
+                {
+                    return ret;
+                }
                 return ret;
             }
-            return ret;
         }
 
         
@@ -278,13 +296,8 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <exception cref="InvalidToolNameException">Can trigger if validation fails i.e. <see cref="ValidateToolName(IButlerToolBaseInterface, bool)"/> returns false. </exception>
         public void AddTool(string name, IButlerToolBaseInterface tool, bool ValidateNames=true, ToolSurfaceScope Scope = ToolSurfaceScope.NoPermissions)
         {
-            
-            if (MultiThreadGuard)
-                lock (this.Tools)
-                {
-                    AddToolCommon(name, tool, Scope, ValidateNames);
-                }
-            else
+
+            lock (this.Tools)
             {
                 AddToolCommon(name, tool, Scope, ValidateNames);
             }
@@ -311,11 +324,7 @@ namespace ButlerSDK.ToolSupport.Bench
 
         public void UpdateTool(string name, IButlerToolBaseInterface tool, ToolSurfaceScope Scope)
         {
-            if (MultiThreadGuard)
-            {
-                UpdateToolCommon(name, tool, true, Scope);
-            }
-            else
+            lock (Tools)
             {
                 UpdateToolCommon(name, tool, true, Scope);
             }
@@ -323,6 +332,7 @@ namespace ButlerSDK.ToolSupport.Bench
 
         public void UpdateTool(string name, IButlerToolBaseInterface tool)
         {
+            /* NOTE DO NOT LOCK THIS AS IT FOWARDS TO APUBLIC API THAT TRY LOCKING */
             UpdateTool(name, tool, ToolSurfaceScope.StandardReading);
         }
         /// <summary>
@@ -333,6 +343,7 @@ namespace ButlerSDK.ToolSupport.Bench
 
         public void AddTool(IButlerToolBaseInterface tool, bool ValidateNames=true)
         {
+            /* NOTE DO NOT LOCK THIS AS IT FOWARDS TO APUBLIC API THAT TRY LOCKING */
             AddTool(tool, ToolSurfaceScope.StandardReading, ValidateNames);
         }
 
@@ -343,14 +354,7 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <param name="ValidateNames"></param>
         public void AddTool(IButlerToolBaseInterface tool, ToolSurfaceScope Scope,  bool ValidateNames=true)
         {
-            if (MultiThreadGuard)
-            {
-                lock (Tools)
-                {
-                    AddToolCommon(tool.ToolName, tool, Scope, true, false);
-                }
-            }
-            else
+            lock (Tools)
             {
                 AddToolCommon(tool.ToolName, tool, Scope, true, false);
             }
@@ -366,15 +370,8 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <exception cref="InvalidToolNameException">Can trigger if validation fails i.e. <see cref="ValidateToolName(IButlerToolBaseInterface, bool)"/> returns false. </exception>
         public void AddTool(string name, IButlerToolBaseInterface tool, ToolSurfaceScope Scope, bool ValidateNames)
         {
-            
-            if (MultiThreadGuard)
-            {
-                lock (Tools)
-                {
-                    AddToolCommon(name, tool as IButlerToolBaseInterface, Scope, ValidateNames);
-                }
-            }
-            else
+
+            lock (Tools)
             {
                 AddToolCommon(name, tool as IButlerToolBaseInterface, Scope, ValidateNames);
             }
@@ -388,33 +385,16 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <param name="AllowCleanup">If set, calls cleanup routines</param>
         public void RemoveTool(string name, bool AllowCleanup, bool DoNotRemoveSystemTools=true)
         {
-            if (MultiThreadGuard)
+            lock (Tools)
             {
                 RemoveToolCommon(name, AllowCleanup != true, DoNotRemoveSystemTools);
-            }
-            else
-            {
-                lock (Tools)
-                {
-                    RemoveToolCommon(name, AllowCleanup != true, DoNotRemoveSystemTools);
-                }
             }
         }
 
         public void RemoveAllTools(bool AllowCleanup, bool DoNotRemoveSystemTools)
         {
             var list = Tools.Keys.ToList();
-            if (MultiThreadGuard)
-            {
-                lock (Tools)
-                {
-                    foreach (var name in list)
-                    {
-                        RemoveToolCommon(name, AllowCleanup != true, DoNotRemoveSystemTools);
-                    }
-                }
-            }
-            else
+            lock (Tools)
             {
                 foreach (var name in list)
                 {
@@ -427,7 +407,10 @@ namespace ButlerSDK.ToolSupport.Bench
         #region adjusting tool limits
         public void UpdateInventoryLimit(string name, ulong limit)
         {
-            Limiter.AssignNewServiceLimit(name, limit);
+            lock (Tools)
+            {
+                Limiter.AssignNewServiceLimit(name, limit);
+            }
         }
 
         #endregion
@@ -459,28 +442,14 @@ namespace ButlerSDK.ToolSupport.Bench
 
         public ButlerChatToolResultMessage? CallToolFunction(IButlerToolBaseInterface Tool, string CallId, string Arguments, out bool OK)
         {
-            if (MultiThreadGuard)
-            {
-                lock (Tools)
-                {
-                    return CallToolFunctionInternalSync(null, CallId, Arguments, Tool, out OK);
-                }
-            }
-            else
+            lock (Tools)
             {
                 return CallToolFunctionInternalSync(null, CallId, Arguments, Tool, out OK);
             }
         }
         public ButlerChatToolResultMessage? CallToolFunction(ButlerChatToolCallMessage msg, out bool OK)
         {
-            if (MultiThreadGuard)
-            {
-                lock (Tools)
-                {
-                    return CallToolFunctionInternalSync(msg.ToolName, msg.Id, msg.FunctionArguments,null, out OK);
-                }
-            }
-            else
+            lock (Tools)
             {
                 return CallToolFunctionInternalSync(msg.ToolName, msg.Id, msg.FunctionArguments, null, out OK);
             }
@@ -488,18 +457,11 @@ namespace ButlerSDK.ToolSupport.Bench
 
         public ButlerChatToolResultMessage? CallToolFunction(string FunctionName, string CallId, string Arguments, out bool OK)
         {
-            if (MultiThreadGuard)
-            {
-                lock (Tools)
-                {
-                    return CallToolFunctionInternalSync(FunctionName, CallId, Arguments, null, out OK);
-                }
-            }
-            else
+            lock (Tools)
             {
                 return CallToolFunctionInternalSync(FunctionName, CallId, Arguments, null, out OK);
             }
-        
+
         }
 
         /// <summary>
@@ -512,6 +474,7 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <param name="OK">set to true on call work and false on error</param>
         /// <returns>depending on the tool either a <see cref="ButlerChatToolCallMessage"/> or null</returns>
         /// <exception cref="ToolNotFoundException">Is thrown if the name is not in our list</exception>
+        /// <remarks>The multo thread guard stuff is in the public api. This internal routine knows no such perks</remarks>
         internal ButlerChatToolResultMessage? CallToolFunctionInternalSync(string? FunctionName, string? CallId, string? Arguments, IButlerToolBaseInterface? ForceUser, out bool OK)
         {
             IButlerToolBaseInterface? Tool = null;

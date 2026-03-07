@@ -12,6 +12,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Security;
 using ButlerSDK.ToolSupport.Bench;
 using ButlerProtocolBase.ToolSecurity;
+using ButlerSDK;
+using UnitTestDataTypes;
 
 
 namespace UnitTests.CurrentTests
@@ -22,13 +24,94 @@ namespace UnitTests.CurrentTests
         [TestMethod]
         public void Flags_Zero_Is_None()
         {
+            // so if any one gets any ideas that Nopermssion should be something not 0
             Assert.AreEqual(0, (int)ToolSurfaceScope.NoPermissions);
         }
 
     }
+
+    class dummy_limiter : IApiKeyRateLimiter
+    {
+        public int ServiceCount => throw new NotImplementedException();
+
+        public decimal SharedBudget { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public void AddService(string ServiceName, decimal CostPerCall, ulong CurrentInventory, ulong MaxInventory, ButlerApiLimitType LimitKind, bool ReplaceIfExists = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AssignNewCost(string ServiceName, decimal Cost)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AssignNewServiceLimit(string ServiceName, ulong Limit)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ChargeService(string ServiceName, int CallNumber)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool CheckForCallPermission(string ServiceName, int CallCount = 1)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool DoesServiceExist(string ServiceName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public decimal GetCurrentCost(string ServiceName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public decimal GetServiceInventory(string ServiceName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public decimal GetServiceLimit(string ServiceName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveService(string ServiceName, bool PanicIfNonExistent = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ResetServiceLimit(string ServiceName)
+        {
+            throw new NotImplementedException();
+        }
+    }
     [TestClass]
     public class JerryToolKit_Tests
     {
+        [TestMethod]
+        public void CreateInstance_CustomLimiter_IsNull_Throws()
+        {
+            Assert.ThrowsException<ArgumentNullException>(() => { var TestMe = new ButlerToolBench(null!); });
+        }
+
+        [TestMethod]
+        public void CreateInstance_CustomLimiter_IsNotNull_TypeMatchs()
+        {
+            var Testme = new ButlerToolBench(new dummy_limiter());
+            Assert.IsNotNull(Testme);
+            Assert.IsInstanceOfType(Testme, typeof(ButlerToolBench));
+
+            var CustomLimiter = Testme.GetPrivateField<IApiKeyRateLimiter>("Limiter");
+            Assert.IsNotNull(CustomLimiter);
+            Assert.IsInstanceOfType(CustomLimiter, typeof(dummy_limiter));
+
+        }
         [TestMethod]
         public void CanCreateInstance_ShouldNotBeNull()
         {

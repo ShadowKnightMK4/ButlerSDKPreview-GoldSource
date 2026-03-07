@@ -102,7 +102,9 @@ namespace ButlerSDK.ToolSupport
 
         public static IButlerToolResolver CreateSchedule(IButlerLLMProvider Provider, string name)
         {
+#pragma warning disable CA1859 
             var ret = new ToolResolver() as IButlerToolResolver;
+#pragma warning restore CA1859 
             if (ret is null)
             {
                 throw new InvalidOperationException("Warning: Unable to create ToolResolver and convert to interface. ");

@@ -2,15 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-	  <IsPackable>true</IsPackable>
-	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
+    <PackageReference Include="MSTest" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
   </ItemGroup>
 
 </Project>

@@ -15,10 +15,13 @@ using System.Net.NetworkInformation;
 using ButlerSDK.ToolSupport.Bench;
 using ButlerSDK.Core;
 using ButlerLLMProviderPlatform.Protocol;
+using System.Security;
+using ButlerProtocolBase.ToolSecurity;
 
 
 namespace ButlerSDK.ToolSupport
 {
+
 
 
     /*
@@ -318,42 +321,52 @@ namespace ButlerSDK.ToolSupport
                     try
                     {
                             // invoke the tool function. It's gonna set OK
-                      
-                        if (TargetTool is null)
-                        {
+
+                            if (TargetTool is null)
+                            {
                                 throw new InvalidOperationException("ERROR: ToolName passed check OK but got null instead of the tool instance before call. ");
-                        }
-                        else
-                        {
-                                /* dear future maintainer
-                                 * as C# currently don't like ref/out for async.
-                                 * OK is changed for async
+                            }
+                            else
+                            {
+                                /* relaunch 
                                  * 
-                                 * Sync version let the tool set set OK as normal or not and return a value seperate from that
-                                 * 
-                                 * Async version currently treats null return = bad time, not null = good time (ok is true).
                                  */
-                                if (TargetTool is IButlerToolAsyncResolver TT)
+                                if (!ToolSurfaceFlagChecking.CheckMinRequirements(TargetTool, this.SurfaceFlags))
                                 {
-                                    result = await CallableToolKit.CallToolFunctionAsync(TargetTool, Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString());
-                                    if (result is not null)
-                                    {
-                                        ok = true;
-                                    }
-                                    else
-                                    {
-                                        ok = false;
-                                    }
+                                    throw new SecurityException("Tool " + TargetTool.ToolName + " rquests more access than allowed currently. This action is blocked and tool is not gonna be ran");
                                 }
                                 else
                                 {
-                                    result = CallableToolKit.CallToolFunction(TargetTool, Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString(), out ok);
+                                    /* dear future maintainer
+                                     * as C# currently don't like ref/out for async.
+                                     * OK is changed for async
+                                     * 
+                                     * Sync version let the tool set set OK as normal or not and return a value seperate from that
+                                     * 
+                                     * Async version currently treats null return = bad time, not null = good time (ok is true).
+                                     */
+                                    if (TargetTool is IButlerToolAsyncResolver TT)
+                                    {
+                                        result = await CallableToolKit.CallToolFunctionAsync(TargetTool, Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString());
+                                        if (result is not null)
+                                        {
+                                            ok = true;
+                                        }
+                                        else
+                                        {
+                                            ok = false;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        result = CallableToolKit.CallToolFunction(TargetTool, Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString(), out ok);
+                                    }
+                                    if (Stats is not null)
+                                    {
+                                        UsedTools?.Add((Entry.ID.ToString(), TargetTool));
+                                    }
                                 }
-                         if (Stats is not null)
-                          {
-                            UsedTools?.Add((Entry.ID.ToString(),TargetTool));
-                           }
-                        }
+                            }
                         //result = ToolDB.CallToolFunction(Entry.ToolName.ToString(), Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString(), out OK);
                     }
                     catch (Exception ex)
@@ -610,6 +623,20 @@ namespace ButlerSDK.ToolSupport
         /// </summary>
         public bool EmptyScheduleRunFine { get; set; } = false;
         public IButlerLLMProvider? Provider { get; set; }
+
+#warning SurfaceFlags code needs to be added so the butler object that creates this resolver actually can set the tool surface. ATM THis currently respects the setting here BUT the chat session object (butler) doesn't set this yet.
+        public ToolSurfaceScope SurfaceFlags
+        {
+            get
+            {
+                return _SurfaceFlags;
+            }
+            set
+            {
+                this._SurfaceFlags = value;
+            }
+        }
+        ToolSurfaceScope _SurfaceFlags;
     }
 
 

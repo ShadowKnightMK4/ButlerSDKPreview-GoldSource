@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\ToolSurface\ButlerSDK.Tools.ToolSurface.csproj" />
   </ItemGroup>
 
 </Project>

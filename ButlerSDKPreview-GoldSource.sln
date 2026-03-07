@@ -111,6 +111,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.ChatCollections",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.Resolver", "ButlerSDK.Tools.Resolver\ButlerSDK.Tools.Resolver.csproj", "{9BD76351-9C11-4B28-8B2E-51D67785D9D2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscoverToolUnitTests", "DiscoverToolUnitTests\DiscoverToolUnitTests.csproj", "{72C746E4-B1E5-9DAE-9D32-9894DA1137C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -273,6 +275,10 @@ Global
 		{9BD76351-9C11-4B28-8B2E-51D67785D9D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9BD76351-9C11-4B28-8B2E-51D67785D9D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9BD76351-9C11-4B28-8B2E-51D67785D9D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72C746E4-B1E5-9DAE-9D32-9894DA1137C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72C746E4-B1E5-9DAE-9D32-9894DA1137C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72C746E4-B1E5-9DAE-9D32-9894DA1137C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72C746E4-B1E5-9DAE-9D32-9894DA1137C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -318,6 +324,7 @@ Global
 		{EDE71A67-93F9-40C2-BA77-733E51A8010A} = {90C68CD0-9657-46C7-865E-C27B83631C29}
 		{6277C530-ADC8-4E7D-B6F1-811D935F3551} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{9BD76351-9C11-4B28-8B2E-51D67785D9D2} = {362C5453-F0ED-480E-A297-F94779B3805F}
+		{72C746E4-B1E5-9DAE-9D32-9894DA1137C5} = {B6D434AF-AA6F-407F-AB28-FDF146EFAB97}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E98753D-786C-427A-9051-6515CCB6B063}

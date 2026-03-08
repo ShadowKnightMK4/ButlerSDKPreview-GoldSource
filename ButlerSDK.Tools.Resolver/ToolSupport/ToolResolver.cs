@@ -103,7 +103,7 @@ namespace ButlerSDK.ToolSupport
             return ret;
         }
 
-        public static IButlerToolResolver CreateSchedule(IButlerLLMProvider Provider, string name)
+        public static IButlerToolResolver CreateSchedule(IButlerLLMProvider Provider, string name, ToolSurfaceScope StartingSurfaceScope)
         {
 #pragma warning disable CA1859 
             var ret = new ToolResolver() as IButlerToolResolver;
@@ -113,6 +113,7 @@ namespace ButlerSDK.ToolSupport
                 throw new InvalidOperationException("Warning: Unable to create ToolResolver and convert to interface. ");
             }
             ret.Provider = Provider;
+            ret.ToolSurfaceScope = StartingSurfaceScope;
             return ret;
         }
 
@@ -328,10 +329,10 @@ namespace ButlerSDK.ToolSupport
                             }
                             else
                             {
-                                /* relaunch 
-                                 * 
+                                /* 
+                                 * test if the tool is allowed to be run in the current surface/context before we run it.  If it's not allowed, we skip running it and add a failure for the entry.
                                  */
-                                if (!ToolSurfaceFlagChecking.CheckMinRequirements(TargetTool, this.SurfaceFlags))
+                                if (!this.TestIfToolIsAllowed(TargetTool))
                                 {
                                     throw new SecurityException("Tool " + TargetTool.ToolName + " rquests more access than allowed currently. This action is blocked and tool is not gonna be ran");
                                 }
@@ -605,6 +606,12 @@ namespace ButlerSDK.ToolSupport
             return ResolvedTool.Select(s => s.Results).ToArray();
         }
 
+       
+        private bool TestIfToolIsAllowed(IButlerToolBaseInterface Tool)
+        {
+            return ToolSurfaceFlagChecking.CheckMinRequirements(Tool, this._SurfaceFlags);
+        }
+
 
     
         public int ResolvedToolCount
@@ -624,18 +631,10 @@ namespace ButlerSDK.ToolSupport
         public bool EmptyScheduleRunFine { get; set; } = false;
         public IButlerLLMProvider? Provider { get; set; }
 
-#warning SurfaceFlags code needs to be added so the butler object that creates this resolver actually can set the tool surface. ATM THis currently respects the setting here BUT the chat session object (butler) doesn't set this yet.
-        public ToolSurfaceScope SurfaceFlags
-        {
-            get
-            {
-                return _SurfaceFlags;
-            }
-            set
-            {
-                this._SurfaceFlags = value;
-            }
-        }
+
+
+        public ToolSurfaceScope ToolSurfaceScope { get => _SurfaceFlags; set => _SurfaceFlags = value; }
+
         ToolSurfaceScope _SurfaceFlags;
     }
 

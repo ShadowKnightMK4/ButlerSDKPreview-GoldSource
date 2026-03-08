@@ -1,4 +1,5 @@
 ﻿using ButlerBaseInternal;
+using ButlerProtocolBase.ToolSecurity;
 using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK.Core;
 using ButlerSDK.ToolSupport.Bench;
@@ -10,21 +11,64 @@ using System.Text.Json;
 
 namespace ButlerSDK.ToolSupport.DiscoverTool
 {
-  
-    
 
+
+    /// <summary>
+    /// The default scanner. Looks at teh loaded assembles and presents them.
+    /// </summary>
+    public class DefaultButlerTool_DiscoverResource: DefaultButlerTool_DiscoverResourceBase
+    {
+        public DefaultButlerTool_DiscoverResource() : base()
+        {
+        }
+        protected override bool FilterTool(IButlerToolBaseInterface tool)
+        {
+            return base.FilterTool(tool);
+        }
+    }
+
+    /// <summary>
+    /// Different flavor. This discover resource is for tools that want to be discoverable but only on certain surfaces.  You can set the surface scope and the filter will only allow tools to be added if the scope of the tool matches the surface scope of the discover resource.  This is ment for tools that want to be discoverable but only on certain surfaces.  You can set the surface scope and the filter will only allow tools to be added if the scope of the tool matches the surface scope of the discover resource.
+    /// </summary>
+    public class ToolSurfaceButlerTool_DiscovererResource: DefaultButlerTool_DiscoverResourceBase
+    {
+        public ToolSurfaceScope TargetScope { get; set; }
+        public ToolSurfaceButlerTool_DiscovererResource(ToolSurfaceScope scope) : base()
+        {
+            TargetScope = scope;
+        }
+        /// <summary>
+        /// we filter based on scope
+        /// </summary>
+        /// <param name="tool"></param>
+        /// <returns></returns>
+        protected override bool FilterTool(IButlerToolBaseInterface tool)
+        {
+            if (ToolSurfaceFlagChecking.CheckMinRequirements(tool, TargetScope))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public override void Initialize(IButlerVaultKeyCollection? KeyHandler)
+        {
+            base.Initialize(KeyHandler);
+            this.ToolCollection.RemoveAll(tool => { if (ToolSurfaceFlagChecking.CheckMinRequirements(tool, TargetScope)) { return false; } else { return true; } });
+        }
+    }
     /// <summary>
     /// The default implementation of the <see cref="IButlerTool_DiscoverResource"/> that <see cref="ButlerTool_DiscoverTools"/> uses. It'll scan the loaded assemblies for any <see cref="IButlerToolBaseInterface"/>, add them to its kit if  <see cref="ButlerTool_DiscoverAttributes"/> don't forbid it and let the butler pick as needed
     /// </summary>
-    public class DefaultButlerTool_DiscoverResource : IButlerTool_DiscoverResource
+    public class DefaultButlerTool_DiscoverResourceBase : IButlerTool_DiscoverResource
     {
-        readonly List<IButlerToolBaseInterface> ToolCollection = [];
+        protected readonly List<IButlerToolBaseInterface> ToolCollection = [];
 
         /// <summary>
         /// Initializes the resource for <see cref="ButlerTool_DiscoverTools"/>. Note this implementation will scan current domain assemblies, create instances that match and pass the passed <see cref="IButlerVaultKeyCollection"/> as is to them.
         /// </summary>
         /// <param name="KeyHandler">instance of this interface to pass to all tools instanced</param>
-        public void Initialize(IButlerVaultKeyCollection? KeyHandler)
+        public virtual void Initialize(IButlerVaultKeyCollection? KeyHandler)
         {
            
             // grab running assemblies
@@ -92,9 +136,9 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
 
         public IList<string> Search(string terms)
         {
-         return Search(new string[] { terms });  
+           return Search(new string[] { terms });  
         }
-        public IList<string> Search(string[] terms)
+        public virtual IList<string> Search(string[] terms)
         {
             List<string> ret = new();
             foreach (IButlerToolBaseInterface tool in ToolCollection)

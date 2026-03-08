@@ -1,6 +1,8 @@
 ﻿using ButlerProtocolBase.ToolSecurity;
 using ButlerSDK;
 using ButlerSDK.ApiKeyMgr.Contract;
+using ButlerSDK.Core;
+using ButlerSDK.ToolSupport.DiscoverTool;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using System;
@@ -9,7 +11,6 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using ButlerSDK.Core;
     namespace UnitTests.UnitTestingTools
 {
     [ToolSurfaceCapabilities(ToolSurfaceScope.MaxAvailablePermissions)]
@@ -43,6 +44,64 @@ using ButlerSDK.Core;
         public bool ValidateToolArgs(ButlerChatToolCallMessage? Call, JsonDocument? FunctionParse)
         {
             return true;
+        }
+    }
+
+    [ButlerTool_DiscoverAttributes(true)]
+    public class DiscoverToolDoNotDiscover_TAGGED_TRUE : ButlerToolBase
+    {
+        public DiscoverToolDoNotDiscover_TAGGED_TRUE(IButlerVaultKeyCollection? KeyHandler) : base(KeyHandler)
+        {
+        }
+
+        public override string ToolName => throw new NotImplementedException();
+
+        public override string ToolDescription => throw new NotImplementedException();
+
+        public override string ToolVersion => throw new NotImplementedException();
+
+        public override string GetToolJsonString()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool ValidateToolArgs(ButlerChatToolCallMessage? Call, JsonDocument? FunctionParse)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [ButlerTool_DiscoverAttributes(false)]
+    public class DiscoverToolWILLDISCOVER_TAGGED_FALSE : ButlerToolBase
+    {
+        public DiscoverToolWILLDISCOVER_TAGGED_FALSE(IButlerVaultKeyCollection? KeyHandler) : base(KeyHandler)
+        {
+        }
+
+        public override string ToolName => throw new NotImplementedException();
+
+        public override string ToolDescription => throw new NotImplementedException();
+
+        public override string ToolVersion => throw new NotImplementedException();
+
+        public override string GetToolJsonString()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool ValidateToolArgs(ButlerChatToolCallMessage? Call, JsonDocument? FunctionParse)
+        {
+            throw new NotImplementedException();
         }
     }
 

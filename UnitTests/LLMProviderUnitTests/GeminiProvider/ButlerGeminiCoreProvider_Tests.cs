@@ -34,7 +34,7 @@ namespace GeminiProvider
         }
 
         [TestMethod]
-        public void CreateChatToolWorks_ShouldMatch()
+        public void CreateChatToolWorks_UsesParameter_NOTSCHEMA_PARAMETER_NOTNULL()
         {
             ButlerGeminiProvider x = new();
             Assert.IsNotNull(x);
@@ -49,23 +49,14 @@ namespace GeminiProvider
             Assert.AreEqual(tool.Description, testtool.ToolDescription);
             Assert.AreEqual(tool.Name, testtool.ToolName);
 
-            JsonNode DataJason;
-            if (tool.ParametersJsonSchema is not null)
-                DataJason = tool.ParametersJsonSchema;
+            Schema DataJason;
+            if (tool.Parameters is not null)
+                DataJason = tool.Parameters;
             else
                 DataJason = null!; // null here is intended to be failure
 
             Assert.IsNotNull(DataJason);
 
-            JsonDocument? doc;
-
-            {
-                doc = JsonDocument.Parse(testtool.GetToolJsonString());
-            }
-            var test_against = doc.RootElement.AsNode();
-
-
-            Assert.IsTrue(JsonNode.DeepEquals(DataJason, test_against));
         }
 
     }

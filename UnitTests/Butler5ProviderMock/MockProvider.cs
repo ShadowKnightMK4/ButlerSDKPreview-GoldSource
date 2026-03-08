@@ -19,11 +19,10 @@ using System.Security;
 namespace ButlerSDK.Providers.UnitTesting.MockProvider
 {
     
-    public class MockProviderEntryPoint : IButlerLLMProvider, IButlerChatCreationProvider, IButlerChatCreationProvider_NoApiNeeded, IButlerLLMProvider_RecoverOptions
+    public class ErrorMockProviderEntryPoint : IButlerLLMProvider, IButlerChatCreationProvider, IButlerChatCreationProvider_NoApiNeeded
     {
-        public MockProviderEntryPoint()
+        public ErrorMockProviderEntryPoint() : base()
         {
-
         }
 
         public IButlerChatCreationProvider ChatCreationProvider => this;
@@ -37,10 +36,41 @@ namespace ButlerSDK.Providers.UnitTesting.MockProvider
             return butlerToolBase;
         }
 
-        /// <summary>
-        /// This sets what <see cref="GetChatClient(string, object?, IButlerChatPreprocessor?)"/> will return. If swapping, your new chat client should have a 0 argument constructor
-        /// </summary>
-        public Type ChatClientAward = typeof(MockChatClient);
+        public IButlerChatClient? GetChatClient(string model, object? Options, IButlerChatPreprocessor? PPR)
+        {
+            return new ErrorMockClient();
+        }
+
+        public void Initialize(SecureString x)
+        {
+            
+        }
+
+        public void Initialize()
+        {
+          
+        }
+    }
+    public class MockProviderEntryPoint : IButlerLLMProvider, IButlerChatCreationProvider, IButlerChatCreationProvider_NoApiNeeded, IButlerLLMProvider_RecoverOptions
+    {
+        public MockProviderEntryPoint()
+        {
+            
+        }
+
+
+        public IButlerChatCreationProvider ChatCreationProvider => this;
+
+        public IButlerChatCreationSupportedModels? SupportedModels => throw new NotImplementedException();
+
+        public IButlerChatCompletionOptions DefaultOptions => new ButlerChatCompletionOptions();
+
+        public object CreateChatTool(IButlerToolBaseInterface butlerToolBase)
+        {
+            return butlerToolBase;
+        }
+
+
         public IButlerChatClient? GetChatClient(string model, object? Options, IButlerChatPreprocessor? PPR)
         {
             return new MockChatClient();
@@ -78,26 +108,30 @@ namespace ButlerSDK.Providers.UnitTesting.MockProvider
         public bool WasIniNOkeyCalled = false;
     }
 
+    public class MockException : Exception
+    {
+        public MockException(string message) : base(message)
+        {
+        }
+    }
 
     public class ErrorMockClient: MockChatClient
     {
-        public class MockException : Exception
-        {
-            public MockException(string message) : base(message)
-            {
-            }
-        }
+
         public Exception ExceptionToThrow = new MockException("Mock Exception");
 
         public new IButlerClientResult CompleteChat(IList<ButlerChatMessage> msg)
         {
-            throw new NotImplementedException();
+            throw ExceptionToThrow;
         }
 
         public new async IAsyncEnumerable<ButlerStreamingChatCompletionUpdate> CompleteChatStreamingAsync(IList<ButlerChatMessage> msg, IButlerChatCompletionOptions options, [EnumeratorCancellation] CancellationToken cancelMe = default)
         {
+            throw ExceptionToThrow;
+#pragma warning disable CS0162 // Unreachable code detected
             yield return new ButlerStreamingChatCompletionUpdate();
-            throw ExceptionToThrow; 
+#pragma warning restore CS0162 // Unreachable code detected
+
         }
     }
     public class MockChatClient : IButlerChatClient

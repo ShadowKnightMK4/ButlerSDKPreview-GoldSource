@@ -21,14 +21,11 @@ namespace CoreUnitTests.CurrentTests
         [TestMethod]
         public void Butler_TestPassThruRecovery_TripsExecptionOnFail()
         {
-            var dummyKeyMgr = new EnvironmentApiKeyMgr();   
-            var Dummy = new MockProviderEntryPoint();
+            var dummyKeyMgr = new EnvironmentApiKeyMgr();
+            var Dummy = new ErrorMockProviderEntryPoint();
             var TestMe = new Butler(dummyKeyMgr, Dummy, null, "None", Butler.NoApiKey, null, null);
-            Dummy.ErrorHandlerReturnValue = false; // false here means the provider has chose to NOT handle the error
-                                                   // this should cause streaming attempts to throw if something happens
-            Dummy.ChatClientAward = typeof(ErrorMockClient); // this client will throw on any attempt to use it, simulating a failure in the provider layer
-
-            Assert.ThrowsException<ErrorMockClient.MockException>(async () =>
+            
+            Assert.ThrowsExceptionAsync<MockException>(async () =>
             {
                 await TestMe.StreamResponseAsync
                 (null!, null, false, 5, 5, default); // the ! is because we want this to be null and go boom

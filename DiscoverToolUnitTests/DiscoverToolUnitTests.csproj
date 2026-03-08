@@ -12,6 +12,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\DiscovererTool\ButlerSDK.Tools.DiscovererTool.csproj" />
+    <ProjectReference Include="..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\ToolSurface\ButlerSDK.Tools.ToolSurface.csproj" />
+    <ProjectReference Include="..\UnitTests\UnitTestDataTypes\UnitTestDataTypes.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
   </ItemGroup>
 

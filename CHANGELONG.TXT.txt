@@ -8,7 +8,7 @@ Note: Upgrading to v1.1.0-preview or higher is strongly recommended due to break
 
 🔒 Security & Governance
 
-Capability-Based Security (ToolSurfaceScope): Tools are now recommanded to declare their operational intent via the [ToolSurfaceCapabilities] attribute (e.g., NetworkRead, DiskWrite, ArbitraryExecution). 
+Capability-Based Security (ToolSurfaceScope): Tools are now recommanded to declare their operational intent via the [ToolSurfaceCapabilities] attribute (e.g., NetworkRead, DiskWrite, ArbitraryExecution).  
 
 Active Firewalling: Butler.AddTool() now actively enforces security perimeters. If a tool requests permissions exceeding the Butler instance's allowed scope, the system immediately rejects it and throws a SecurityException.
 
@@ -33,6 +33,8 @@ budget/limits,  Removing tools, GetTool(), Exist Tool().  Notable this does *not
 The Bench (the tool collection): New Feature. Supply your ApiKeyRateLimiter flavor thru Dependency Injection in the constructer. It also rejects null.
 
 Tool Discoverer (reflection based tool scanner): Respects tool surface scope by default if assigned permssion. It also now has a dependancy on ButlerSDK.Tools.ToolSurface
+Tool Discoverer (reflection based tool scanner): Default resource search term is now virtual as well as it's initizailtion routine. Enjoy the customization
+Tool Discoverer (reflection based tool scanner): New resource: ToolSurfaceButlerTool_DiscovererResource. This one accepts a tool surface flag for allowed to be added to llm
 
 🤖 Provider Updates
 

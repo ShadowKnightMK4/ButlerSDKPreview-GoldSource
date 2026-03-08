@@ -1,4 +1,5 @@
 ﻿using ButlerLLMProviderPlatform.Protocol;
+using ButlerProtocolBase.ToolSecurity;
 using ButlerSDK.ToolSupport.Bench;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
@@ -10,6 +11,10 @@ namespace ButlerSDK.ToolSupport
 {
     public interface IButlerToolResolver 
     {
+        /// <summary>
+        /// The exposed surface scope for the tool resolver. The resolver should refuse to run tools that request more access than allowed
+        /// </summary>
+        public ToolSurfaceScope ToolSurfaceScope { get; set; }
         /// <summary>
         /// A provider assocated with this tool resollver, see - <see cref="IButlerLLMProvider_SpecificToolExecutionPostCall"/>
         /// </summary>

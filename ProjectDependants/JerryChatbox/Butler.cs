@@ -64,7 +64,7 @@ namespace ButlerSDK.Core
             this.PostProcessing = PostProcessor;
             this.PreProcessing = PPR;
 
-            this.ToolExec = ToolResolver.CreateSchedule(Provider, "Default");
+            this.ToolExec = ToolResolver.CreateSchedule(Provider, "Default", ToolSurfaceScope);
             this.ToolExecType = typeof(ToolResolver);
    
         }
@@ -88,7 +88,7 @@ namespace ButlerSDK.Core
 
             if ( (ToolResolveHandler is null) || (ToolResolveHandler == default))
             {
-                this.ToolExec = ToolResolver.CreateSchedule(Provider, "Default");
+                this.ToolExec = ToolResolver.CreateSchedule(Provider, "Default", ToolSurfaceScope);
                 this.ToolExecType = typeof(ToolResolver);
             }
             else
@@ -147,27 +147,26 @@ namespace ButlerSDK.Core
         {
             if (Resolver is null)
             {
-                LogTap?.LogString("Created the Tool Resolver object");
-                MethodInfo? CreateMe = this.ToolExecType.GetMethod("CreateSchedule", new Type[] { typeof(IButlerLLMProvider), typeof(string) });
+                LogTap?.LogString("Created the Tool Resolver object and assing SurfaceScope");
+                MethodInfo? CreateMe = this.ToolExecType.GetMethod("CreateSchedule", new Type[] { typeof(IButlerLLMProvider), typeof(string) , typeof(ToolSurfaceScope)});
                 if (CreateMe == null)
                 {
                     throw new InvalidOperationException($"Unable to get create schedule method dispite matching data type. Check if it exists as STATIC and if the type used {ToolExecType.Name} has it.");
                 }
                 else
                 {
-                    Resolver = (IButlerToolResolver?)CreateMe.Invoke(ToolExec, new object[] { Provider,  "ResolveMe" } );
+                    Resolver = (IButlerToolResolver?)CreateMe.Invoke(ToolExec, new object[] { Provider,  "ResolveMe", this.ToolSurfaceScope } );
                     if (Resolver is null)
                     {
                         throw new InvalidOperationException($"Fatal error: Unable to create tool scheduler clas (it returned null on create). Class name{ToolExecType.Name}");
                     }
                 }
-            } /*
-                    Resolver = IButlerToolResolver.CreateSchedule("ResolveMe");
-                }
-                else*/
-                {
-                    LogTap?.LogString("Not creating Tool Resolver object, it already exists.");
-                }
+            } 
+            else 
+            {
+                    LogTap?.LogString("Not creating Tool Resolver object as it exists already, ensuring ToolSurfaceScope matches");
+                    Resolver.ToolSurfaceScope = this.ToolSurfaceScope;
+            }
             
             
         }

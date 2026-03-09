@@ -6,11 +6,22 @@
     <Nullable>enable</Nullable>
 	  <IsPackable>true</IsPackable>
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	  <PackageReadmeFile>ButlerSDK.Core_NugetReadme.MD</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="ButlerBase.cs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\Thoma\source\repos\ButlerSDKPreview1-GoldSource\NUGET_README.md" />
+    <None Remove="NUGET_README.MD" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<!-- 2. Pack the file into the root of the NuGet package -->
+		<None Include="ButlerSDK.Core_NugetReadme.MD" Pack="true" PackagePath="\" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />

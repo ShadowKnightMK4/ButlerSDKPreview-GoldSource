@@ -5,6 +5,7 @@ using ButlerSDK.ButlerPostProcessing;
 using ButlerSDK.Core;
 using ButlerSDK.Debugging;
 using ButlerSDK.Providers.Gemini;
+using ButlerSDK.Providers.OpenAI;
 using ButlerSDK.Tools;
 using ButlerToolContract.DataTypes;
 using SecureStringHelper;
@@ -13,12 +14,13 @@ using System.Reflection;
 using System.Security;
 /*
  * A word. The TestBed project you see here is how I did manually testing aka edit and run.
+ * There's no fancy rules for it to folly.
  */
 #pragma warning disable
 namespace ButlerTestBed
 {
     /// <summary>
-    /// Stricty for this project. Pulls keys from arbitary folder by location
+    /// Stricty for this project. Pulls keys from arbitary folder by location *not* in the search path
     /// </summary>
     public class TestingFileApiKeyMgr : IButlerVaultKeyCollection
     {
@@ -121,7 +123,7 @@ namespace ButlerTestBed
             ButlerSDK.Providers.OpenAI.ButlerOpenAiProvider OpenAi;
             //            var Llama = new Butler.Providers.LlamaProvider.Butler5ProviderLlama(new  DeepSeekV2PPr(), null);
             var Llama = new ButlerSDK.Providers.OpenAI.Ollama.OllamaOpenAiProvider(null);
-            //OpenAi = new ButlerOpenAiProvider();
+            OpenAi = new ButlerOpenAiProvider();
             var Gemini = new ButlerGeminiProvider();
             DevBuild.Authenticate(System.Reflection.Assembly.GetExecutingAssembly());
 
@@ -178,12 +180,12 @@ that the tools may change depending on the chat as needed.
             //var target = "butler-8k:latest"; DO BOOT 
             //var target = "llama3.1:latest"; da boot
             //var target = "gpt-oss:20b";  WORKS
-            var target = "models/gemini-flash-latest"; //USED TO WORK
-            //var target = "gpt-4o"; //WORKS
+           // var target = "models/gemini-flash-latest"; //USED TO WORK
+            var target = "gpt-4o"; //WORKS
             //var testme = new ButlerSDK.Butler(DevBuild, Llama, null, "models/gemini-flash-latest", "GEMINI.KEY");
             //var testme = new ButlerSDK.ButlerPostProcessing(DevBuild, Llama, null, target, "GEMINI.KEY", null, null); 
 
-            var testme = new Butler(DevBuild, Gemini, null, target, "GEMINI.KEY", null, null);
+            var testme = new Butler(DevBuild, OpenAi, null, target, "OPENAI.KEY", null, null);
             // testme.
             //var testme = new ButlerSDK.ButlerPostProcessing(DevBuild, OpenAi, null, target, "OPENAI.KEY");
 

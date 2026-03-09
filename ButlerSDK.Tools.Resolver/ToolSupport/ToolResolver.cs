@@ -607,9 +607,26 @@ namespace ButlerSDK.ToolSupport
         }
 
        
+        /// <summary>
+        /// helper to do: Is the tool marked? check if we allow it's permssions. If not marked - do we alllow all access?
+        /// </summary>
+        /// <param name="Tool">tool instance to check</param>
+        /// <returns>true if tool matches permssions ok</returns>
         private bool TestIfToolIsAllowed(IButlerToolBaseInterface Tool)
         {
-            return ToolSurfaceFlagChecking.CheckMinRequirements(Tool, this._SurfaceFlags);
+            bool result = ToolSurfaceFlagChecking.CheckMinRequirements(Tool, this._SurfaceFlags);
+            if (result) return result;
+            else
+            {
+                if (this.ToolSurfaceScope == ToolSurfaceScope.AllAccess)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
         }
 
 

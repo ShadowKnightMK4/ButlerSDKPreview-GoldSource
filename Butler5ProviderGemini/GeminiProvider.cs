@@ -685,7 +685,8 @@ namespace ButlerSDK.Providers.Gemini
                 }
                 else
                 {
-                    CPart.FunctionCall.Args = null;
+                    //CPart.FunctionCall.Args = null;
+                    CPart.FunctionCall.Args = JsonNode.Parse("{}");
                 }
 
                 ToolCall.Parts.Add(CPart);
@@ -713,9 +714,9 @@ namespace ButlerSDK.Providers.Gemini
                         }
                     }
                     //CPart.FunctionResponse.Response = JsonNode.Parse(JsonSerializer.Serialize(Results)).Root;
-                    if (CPart.FunctionResponse.Response is not null)
+                    //if (CPart.FunctionResponse.Response is not null)
                     {
-                        throw new InvalidOperationException("Successful json parse BUT did not assign ok to response");
+                  //      throw new InvalidOperationException("Successful json parse BUT did not assign ok to response");
                     }
                 }
                 catch (Exception ex)
@@ -838,7 +839,23 @@ namespace ButlerSDK.Providers.Gemini
                                     GeminiAssist_ThoughtSigHelper.ButlerToGeminiThoughtFetch(part, GeminiPart);
                                     LLMResponse.AddPart(GeminiPart);
                                 }
-                                else
+                                else if (part.MessageType == ButlerChatMessageType.Refusal)
+                                {
+                                    Part GeminiPart = new Part();
+                                    if (part.Refusal is not null)
+                                    {
+                                        GeminiPart.Text = part.Refusal;
+                                    }
+                                    else
+                                    {
+                                        GeminiPart.Text = part.Text;
+                                    }
+                                    
+                                    GeminiAssist_ThoughtSigHelper.ButlerToGeminiThoughtFetch(part, GeminiPart);
+                                    LLMResponse.AddPart(GeminiPart);
+                                    
+                                }
+                                else 
                                 {
                                     throw new NotImplementedException("Currently Gemini Provider only supports text");
                                 }
@@ -1030,6 +1047,7 @@ namespace ButlerSDK.Providers.Gemini
             // send this to Gemini and return the wrapper to process it
             var response = Client.StreamContentAsync(chat);
 #if DEBUG
+            /*
             Console.BackgroundColor = ConsoleColor.Black; Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("\r\n");
             Console.BackgroundColor = ConsoleColor.Red;
@@ -1037,7 +1055,7 @@ namespace ButlerSDK.Providers.Gemini
             Console.WriteLine("DEBUG ONLY: This is json of what's been end to the gemini end point");
             Console.WriteLine(JsonSerializer.Serialize(chat, new JsonSerializerOptions() { WriteIndented = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull }));
             Console.BackgroundColor = ConsoleColor.Black; Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("\r\n");
+            Console.WriteLine("\r\n");*/
 #endif
 
             await foreach (var reply in response.WithCancellation(cancelMe))

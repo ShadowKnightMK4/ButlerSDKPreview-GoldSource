@@ -445,6 +445,7 @@ namespace ButlerSDK.Core
             /// Do no action
             /// </summary>
             None ,// *Elsa voice* let it go (and propagate to the consumer of the library*
+
             SleepAction , // recovery is sleep x and then goto reset via a label.
 
             SomethingBadHappened,
@@ -715,19 +716,37 @@ namespace ButlerSDK.Core
 
                         if ((NetworkErrorStateHandling == NetworkErrorAction.SleepAction))
                         {
-                            if (CurrentNetworkAttempts < NetworkErrorMaxRetries)
-                            {
-                                NetworkErrorStateHandling++;
-                                LogTap?.LogString($"Attempting recoverable C# exception in mid ai turn. Used {CurrentNetworkAttempts} out of a max of {NetworkErrorMaxRetries} so far");
-                                await Task.Delay(SleepTime, cancelMe);
-                                goto ProviderErrorHandlerMark;
-                            }
-                            else
-                            {
-                                LogTap?.LogString($"Provider indicated C# exception recoverable BUT we're out of recovery attempts. Currently at {CurrentNetworkAttempts} out of a max of {NetworkErrorStateHandling} so are. Passing exception up the chain");
-                                throw;
-                            }
+                            
 
+                        }
+                        switch (NetworkErrorStateHandling)
+                        {
+                            case NetworkErrorAction.None: throw;
+                            case NetworkErrorAction.SleepAction:
+                                {
+                                    if (CurrentNetworkAttempts < NetworkErrorMaxRetries)
+                                    {
+                                        NetworkErrorStateHandling++;
+                                        LogTap?.LogString($"Attempting recoverable C# exception in mid ai turn. Used {CurrentNetworkAttempts} out of a max of {NetworkErrorMaxRetries} so far");
+                                        await Task.Delay(SleepTime, cancelMe);
+                                        goto ProviderErrorHandlerMark;
+                                    }
+                                    else
+                                    {
+                                        LogTap?.LogString($"Provider indicated C# exception recoverable BUT we're out of recovery attempts. Currently at {CurrentNetworkAttempts} out of a max of {NetworkErrorStateHandling} so are. Passing exception up the chain");
+                                        throw;
+                                    }
+                                }
+                            case NetworkErrorAction.NoError:
+                                {
+                                    LogTap?.LogString($"Provider returned no error in error handling! This is weird. Treating it as Corrective action none.  Recommend just returning none");
+                                    throw;
+                                }
+                            default:
+                                {
+                                    LogTap?.LogString($"Provider returned an unknown to this version of butler error code for recovery. Treating it as error recoveration action none.");
+                                    throw;
+                                }
                         }
                     }
                     else

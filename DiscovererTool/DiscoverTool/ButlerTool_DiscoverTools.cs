@@ -54,7 +54,19 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
         public override void Initialize(IButlerVaultKeyCollection? KeyHandler)
         {
             base.Initialize(KeyHandler);
-            this.ToolCollection.RemoveAll(tool => { if (ToolSurfaceFlagChecking.CheckMinRequirements(tool, TargetScope)) { return false; } else { return true; } });
+            this.ToolCollection.RemoveAll(
+                tool => 
+                {
+                    if (this.TargetScope == ToolSurfaceScope.AllAccess)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                      var  passed=   ToolSurfaceFlagChecking.CheckMinRequirements(tool, this.TargetScope);
+                        return !passed;
+                    }
+                });
         }
     }
     /// <summary>
@@ -447,7 +459,9 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
             ReturnValue["matchlist"] = match.ToString();
             return new ButlerChatToolResultMessage(FuncID, JsonSerializer.Serialize(ReturnValue));
         }
+#pragma warning disable CA1822 // Mark members as static
         bool validate_tool_name_list(string name)
+#pragma warning restore CA1822 // Mark members as static
         {
             return true;
         }

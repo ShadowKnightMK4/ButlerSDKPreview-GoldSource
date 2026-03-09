@@ -93,7 +93,7 @@ namespace ButlerSDK.ToolSupport
         /// </summary>
         /// <param name="Tool"></param>
         /// <param name="ToolAllowedPermissions"></param>
-        /// <returns></returns>
+        /// <returns>returns true if tool is marked and passed permssion is fully allowed</returns>
         /// <remarks>
         /// If a tool is not marked for scope, it's assumed to Want <see cref="ToolSurfaceScope.AllAccess"/> and filtered per the setting
         /// </remarks>

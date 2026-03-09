@@ -1,5 +1,6 @@
-﻿using ButlerSDK.ApiKeyMgr.Contract;
-using ButlerLLMProviderPlatform.DataTypes;
+﻿using ButlerLLMProviderPlatform.DataTypes;
+using ButlerProtocolBase.ToolSecurity;
+using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using System;
@@ -12,10 +13,12 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace ButlerSDK.Tools
+
 {    /// <summary>
      /// Politely ask the device running ButlerSDK what time and date settings are for a <see cref="DateTime.Now"/>
      /// </summary>
      /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
+    [ToolSurfaceCapabilities(ToolSurfaceScope.NoPermissions)]
     public class ButlerTool_DeviceAPI_GetLocalDateTime: ButlerToolBase, IButlerToolPostCallInjection
     {
         const string json_template = @"{

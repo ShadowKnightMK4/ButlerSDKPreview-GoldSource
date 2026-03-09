@@ -4,7 +4,7 @@
 Summary:
 This release focuses heavily on Architectural Decoupling, Security Governance, and Provider Stability. It formally introduces the Tool Surface Scope security model and entirely decouples the Memory Engine from the Core Logic.
 
-Note: Upgrading to v1.1.0-preview or higher is strongly recommended due to breaking enhancements in the ButlerSDK.Core.Abstraction data types and provider-specific storage objects.
+Note: Upgrading to v1.1.0-preview or higher is strongly recommended due to breaking enhancements in the ButlerSDK.Core.Abstraction data types and provider-specific storage objects. It's recommended to version match if at all reasonable possible.
 
 🔒 Security & Governance
 
@@ -30,7 +30,7 @@ Provider Metadata Hooks: Introduced a new lifecycle hook to handle Provider-Spec
 The Bench (the tool collection):  Multithread Guard is made obsolete. It's always active now. This Effects the public AddTool routines, updating tool call 
 budget/limits,  Removing tools, GetTool(), Exist Tool().  Notable this does *not* effect Async calling but *does* effect Sync based tool calling.
 
-The Bench (the tool collection): New Feature. Supply your custom ApiKeyRateLimiter flavor via Dependency Injection in the constructer. It also rejects null. Will default to  ApiKeyRateLimiter if you don't supply one.
+The Bench (the tool collection): New Feature. Supply your ApiKeyRateLimiter flavor thru Dependency Injection in the constructer. It also rejects null.
 
 Tool Discoverer (reflection based tool scanner): Respects tool surface scope by default if assigned permssion. It also now has a dependancy on ButlerSDK.Tools.ToolSurface
 Tool Discoverer (reflection based tool scanner): Default resource search term is now virtual as well as it's initizailtion routine. Enjoy the customization
@@ -42,15 +42,14 @@ Google Gemini State Persistence: Fixed a critical state-loss issue where Gemini'
 
 Google Gemini Pragmatic Shims: Added a conversation history validator. To prevent HTTP 400 errors from the Gemini API when history starts with a Model/System response, Butler now seamlessly injects a placeholder User message ("Hello") if the the chat log is empty (not counting system messages) or starts with a assistant role.
 
-Reserved Keyword Notice: "GeminiModelThinking" is now a reserved provider-specific keyword used to route model thought-traces. Custom provider implementations should avoid utilizing this specific key in the ProviderSpecific dictionary to prevent collision if hot-swapping to Gemini. To be clear as long as you're not using the Gemini provider, butler itself doesn't mind. The Gemini provider gets first dibbs for this word.
+Reserved Keyword Notice: "GeminiModelThinking" is now a reserved provider-specific keyword used to route model thought-traces. Custom provider implementations should avoid utilizing this specific key in the ProviderSpecific dictionary to prevent collision if hot-swapping to Gemini. To be clear this this keyword is using in the dictionary<string,string> that houses provider specific strings.
 
 
-Exception Propagation: Fixed a critical fault where mid-stream provider exceptions (such as API Key rejections or rate limits) were being silently swallowed if provider didn't do the error recovery feature . Butler now correctly surfaces unrecoverable provider errors directly to the calling application.
-Exception Propagation: Fixed a case in the the fix above where the openai provider getting a bad model name was current treated as a recoverable error in thestreaming chat routine.
+Exception Propagation: Fixed a critical fault where mid-stream provider exceptions (such as API Key rejections or rate limits) were being silently swallowed. Butler now correctly surfaces unrecoverable provider errors directly to the calling application.
 
 🐛 Bug Fixes
 
-Core: Hardened the logic within ButlerMessageStitcher to ideally handle fragmented and malformed LLM packets better.
+Core: Hardened the logic within ButlerMessageStitcher to robustly handle fragmented and malformed stream packets.
 
 Tooling: Refactored state evaluation in ButlerTool_RestAPI_GetPublicHolidays to eliminate an infinite loop vulnerability caused by invalid JSON payloads.
 
@@ -59,6 +58,19 @@ ApiKeyRateLimiter (ButlerSDK's limiter for runaway LLM calls): fixed a case wher
 ApiKeyRateLimiter (ButlerSDK's limiter for runaway LLM calls): Each public api currently synchs via a private object for the class now. This should help prevent multh threading issues.
 
 
-Fun Little story:
-I tested the what's the time tool with gemini and found the tool surface sandbox thing actually sucessfully blocked the request. The LLM explained there was a problem without missing a beat.
+⚠️ Possible Risks & Migration Notes
+
+Gemini Provider: The reserved keyword GeminiModelThinking is exclusively for Gemini Provider. Using it outside of Gemini Provider and later swapping to the provider may corrupt thought-trace state. Other providers can safely ignore this restriction.
+
+Tool Memory Access: Tools accessing past context messages may encounter aged-out messages due to automatic trimming. BYOCC (Bring Your Own Chat Collection) implementations must handle this explicitly.
+
+Multi-Version / NuGet Mismatch: Only v1.1.0-preview is officially supported. Older versions or mixed package versions may cause type or state inconsistencies. Developers are strongly advised to align package versions.
+
+Async vs Sync Execution: If a tool defines both sync and async routines, async will be preferred. Sync calls may behave differently than prior versions — document accordingly.
+
+Direct Internal Calls: Calling internal methods of ApiKeyRateLimiter or other core classes outside the public API is unsupported and may introduce threading or state issues.
+
+Legacy / Untagged Tools: Untagged tools default to MaxPermissions. Ensure tool attributes are up-to-date to avoid unexpected permission failures.
+
+The ToolSurfaceScope call is live on AddTool and when a tool is invoked by the LLM (ie ToolResolver).
 

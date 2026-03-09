@@ -142,5 +142,5 @@ await butler.StreamResponseAsync(MyUiHandler);
 
 ### Tips for Custom Implementations
 1.  **Don't Buffer if you don't have to:** Buffering increases perceived latency. If you are only checking for safety (e.g., checking for profanity or trying to hard stop PII for example), you can pass through text and only cut the stream if a bad word appears.
-2.  **Manage `QueueSize`:** If you implement buffering, ensure your `QueueSize` property is accurate. Butler monitors this to infinite loops during buffer dumping.
-3.  **Use `IsTemporary`:** Always set `IsTemporary = true` on remedial messages or steering the LLM. This ensures that your "error correction" logic doesn't pollute the long-term context window.
+2.  **Manage `QueueSize`:** If you implement buffering, ensure your `QueueSize` property is accurate. Butler will log and complain if you don't update this after dequerying to aid accidental infinite loop prevention.
+3.  **Use `IsTemporary`:** Always set `IsTemporary = true` on remedial messages or steering the LLM. This ensures that your "error correction" logic message(s) doesn't pollute the long-term context window.

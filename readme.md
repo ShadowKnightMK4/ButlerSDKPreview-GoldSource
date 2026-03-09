@@ -1,12 +1,17 @@
 ﻿# ButlerSDK - AI Orchestration Framework (Preview 1)
 
-[![NuGet](https://img.shields.io/badge/nuget-v1.0.0--preview-blue.svg)](https://www.nuget.org/packages/ButlerSDK/)
+[![NuGet](https://img.shields.io/badge/nuget-v1.1.0--preview-blue.svg)](https://www.nuget.org/packages/ButlerSDK/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Platform: .NET 8](https://img.shields.io/badge/Platform-.NET%208-purple.svg)](https://dotnet.microsoft.com/)
 
 **Robust, vendor-agnostic AI orchestration for .NET.**
 
 ButlerSDK aims to transform Large Language Models (LLMs) from unpredictable chatbots into reliable infrastructure components. It provides a unified abstraction layer over **OpenAI**, **Google Gemini**, and **Ollama**, while enforcing tool infrastructure, strict C# Tool typing, and opening the door to letting the developer intercept the streaming LLM to steer it or filter for agentic workflows.
+
+
+--- What's new?
+The change log goes over a lot of things. However the big think is Gemini Tool calling works again, tool's are recommanded to declare a ToolSurfaceScope and a grab bag of bug fixing and updates.  Important: versions before this version currently are *NOT* supported anymore.
+
 
 ---
 
@@ -93,7 +98,7 @@ Write your tools once. Run them anywhere.
 ### 3. Secure Key Management
 ButlerSDK rejects the practice of holding API keys in long-lived `string` variables for application life time.
 *   **Storage (At Rest):** Keys can be encrypted with DPAPI on Windows via the `WindowsVault`. 
-*   **Memory (In Use):** Keys in memory are handled via `SecureString`. The primary goal is encouraging deterministic disposal and reducing the lifetime of plaintext values in managed memory and not as a way to lean on it's platform specific encryption abilities.
+*   **Memory (In Use):** Keys in memory are handled via `SecureString`. The primary goal is encouraging deterministic disposal and reducing the lifetime of plaintext values in managed memory and not as a way to lean on any SecureString platform specific encryption abilities.
 *   **Ephemeral Access Pattern:** Tools can utilize internal disposal helpers to access keys *only* for the duration of the HTTP request, minimizing the attack surface.  One such example is the azure map using tool [Here](https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource/blob/master/ButlerSDK.Tools.AzureMaps/ButlerTool_AzureApi_GetCountryCode.cs) and the helper it uses and disposes is [there](https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource/blob/master/ButlerSDK.Tools.AzureMaps/Internal/AzureHelpers.cs)
 *   **Disclaimer:** Butler's underlying SDK needs do eventually need a plain .NET string. Butler's Key managemenet is try keeping the string in memory bare minimum.
 ---
@@ -174,6 +179,6 @@ Copyright 2025-2026 by Thomas Paul Betterly
 
 ### ⚠️ Limitations & Upcoming Changes
 * Version 1 supports text only (no images or audio). 
-* **IN-PROGRESS:** `ButlerBase` can now be provided a generic `IButlerChatCollection`. The engine will assume the simpler interface but dynamically utilize the advanced `IButlerTrenchImplementation` (temporary messages, prompt injection) if the passed class supports it.
+
 
 

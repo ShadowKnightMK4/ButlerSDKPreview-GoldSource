@@ -25,6 +25,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+		<ProjectReference Include="..\..\AzureKeyManager\ButlerSDK.ApiKeyMgr.AzureKeyManager.csproj" />
 		<ProjectReference Include="..\..\BasicToolStarterClass\ButlerSDK.Tools.ButlerToolBase.csproj" />
 		<ProjectReference Include="..\..\ButlerBaseInternal\ButlerSDK.ChatController.csproj" />
 		<ProjectReference Include="..\..\ButlerSDK.Tools.Resolver\ButlerSDK.Tools.Resolver.csproj" />

@@ -1,5 +1,6 @@
 ﻿using ApiKeys;
 using Azure.Identity;
+using ButlerSDK.ApiKeyMgr.AzureVault;
 using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK.ButlerPostProcessing;
 using ButlerSDK.Core;
@@ -131,7 +132,14 @@ namespace ButlerTestBed
             DevBuild.InitVault(@"C:\Users\Thoma\source\repos\ProjectJerry\ApiKeys\keys");
 
 
-
+            {
+           
+                AzureKeyVault TestVault = new AzureKeyVault();
+                TestVault.Authenticate(Assembly.GetExecutingAssembly());
+                TestVault.InitVault("https://jerrybutlerapikeys.vault.azure.net/");
+                var run = TestVault.ResolveKey("Test");
+                return;
+            }
 
             /*
             testme.AddSystemChatMessage(@"You are a helpful llm. You do not need to tell

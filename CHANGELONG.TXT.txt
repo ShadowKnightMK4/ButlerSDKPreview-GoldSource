@@ -74,3 +74,7 @@ Legacy / Untagged Tools: Untagged tools default to MaxPermissions. Ensure tool a
 
 The ToolSurfaceScope call is live on AddTool and when a tool is invoked by the LLM (ie ToolResolver).
 
+
+
+--
+Branch Specific:

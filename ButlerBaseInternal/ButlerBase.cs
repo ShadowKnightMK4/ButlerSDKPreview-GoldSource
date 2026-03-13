@@ -36,7 +36,7 @@ namespace ButlerSDK.Core
         /// <summary>
         /// The ToolSurfaceScope acts as as gatekeeper. Tool indicates at compile time what it reports to do.
         /// </summary>
-        /// <remarks>Do be accurate. a future roadmap is on the horizon where I aim for these to be enforced.. Note it should be inforced at <see cref="ButlerToolBench"/> / <see cref="IButlerToolBench"/> level</remarks>
+        /// <remarks>Do be accurate. A future roadmap is on the horizon where I aim for these to be enforced not just at <see cref="AddTool(IButlerToolBaseInterface)"/> . Note it should be enforced at <see cref="ButlerToolBench"/> / <see cref="IButlerToolBench"/> level</remarks>
         public ToolSurfaceScope ToolSurfaceScope
         {
             get
@@ -226,9 +226,9 @@ namespace ButlerSDK.Core
             }
             else
             {
-                if (LocalFactory is IButlerChatCreationProvider_NoApiNeeded noapikey)
+                if (LocalFactory is IButlerChatCreationProvider_NoApiNeeded NoApiKey)
                 {
-                    noapikey.Initialize();
+                    NoApiKey.Initialize();
                 }
                 else
                 {
@@ -254,7 +254,7 @@ namespace ButlerSDK.Core
         public string? ModelChoice;
 
         /// <summary>
-        /// When using that tool, be sure to set it to *here* and also <see cref="AddTool(IButlerToolBaseInterface)"/>. Doing so will hook the LLM up to let it discover tools provided its live atm tools
+        /// When using that Discoverer, be sure to set it to *here* and also <see cref="AddTool(IButlerToolBaseInterface)"/>. Doing so will hook the LLM up to let it discover tools provided its live atm tools
         /// </summary>
 
         public IButlerTool_Discoverer? TheToolBox = null;
@@ -264,7 +264,7 @@ namespace ButlerSDK.Core
         /// </summary>
         public IButlerChatCompletionOptions MainOptions { get => _MainOptions; }
         /// <summary>
-        /// Backing baraible for <see cref="MainOptions"/>
+        /// Backing variable for <see cref="MainOptions"/>
         /// </summary>
         IButlerChatCompletionOptions _MainOptions;
         protected IButlerToolBench ToolSet = (IButlerToolBench) new ButlerToolBench();
@@ -589,7 +589,7 @@ namespace ButlerSDK.Core
         /// </summary>
         /// <param name="Handler"></param>
         /// <param name="SkipAddingLLMResponse"></param>
-        /// <returns></returns>
+        /// <returns>You s</returns>
         public abstract ButlerChatFinishReason? StreamResponse(ChatMessageStreamHandler Handler, bool SkipAddingLLMResponse = false);
 
 

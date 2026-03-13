@@ -11,7 +11,7 @@ namespace SecureStringHelper
         /// </summary>
         /// <param name="ret">the <see cref="SecureString"/> to convert</param>
         /// <returns>the plain .net string</returns>
-        /// <remarks>While this does zero some of the memory it alloc</remarks>
+        /// <remarks>This works by using marshaling to convert string. It zeros allocated memory after.  Does not change the passed SecureString</remarks>
         public static string DecryptString(this SecureString ret)
         {
             ArgumentNullException.ThrowIfNull(ret);
@@ -31,6 +31,12 @@ namespace SecureStringHelper
         }
 
 
+        /// <summary>
+        /// Slightly more secure. Read specific length of string from the reader one char at a time
+        /// </summary>
+        /// <param name="ret">string to read from</param>
+        /// <param name="Input">string source stream</param>
+        /// <param name="len">if len is less than 1, we read until end of stream. Otherwise we read len characters</param>
         public static void AssignStringThenReadOnly(this SecureString ret, MemoryStream Input, int len = -1)
         {
             using (var Reader = new StreamReader(Input, leaveOpen: true))
@@ -42,7 +48,7 @@ namespace SecureStringHelper
         /// <summary>
         /// Slightly more secure. Read specific length of string from the reader one char at a time
         /// </summary>
-        /// <param name="ret"></param>
+        /// <param name="ret">string to read from</param>
         /// <param name="Input">string source stream</param>
         /// <param name="len">if len is less than 1, we read until end of stream. Otherwise we read len characters</param>
         public static void AssignStringThenReadOnly(this SecureString ret, StreamReader Input, int len=-1)

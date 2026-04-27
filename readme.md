@@ -181,4 +181,8 @@ Copyright 2025-2026 by Thomas Paul Betterly
 * Version 1 supports text only (no images or audio). 
 
 
+### Future potential road map in no particular order no promises and subjec to change:
+*  **Azure key vault** -- for when you want your keys read there.
+*  **Azure Blobs** -- for when you want storage read there.
+*  **https://github.com/microsoft/kernel-memory** -- while not promised, currently looking into adding a tool to integrate a fork of this with ButlerSDK
 

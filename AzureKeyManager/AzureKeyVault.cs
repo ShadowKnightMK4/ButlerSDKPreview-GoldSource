@@ -7,10 +7,15 @@ using ButlerSDK.ApiKeyMgr.Contract;
 using SecureStringHelper;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security;
 
 namespace ButlerSDK.ApiKeyMgr.AzureVault
 {
+    /// <summary>
+    /// The default Vault for Butler for Azure. It is recommended you subclass and override <see cref="InitCredentialOptions"/> and <see cref="InitializeCredential"/> with your specific needs.
+    /// </summary>
+    /// <remarks>It is recommended if you ovrride <see cref="InitCredentialOptions"/> to also override <see cref="InitializeCredential"/></remarks>
     public class AzureKeyVault : IButlerVaultKeyCollection
     {
         bool IsAuthenticated = false;
@@ -43,24 +48,47 @@ namespace ButlerSDK.ApiKeyMgr.AzureVault
         }
 
         /// <summary>
-        /// this is called by <see cref="InitVault(string)"/> to give a hook to adjust ect....
+        /// this is called by <see cref="InitVault(string)"/> to give a hook to adjust ect or completely replace the azure objects created via <see cref="InitializeCredential"/> and <see cref="InitCredentialOptions"/>
         /// </summary>
         protected virtual void PostInitVault()
         {
 
         }
 
+        /// <summary>
+        /// Create your Azure createntials here.;
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>If Windows it is <see cref="DefaultAzureCredentialOptions"/>, if IOS or Droid, <see cref="DeviceCodeCredentialOptions"/>. If anything else , <see cref="DefaultAzureCredentialOptions"/></remarks>
+        protected virtual TokenCredentialOptions InitCredentialOptions()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return new DefaultAzureCredentialOptions();
+            }
+            if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
+            {
+                return new DeviceCodeCredentialOptions();
+            }
+            return new DefaultAzureCredentialOptions();
+        }
 
         /// <summary>
         /// Create your credential to use here such as <see cref="DefaultAzureCredential"/>, 
         /// </summary>
         /// <returns></returns>
+        /// <remarks>If Windows it is <see cref="DefaultAzureCredential"/>, if IOS or Droid, <see cref="DeviceCodeCredential"/>. If anything else , <see cref="DefaultAzureCredential"/></remarks>
         protected virtual TokenCredential InitializeCredential()
         {
-            var cli_redz = new EnvironmentCredentialOptions();
-            // "273f21a8-b205-4bd2-b993-f07919d5d4c4";
+            TokenCredentialOptions Opts = InitCredentialOptions();
+            if (OperatingSystem.IsWindows())
+                return new DefaultAzureCredential((DefaultAzureCredentialOptions) Opts);
+            if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
+            {
+                return new DeviceCodeCredential((DeviceCodeCredentialOptions)Opts);
+            }
 
-            return new EnvironmentCredential(cli_redz);
+            return new DefaultAzureCredential();
         }
         /// <summary>
         /// The Azure vault wants the URL to look at.
@@ -91,7 +119,8 @@ namespace ButlerSDK.ApiKeyMgr.AzureVault
             try
             {
                 string tmp =  RemoteSecret.GetSecret(ID).Value.Value;
-                ret = new SecureString();
+                ret = new SecureString(); 
+
                 ret.AssignStringThenReadOnly(tmp);
             }
             catch (Azure.RequestFailedException)

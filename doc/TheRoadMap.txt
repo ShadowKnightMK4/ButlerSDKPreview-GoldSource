@@ -3,12 +3,7 @@
 ## The Provider Road map
 Openai Cloud: Done
 Openai Local (via Ollama): Done (essentialy we're wrapping Openai cloud to point to local Ollama)
-Gemini Cloud: Done? 
-
-
-# Preview1 road map
-Open the SDK for the public to use, break and file bug reports on
-
+Gemini Cloud: Done.
 
 ## V2 Plans
 Butler supports getting a single IButlerVaultKeyCollection and discover keeps it to pass to instanced tools
@@ -20,3 +15,14 @@ DND Demo for single player with tool based rule enforcment.
 Load ButlerSDK source into instance of bultersdk. Chat with it via gemini.
 Tele tracking (typing device 12 was lost; tele 32 DC was sent here, tele 42 went to overthere) and the thing updates an excel sheet correctly
 
+
+
+
+# Preview1 road map
+Open the SDK for the public to use, break and file bug reports on please.
+
+
+### Future potential road map in no particular order no promises and subjec to change:
+*  **Azure key vault** -- for when you want your keys read there.
+*  **Azure Blobs** -- for when you want storage read there.
+*  **https://github.com/microsoft/kernel-memory** -- while not promised, currently looking into adding a tool to integrate a fork of this with ButlerSDK

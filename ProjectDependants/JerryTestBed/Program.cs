@@ -1,4 +1,5 @@
 ﻿using ApiKeys;
+using Azure.Core;
 using Azure.Identity;
 using ButlerSDK.ApiKeyMgr.AzureVault;
 using ButlerSDK.ApiKeyMgr.Contract;
@@ -13,6 +14,7 @@ using SecureStringHelper;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security;
+using System.Text;
 /*
  * A word. The TestBed project you see here is how I did manually testing aka edit and run.
  * There's no fancy rules for it to folly.
@@ -80,6 +82,75 @@ namespace ButlerTestBed
         }
     }
 
+    class DebugAzureVault: AzureKeyVault
+    {
+        string tstource;
+        public DebugAzureVault(string source)
+        {
+            tstource = source;
+        }
+
+        void ProcessEntry(string line, string env, string div)
+        {
+            if (line.Contains(div))
+            {
+                string sb = line.Substring(0, line.IndexOf(div));
+                sb = sb.Trim();
+                Environment.SetEnvironmentVariable(env, sb);
+            }
+            else
+            {
+                throw new InvalidDataException($"Expected  {div} divider. Didn't get one. This trigger on {env} set.");
+            }
+
+        }
+        void ProcessTenet(string line)
+        {
+            ProcessEntry(line, "AZURE_TENANT_ID", "::::");
+        }
+        void ProcessClient(string line)
+        {
+            ProcessEntry(line, "AZURE_CLIENT_ID", "::::");
+        }
+
+        void ProcessSecret(string line)
+        {
+            ProcessEntry(line, "AZURE_CLIENT_SECRET", "::::");
+        }
+
+        void ProcessLine(string line)
+        {
+            line = line.Trim();
+            if (line.EndsWith("TenetID"))
+            {
+                ProcessTenet(line);
+            } else if (line.EndsWith("ClientID"))
+            {
+                ProcessClient(line);
+            } else if (line.EndsWith("SecretID"))
+            {
+                ProcessSecret(line);
+            } 
+            else
+            {
+                throw new InvalidDataException("Expected lines to end with TenetID, ClientID or SecretID!");
+            }
+            
+
+            
+        }
+        protected override TokenCredential InitializeCredential()
+        {
+               var lines = File.ReadAllLines(tstource);
+            // for debug and keeping this *out* of github. 
+            // we're line[0]=tenet,   line[1] = clinet line [2] = secret
+            foreach (var line in lines)
+            {
+                ProcessLine(line);
+            }
+            return new EnvironmentCredential();
+        }
+    }
 
     internal class Program
     {
@@ -134,10 +205,11 @@ namespace ButlerTestBed
 
             {
            
-                AzureKeyVault TestVault = new AzureKeyVault();
+                DebugAzureVault TestVault = new DebugAzureVault(@"C:\Euphoria\azuretesting.txt");
                 TestVault.Authenticate(Assembly.GetExecutingAssembly());
                 TestVault.InitVault("https://jerrybutlerapikeys.vault.azure.net/");
                 var run = TestVault.ResolveKey("Test");
+                Console.WriteLine(run.DecryptString());
                 return;
             }
 

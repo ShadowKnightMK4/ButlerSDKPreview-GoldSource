@@ -11,8 +11,12 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ButlerSDK.ToolSupport;
     namespace UnitTests.UnitTestingTools
 {
+
+
+
     [ToolSurfaceCapabilities(ToolSurfaceScope.MaxAvailablePermissions)]
     public class AllModeMockScope_AllAccessTagged: AllModeToolMockUnspecifiedScope
     {
@@ -45,6 +49,73 @@ using System.Threading.Tasks;
         {
             return true;
         }
+    }
+
+    [ToolSurfaceCapabilities(ToolSurfaceScope.StandardReading)]
+    /// <summary>
+    /// Nesting tool is ment to stress test the surface code checking for tools.
+    /// </summary>
+    /// <remarks>HOW DO USE: MaxLevel is how many nested instancs of NestingTool you want. Long as it's above 0? Nesting tool makes a instance of itself and sets max-1 as the arg</remarks>
+    public class NestingToolTool: VirtualTool
+    {
+        string key;
+        /// <summary>
+        /// This is a routine ment to walk the class here and it assumes it's walking this class.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <returns>how many levels of the nest we got INCLUDING The TopLevel starting point</returns>
+        public static int NestedLevel(NestingToolTool x)
+        {
+            int count = 0;
+            ArgumentNullException.ThrowIfNull(x);
+        
+            NestingToolTool? Train = x;
+            while (Train._InnerTools.Any())
+            {
+             
+
+                Train = (NestingToolTool?)Train._InnerTools[Train._InnerTools.Keys.First()];
+                if (Train is null)
+                    break;
+                else
+                    count++;
+            }
+
+        caboose:
+            return count;
+        }
+        public NestingToolTool(IButlerVaultKeyCollection Keys, int MaxLevel=255) : base(Keys)
+        {
+            if (MaxLevel ==  int.MaxValue)
+            {
+                throw new NotSupportedException($"Really want to go depth of {MaxLevel} level?. Sorry just No");
+            }
+            if (MaxLevel >= 0)
+            {
+
+                var tool = new NestingToolTool(Keys, MaxLevel - 1);
+                key = (MaxLevel - 1).ToString();
+                _InnerTools.Add(key, tool);
+            }
+        }
+
+        public override ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
+        {
+            string inner_call;
+            if (_InnerTools.ContainsKey(key))
+            {
+                inner_call = _InnerTools[key].ResolveMyTool(FunctionCallArguments, FuncId, Call).Message;   
+            }
+            else
+            {
+                inner_call = "The floor";
+            }
+
+                return new ButlerChatToolResultMessage(FuncId, $"Nesting tool called: Inner tool: {key}\r\n {inner_call}");
+        }
+        
+
+
     }
 
     [ButlerTool_DiscoverAttributes(true)]

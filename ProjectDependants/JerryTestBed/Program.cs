@@ -222,8 +222,8 @@ that the tools may change depending on the chat as needed.
             //testme.AddSystemChatMessage(@"If you need to invoke a tool, examine the json in the tool that determines the arugments for the array ""required info"" and invoke tools as needed to get that info if input doesn't help""");
             testme.AddSystemChatMessage("Should you ");
             testme.AddSystemChatMessage("  For debug purposes Also walk me thru your actions at the end of your response place them after ## Action DEBUG.");
-            */
-            /*
+            
+            
             testme.AddSystemChatMessage(@"You are a helpful LLM. You do not need to disclose your tool list unless asked, and if asked, it's okay to reveal it. Mention that the tools may change during the chat as needed, based on an external adaptive system.");
             testme.AddSystemChatMessage("You also are free to attempt to answer with all tools at your disposal.");
             testme.AddSystemChatMessage("Consider all tools in your list as potential parts of the solution and invoke them as needed to help answer the user's query. If the risk of invoking a tool is low, you do not need to ask for permission—assume the user has granted it based on their message.");

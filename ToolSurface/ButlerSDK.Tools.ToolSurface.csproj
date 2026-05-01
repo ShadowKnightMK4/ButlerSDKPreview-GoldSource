@@ -7,7 +7,26 @@
 	  <IsPackable>true</IsPackable>
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
+  
+  
+  <PropertyGroup>
+    <!-- Your Output & Symbol Settings -->
+    <Version>1.1.1-preview</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
+    <!-- NEW: NuGet Package Metadata -->
+    <Authors>Thomas Betterly</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <!-- NEW: Tells the NuGet package which file to use as the README -->
+    <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
+  </PropertyGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
   </ItemGroup>

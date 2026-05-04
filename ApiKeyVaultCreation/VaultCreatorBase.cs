@@ -172,7 +172,7 @@ namespace ApiKeyVaultCreation
             if (Mode == SaveMode.PassThru)
             {
                 inmem.Position = 0;
-                using (var Output = File.OpenWrite(location))
+                using (var Output = File.Create(location))
                 {
 
                     inmem.Position = 0;
@@ -181,6 +181,7 @@ namespace ApiKeyVaultCreation
                     inmem.CopyTo(Output);
                     Output.Flush();
                 }
+                return;
             }
             var Scope = (DataProtectionScope) int.MaxValue;
             if (Mode.HasFlag(SaveMode.EncryptToLocalMachine))
@@ -202,7 +203,7 @@ namespace ApiKeyVaultCreation
 
                 var Bytes = inmem.ToArray();
                 Bytes = ProtectedData.Protect(Bytes, null, Scope);
-                using (var Output = File.OpenWrite(location))
+                using (var Output = File.Create(location))
                 {
 
                     Output.Write(Bytes);

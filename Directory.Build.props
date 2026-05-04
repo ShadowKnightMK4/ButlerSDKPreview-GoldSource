@@ -1,6 +1,5 @@
 <Project>
   <PropertyGroup>
-    <!-- Your Output & Symbol Settings -->
     <Version>1.1.0-preview</Version>
     <PackageOutputPath>$(MSBuildThisFileDirectory)\NugetProjects\Package</PackageOutputPath>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -8,19 +7,22 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-    <!-- NEW: NuGet Package Metadata -->
     <Authors>Thomas Betterly</Authors>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
 
-    <!-- NEW: Tells the NuGet package which file to use as the README -->
     <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
   </PropertyGroup>
 
-  <!-- NEW: Physically bundles the README file from your root folder into every .nupkg file -->
-    <ItemGroup>
-    <!-- MODIFIED: Only pack the generic README if the current project DOES NOT have its own NUGET_README.md -->
+  <ItemGroup>
+    <!-- 1. Pack the LOCAL project README if it exists -->
+    <None Include="$(MSBuildProjectDirectory)\NUGET_README.md" 
+          Pack="true" 
+          PackagePath="\"
+          Condition="Exists('$(MSBuildProjectDirectory)\NUGET_README.md')" />
+
+    <!-- 2. Pack the ROOT generic README if the local one DOES NOT exist -->
     <None Include="$(MSBuildThisFileDirectory)NUGET_README.md" 
           Pack="true" 
           PackagePath="\"

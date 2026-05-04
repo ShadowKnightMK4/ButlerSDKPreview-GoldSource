@@ -5,16 +5,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	  <IsPackable>true</IsPackable>
+    <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
 	 <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="Helpful.cs" />
   </ItemGroup>
+  
+  
 
   <ItemGroup>
     <ProjectReference Include="..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
     <ProjectReference Include="..\SecureStringHelper\ButlerSDK.SecureStringHelper.csproj" />
+    
   </ItemGroup>
 
 </Project>

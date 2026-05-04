@@ -1,6 +1,6 @@
 ﻿# ButlerSDK - AI Orchestration Framework (Preview 1)
 
-[![NuGet](https://img.shields.io/badge/nuget-v1.1.0--preview-blue.svg)](https://www.nuget.org/packages/ButlerSDK/)
+[![NuGet](https://img.shields.io/badge/nuget-v1.1.1--preview-blue.svg)](https://www.nuget.org/packages/ButlerSDK/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Platform: .NET 8](https://img.shields.io/badge/Platform-.NET%208-purple.svg)](https://dotnet.microsoft.com/)
 
@@ -9,8 +9,9 @@
 ButlerSDK aims to transform Large Language Models (LLMs) from unpredictable chatbots into reliable infrastructure components. It provides a unified abstraction layer over **OpenAI**, **Google Gemini**, and **Ollama**, while enforcing tool infrastructure, strict C# Tool typing, and opening the door to letting the developer intercept the streaming LLM to steer it or filter for agentic workflows.
 
 
---- What's new?
-The change log goes over a lot of things. However the big think is Gemini Tool calling works again, tool's are recommanded to declare a ToolSurfaceScope and a grab bag of bug fixing and updates.  Important: versions before this version currently are *NOT* supported anymore.
+--- What's new from v1.1.1 preview?
+The change log goes over a lot of things. However there is a critical bug fix in tool surface scope nuget. That verison has been bumped to v1.1.1preview.
+The rest of the code is equivelent to verison 1.1.0preview.
 
 
 ---

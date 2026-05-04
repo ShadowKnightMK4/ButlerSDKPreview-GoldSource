@@ -17,7 +17,7 @@ namespace ButlerSDK.ToolSupport
     [ButlerTool_DiscoverAttributes(true)]
     public abstract class VirtualTool : IButlerToolBaseInterface, IButlerToolContainsPrivateTools
     {
-        IButlerVaultKeyCollection? _vaultKeyCollection=null;
+        IButlerVaultKeyCollection? _vaultKeyCollection = null;
         public VirtualTool(IButlerVaultKeyCollection Keys)
         {
             _vaultKeyCollection = Keys;

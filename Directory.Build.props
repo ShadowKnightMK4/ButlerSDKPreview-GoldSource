@@ -19,7 +19,11 @@
   </PropertyGroup>
 
   <!-- NEW: Physically bundles the README file from your root folder into every .nupkg file -->
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)NUGET_README.md" Pack="true" PackagePath="\"/>
+    <ItemGroup>
+    <!-- MODIFIED: Only pack the generic README if the current project DOES NOT have its own NUGET_README.md -->
+    <None Include="$(MSBuildThisFileDirectory)NUGET_README.md" 
+          Pack="true" 
+          PackagePath="\"
+          Condition="!Exists('$(MSBuildProjectDirectory)\NUGET_README.md')" />
   </ItemGroup>
 </Project>

@@ -1,3 +1,38 @@
+🚀 Release Notes: ButlerSDK v1.1.1-preview (Security Hotfix)
+
+Summary:
+This is a critical security patch addressing a Denial of Service (DoS) vulnerability discovered in the Tool Surface Scope validation engine introduced in v1.1.0-preview. All users utilizing VirtualTool architectures must upgrade to this version immediately.
+
+
+🔒 Security & Governance
+Critical Vulnerability Patched (VirtualTool Recursive DoS):
+Fixed a severe vulnerability where the SDK performed an unchecked traversal of inner tools within a VirtualTool. Because the validation engine lacked state-tracking across nested layers, a VirtualTool that accidentally (or maliciously) referenced itself—or contained a circular dependency (e.g., Tool A -> Tool B -> Tool A)—would trap the engine in an infinite recursive loop.
+
+
+Impact if Unpatched:
+Resolving permissions for a cyclic VirtualTool triggers either a crash, likely StackOverflowException OR just will deadlock. In the .NET runtime, StackOverflowException is a fatal error that bypasses standard try/catch blocks and instantly terminates the entire host application process, acting as a highly effective Denial of Service (DoS) attack.
+
+
+The Fix (Hardened Traversal Engine):
+Cycle Detection: The ToolSurfaceFlagChecking engine now passes a HashSet<IButlerToolBaseInterface> (using ReferenceEqualityComparer) down the recursive chain. If a circular reference is detected, the engine safely ignores the duplicate and breaks the loop.
+Strict Depth Limits: Introduced a hard cap on tool nesting (default: 2000 layers). This acts as a secondary failsafe to protect the CLR from stack depletion.
+Catchable Exceptions: Exceeding the depth limit now safely throws a new, catchable VirtualTool_NestedOverflow security exception instead of crashing the process.
+
+
+🏗 Architecture & API Updates
+ToolSurfaceFlagChecking Refactor:
+Introduced LookupToolFlagEx(...), which accepts the traversal HashSet and depth counters.
+The standard LookupToolFlag routine now acts as a safe wrapper around LookupToolFlagEx, initializing the protective state tracking automatically.
+Power-User Bypass: For edge cases requiring extreme depths, developers can toggle ToolSurfaceFlagChecking.AllowBigCheck to bypass the standard integer limits, shifting the responsibility to the host application.
+
+
+⚠️ Mitigation Notes (If unable to update)
+If you are locked to v1.1.0-preview and cannot immediately update, you must strictly audit your tool generation pipeline:
+Ensure that any VirtualTool added to the Butler instance does not reference itself.
+Manually verify that no deep circular references exist in your inner tool dictionaries.
+Do not allow dynamically generated or untrusted third-party tools to be loaded into a VirtualTool without strict code review.
+
+
 
 🚀 Release Notes: ButlerSDK v1.1.0-preview
 

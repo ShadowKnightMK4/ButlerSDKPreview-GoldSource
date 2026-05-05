@@ -188,8 +188,15 @@ namespace ButlerSDK.Tools
         {
             this._SandBoxPathReadOnly = new();
             this._SandBoxPathWriteOnly = new();
-            AddSandBoxPath(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), SandBoxPathFilter.Read);
-            AddSandBoxPath(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), SandBoxPathFilter.Write);
+
+            var genericDefault = Path.Combine(Path.GetTempPath(), "ButlerSDK");
+            genericDefault += Path.DirectorySeparatorChar;
+
+            genericDefault += Guid.NewGuid().ToString().Substring(0, 8);
+            Directory.CreateDirectory(genericDefault);
+
+            AddSandBoxPath(genericDefault, SandBoxPathFilter.Both);
+           
         }
 
         public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler, List<string> AllowedReads) : base(KeyHandler)
@@ -222,7 +229,7 @@ namespace ButlerSDK.Tools
 
         static ButlerChatToolResultMessage? LoadMode(string target, string format, string? id, ButlerTool_LocalFile_Load that)
         {
-            string? sani_target = that.GetSecurePath(target, SandBoxPathFilter.Read);
+            string? sani_target = that.GetSecurePath(target, SandBoxPathFilter.Write);
             if (sani_target == null)
             {
                 return new ButlerChatToolResultMessage(id, $"Requested path {target} is outside the sanbox. Unable to load data with this tool.");
@@ -236,7 +243,7 @@ namespace ButlerSDK.Tools
                         string data;
                         try
                         {
-                            data = File.ReadAllText(target);
+                            data = File.ReadAllText(sani_target);
                         }
                         catch (IOException e)
                         {
@@ -265,11 +272,11 @@ namespace ButlerSDK.Tools
                         try
                         {
                             File.WriteAllText(sani_target, data);
-                            ret = new ButlerChatToolResultMessage(id, $"{target} was successful saved as {format} data");
+                            ret = new ButlerChatToolResultMessage(id, $"{sani_target} was successful saved as {format} data");
                         }
                         catch (IOException e)
                         {
-                            ret = new ButlerChatToolResultMessage(id, $"{target} encountered an error saving as {format} data. Error is {e.Message}");
+                            ret = new ButlerChatToolResultMessage(id, $"{sani_target} encountered an error saving as {format} data. Error is {e.Message}");
                         }
                         return ret;
                     }
@@ -279,11 +286,11 @@ namespace ButlerSDK.Tools
                         try
                         {
                             File.WriteAllBytes(sani_target, DataAsBytes);
-                            ret = new ButlerChatToolResultMessage(id, $"{target} was successful saved as {format} data");
+                            ret = new ButlerChatToolResultMessage(id, $"{sani_target} was successful saved as {format} data");
                         }
                         catch (IOException e)
                         {
-                            ret = new ButlerChatToolResultMessage(id, $"{target} encountered an error saving as {format} data. Error is {e.Message}");
+                            ret = new ButlerChatToolResultMessage(id, $"{sani_target} encountered an error saving as {format} data. Error is {e.Message}");
                         }
                         return ret;
                     }

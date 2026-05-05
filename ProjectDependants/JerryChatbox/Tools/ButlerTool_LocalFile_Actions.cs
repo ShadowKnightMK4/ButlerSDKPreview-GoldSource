@@ -1,9 +1,12 @@
-﻿using ButlerSDK.ApiKeyMgr.Contract;
-using ButlerLLMProviderPlatform.DataTypes;
+﻿using ButlerLLMProviderPlatform.DataTypes;
+using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerToolContract.DataTypes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -15,7 +18,145 @@ namespace ButlerSDK.Tools
     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
     public class ButlerTool_LocalFile_Load : ButlerToolBase
     {
-        const string format_unicode_text = "utf8-txt";
+        private List<string> _SandBoxPathReadOnly=new();
+        private List<string> _SandBoxPathWriteOnly= new();
+        public IReadOnlyList<string> ReadOnlySandBoxPath => _SandBoxPathReadOnly;
+        public IReadOnlyList<string> WriteOnlySandBoxPath => _SandBoxPathWriteOnly;
+
+        public enum SandBoxPathFilter
+        {
+            Unknown =0,
+            Read = 1,
+            Write = 2,
+            Both = 3,
+            ReadWrite = Both
+        }
+
+        private bool does_sandbox_exist(DirectoryInfo Info)
+        {
+            ArgumentNullException.ThrowIfNull(Info);
+            return Info.Exists;
+        }
+        private bool does_sandbox_exist(string path)
+        {
+            ArgumentNullException.ThrowIfNull(path);
+            return does_sandbox_exist(new DirectoryInfo(path));
+        }
+        public void AddSandBoxPath(string path, SandBoxPathFilter Filter)
+        {
+           AddSandBoxPath(new DirectoryInfo(path), Filter);
+        }
+        public void AddSandBoxPath(FileSystemInfo Location, SandBoxPathFilter Filter)
+        {
+            if (!does_sandbox_exist(Location.FullName))
+            {
+                throw new DirectoryNotFoundException($"{Location.FullName} does not seem to exist. Ensure it does before added to ButlerSDK File tool");
+            }
+            if (Filter == SandBoxPathFilter.Unknown)
+            {
+                throw new NotSupportedException("Unknown sandbox path. Pick Read/ Write or Both");
+            }
+            
+            
+            switch (Filter)
+            {
+                case SandBoxPathFilter.Write:
+                    _SandBoxPathWriteOnly.Add(Location.FullName); break;
+                case SandBoxPathFilter.ReadWrite:
+                    _SandBoxPathWriteOnly.Add(Location.FullName);
+                    _SandBoxPathReadOnly.Add(Location.FullName); break;
+                case SandBoxPathFilter.Read:
+                    _SandBoxPathReadOnly.Add(Location.FullName);
+                    break;
+                default:
+                    throw new InvalidEnumArgumentException("Unknown/Unsupported Enum. Select Read, Write or ReadWrite/Both");
+            }
+        }
+
+        /// <summary>
+        /// The short story is we get the system to tell us where and return null if out out our sandbox.
+        /// </summary>
+        /// <param name="RequestedPath">on input, this is passed to Path.GetFullPath first</param>
+        /// <param name="Filter">Pick Both, read or write</param>
+        /// <returns>null if outside of all passed directories, the full path if in</returns>
+        string? GetSecurePath(string RequestedPath, SandBoxPathFilter Filter)
+        {
+            RequestedPath = Path.GetFullPath(RequestedPath);
+            RequestedPath = RequestedPath.Trim();
+            if (string.IsNullOrEmpty(RequestedPath))
+                return null;
+            List<string> search;
+            switch (Filter)
+            {
+                case SandBoxPathFilter.Write:
+                    search = _SandBoxPathWriteOnly;
+                    break;
+                case SandBoxPathFilter.Read:
+                    search = _SandBoxPathReadOnly;
+                    break;
+                case SandBoxPathFilter.Both:
+                    search = new();
+                    search.AddRange( _SandBoxPathWriteOnly );
+                    search.AddRange(_SandBoxPathReadOnly);
+                    break;
+                default:
+                    throw new InvalidEnumArgumentException("Unknown/unsupported enum. Select Both, Read or Write");
+            }
+
+     
+            if ( (search is null))
+            {
+                return null;
+            }
+            
+            if (search.Count == 0)
+            {
+                return null;
+            }
+
+            bool one = false;
+
+
+           foreach (string s in search)
+            {
+                string target;
+                if (!(s.EndsWith(Path.DirectorySeparatorChar) || (s.EndsWith(Path.AltDirectorySeparatorChar))))
+                {
+                    target = Path.GetFullPath(s) + Path.DirectorySeparatorChar;
+                }
+                else
+                {
+                    target = Path.GetFullPath(s);
+                }
+                
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    if (RequestedPath.StartsWith(target, StringComparison.OrdinalIgnoreCase))
+                    {
+                        one = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    if (RequestedPath.StartsWith(target))
+                    {
+                        one = true;
+                        break;
+
+                    }
+                }
+            }
+            if (one)
+            {
+                return RequestedPath;
+            }
+            else
+            {
+                return null;
+            }
+        }
+                const string format_unicode_text = "utf8-txt";
         const string format_ansi_text = "ANSI-txt";
         const string format_pdf_doc = "PDF";
         const string command_save = "save";
@@ -45,7 +186,26 @@ namespace ButlerSDK.Tools
 }";
         public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler) : base(KeyHandler)
         {
+            this._SandBoxPathReadOnly = new();
+            this._SandBoxPathWriteOnly = new();
+            AddSandBoxPath(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), SandBoxPathFilter.Read);
+            AddSandBoxPath(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), SandBoxPathFilter.Write);
         }
+
+        public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler, List<string> AllowedReads) : base(KeyHandler)
+        {
+            this._SandBoxPathReadOnly = new();
+            this._SandBoxPathReadOnly.AddRange(AllowedReads);
+        }
+
+        public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler, List<string> AllowedReads, List<string> AllowedWrites) : base(KeyHandler)
+        {
+            this._SandBoxPathReadOnly = new();
+            this._SandBoxPathReadOnly.AddRange(AllowedReads);
+            this._SandBoxPathWriteOnly = new();
+            this._SandBoxPathWriteOnly.AddRange(AllowedWrites);
+        }
+
 
         public override string ToolName => "PerformLocalFileAction";
 
@@ -60,8 +220,13 @@ namespace ButlerSDK.Tools
 
 
 
-        static ButlerChatToolResultMessage? LoadMode(string target, string format, string? id)
+        static ButlerChatToolResultMessage? LoadMode(string target, string format, string? id, ButlerTool_LocalFile_Load that)
         {
+            string? sani_target = that.GetSecurePath(target, SandBoxPathFilter.Read);
+            if (sani_target == null)
+            {
+                return new ButlerChatToolResultMessage(id, $"Requested path {target} is outside the sanbox. Unable to load data with this tool.");
+            }
             ButlerChatToolResultMessage ret;
             switch (format)
             {
@@ -84,8 +249,13 @@ namespace ButlerSDK.Tools
             }
         }
 
-        static ButlerChatToolResultMessage? SaveMode(string target, string format, string data, string? id)
+        static ButlerChatToolResultMessage? SaveMode(string target, string format, string data, string? id, ButlerTool_LocalFile_Load that)
         {
+            string? sani_target = that.GetSecurePath(target, SandBoxPathFilter.Write);
+            if (sani_target == null)
+            {
+                return new ButlerChatToolResultMessage(id, $"Requested path {target} is outside the sanbox. Unable to save data with this tool.");
+            }
             ButlerChatToolResultMessage ret;
             switch (format)
             {
@@ -94,7 +264,7 @@ namespace ButlerSDK.Tools
                         
                         try
                         {
-                            File.WriteAllText(target, data);
+                            File.WriteAllText(sani_target, data);
                             ret = new ButlerChatToolResultMessage(id, $"{target} was successful saved as {format} data");
                         }
                         catch (IOException e)
@@ -108,7 +278,7 @@ namespace ButlerSDK.Tools
                         byte[] DataAsBytes = Encoding.ASCII.GetBytes(data);
                         try
                         {
-                            File.WriteAllBytes(target, DataAsBytes);
+                            File.WriteAllBytes(sani_target, DataAsBytes);
                             ret = new ButlerChatToolResultMessage(id, $"{target} was successful saved as {format} data");
                         }
                         catch (IOException e)
@@ -148,10 +318,10 @@ namespace ButlerSDK.Tools
             switch (baseaction)
             {
                 case "load":
-                    return LoadMode(targetfile, formatdiff, FuncId);
+                    return LoadMode(targetfile, formatdiff, FuncId, this);
                 case "save":
                     string data = Args.RootElement.GetProperty("data").ToString();
-                    return SaveMode(targetfile, formatdiff, data, FuncId);
+                    return SaveMode(targetfile, formatdiff, data, FuncId,this);
                 default:
                     return new ButlerChatToolResultMessage(FuncId, $"Error: Invalid Mode selected. No Action do" +
                         $"ne with  {targetfile}");

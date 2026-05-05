@@ -3,6 +3,9 @@
 Summary:
 This is a critical security patch addressing a Denial of Service (DoS) vulnerability discovered in the Tool Surface Scope validation engine introduced in v1.1.0-preview. All users utilizing VirtualTool architectures must upgrade to this version immediately.
 
+The Window Vault Key Creator Helper CLI app will truncate the output file first to guard against data corruption.
+ 
+
 
 🔒 Security & Governance
 Critical Vulnerability Patched (VirtualTool Recursive DoS):

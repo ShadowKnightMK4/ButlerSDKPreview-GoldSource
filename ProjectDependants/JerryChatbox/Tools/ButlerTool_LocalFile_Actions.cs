@@ -18,6 +18,7 @@ namespace ButlerSDK.Tools
     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
     public class ButlerTool_LocalFile_Load : ButlerToolBase
     {
+        private List<string> _SandboxWhiteList = new();
         private List<string> _SandBoxPathReadOnly=new();
         private List<string> _SandBoxPathWriteOnly= new();
         public IReadOnlyList<string> ReadOnlySandBoxPath => _SandBoxPathReadOnly;
@@ -74,18 +75,97 @@ namespace ButlerSDK.Tools
         }
 
         /// <summary>
+        /// White list a specific link file. Symbolic links are resolved first
+        /// </summary>
+        /// <param name="path"></param>
+        /// <exception cref="FileNotFoundException"></exception>
+        /// <remarks>If you attach a symbol link of C:\\Data.txt that points to C:\\cache\\sdk\\data.txt it's treated as if you attached C:\\cache\\sdk\\data.txt</remarks>
+        public void AttachFile(string path)
+        {
+            FileInfo FileData = new FileInfo(path);
+            path = Path.GetFullPath(path);
+            if (!FileData.Exists)
+            {
+                throw new FileNotFoundException(path);
+            }
+            else
+            {
+                var link = FileData.ResolveLinkTarget(true);
+                if (link != null)
+                {
+                    string? tmp = link.FullName;
+                    if (tmp is not null)
+                    {
+                        path = Path.GetFullPath(tmp);
+                    }
+                }
+            }
+                _SandboxWhiteList.Add(path);
+        }
+ 
+        string? CheckAttachments(string requested_file)
+        {
+            FileInfo info;
+            requested_file = Path.GetFullPath(requested_file);
+            requested_file = requested_file.Trim();
+            info = new FileInfo(requested_file);
+            if (info.Exists)
+            {
+                string resolved_file;
+                FileSystemInfo? caboose = info.ResolveLinkTarget(true);
+                if (caboose is null)
+                {
+                    resolved_file =  requested_file;
+                }
+                else
+                {
+                    if (caboose is not DirectoryInfo)
+                    {
+                        resolved_file = Path.GetFullPath(caboose.FullName);
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                    foreach (string walk in this._SandboxWhiteList)
+                    {
+                        string sani = Path.GetFullPath(walk);
+                        if (string.CompareOrdinal(resolved_file, sani) == 0)
+                        {
+                            return resolved_file;
+                        }
+                    }
+            }
+            return null;
+        }
+        /// <summary>
         /// The short story is we get the system to tell us where and return null if out out our sandbox.
         /// </summary>
         /// <param name="RequestedPath">on input, this is passed to Path.GetFullPath first</param>
         /// <param name="Filter">Pick Both, read or write</param>
-        /// <returns>null if outside of all passed directories, the full path if in</returns>
+        /// <returns>null if outside of all sandbox directores and not a whitelist <see cref="AttachFile(string)"/>, the full path if in</returns>
+        /// <remarks>ensure trusted folks and NOT LLM can call AttachFile only.</remarks>
         string? GetSecurePath(string RequestedPath, SandBoxPathFilter Filter)
         {
             RequestedPath = Path.GetFullPath(RequestedPath);
             RequestedPath = RequestedPath.Trim();
             if (string.IsNullOrEmpty(RequestedPath))
                 return null;
-            List<string> search;
+            else
+            {
+                if ((Filter == SandBoxPathFilter.Read) || (Filter == SandBoxPathFilter.Both))
+                {
+                    string? whitelist = CheckAttachments(RequestedPath);
+                    if (whitelist is not null)
+                    {
+                        return whitelist;
+                    }
+                }
+            }
+                List<string> search;
+
+
             switch (Filter)
             {
                 case SandBoxPathFilter.Write:

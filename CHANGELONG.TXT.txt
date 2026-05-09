@@ -1,18 +1,72 @@
-🚀 Release Notes: ButlerSDK v1.1.2 preview (Security Hotfix)
-Note: this 🚀 Release Notes: ButlerSDK v1.1.2-preview is NOT on Nuget Yet.
-Then it happens,  the ButlerSDK.Core nuget will be bumped v1.1.2 preview as it holds the changes. The rest are still if unchanged, kept at v1.1.1preview
+🚀 Release Notes: ButlerSDK v1.1.2-preview (Security Hotfix & Feature Update)
+Note: This v1.1.2-preview is NOT on NuGet yet. When published, the ButlerSDK.Core package will be bumped to v1.1.2-preview as it holds these changes. Unchanged packages will remain at v1.1.1-preview.
 
-This update adds a developer‑controlled AttachFile() method that allows a single file to be safely exposed to the LLM outside the normal sandbox directory. Symlinks are resolved to their real target (file‑only; directory symlinks rejected).
+
+Summary:
+This update introduces a major security hardening of the ButlerTool_LocalFile_Load file-system tool, transitioning it from a standard path-filter to a bounded, OS-locked sandbox to expose only dev supplied locations.  It also introduces the new AttachFile() method to give developers safe, explicit control over out-of-sandbox file exposure. 
+All developers utilizing LLM file-access tools are strongly encouraged to review these changes.
+
+
+🛡️ The Sandbox: What it is and What changed (No Fluff)
+Before v1.1.2:
+The file tool essentially acted as a passthrough. If an LLM hallucinated a path, or a user used prompt injection to ask the LLM to read C:\Windows\System32\drivers\etc\hosts or ~/.bashrc, the tool would execute the read/write as long as the host application had the OS permissions to do so. The LLM had the run of your hard drive.
+
+
+Now (v1.1.2+):
+New Feature: ButlerTool_LocalFile_Load  now has a read sandbox, a write sandbox and the ability to attach file case by case basis to escape.
+
+
+ButlerTool_LocalFile_Load operates on a strict Default-Deny architecture. The LLM is trapped by default.
+
+How it works: You must explicitly mount safe folders to the tool using AddSandBoxPath(path, filter) (e.g., Read, Write, or Both). Skipping this will default to creating a blank temporary folder in your system temporary folder location.
+The Intercept: When the LLM requests a file, the SDK intercepts the path, strips out traversal attempts (../../), follows all symlinks to their true physical location, and verifies that the final destination lives entirely inside your mounted folders.
+The Result: If the LLM tries to touch anything outside the mounted sandbox, the SDK blocks the OS call entirely and simply feeds a text error back into the LLM's context window.
+
+
+🏗 Architecture & API Updates
+New Feature: Developer-Controlled AttachFile()
+This update adds an AttachFile() method that allows a single file to be safely exposed to the LLM outside the normal sandbox directory. Symlinks are resolved to their real target (file‑only; directory symlinks are rejected).
 
 This ensures:
-1. sandbox remains strict by default
-2. LLM cannot expand its own access unless given a tool to attch files.
-3. developers can intentionally expose specific files (e.g., C:\Data\Dataset.txt)
-4. accidental “how did the model access this?” scenarios are prevented
+1.The sandbox remains strict by default without it being cumbersome to white list. 
+2. The LLM cannot easily expand its own access unless explicitly given a tool to attach files.
+3. Developers can intentionally expose specific datasets (e.g., C:\Data\Dataset.txt).
+4. Accidental “how did the model access this?” scenarios are drastically reduced.
+5. It makes the sandbox exceptionally harder to break out of—no code is perfect, but we're no longer leaving the key in the front door.
 
-The why?
-In short it seemed useful when trying to secure this security bug here [https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource/issues/8] to make it easy for developers  to attach
-files that are outside the sandbox ala a bit like uploading to ChatGPT/CoPilot/Gemini.  If you happen to create a tool that enables the llm to attach its own files without a code enforced boundry, you are potentially exposing your PC's data to the LLM depending on prompt and security.
+The Why:
+It became necessary (good dev experience) while addressing Issue #8 to make it easy for devs to attach files outside the sandbox (similar to uploading a file to ChatGPT/Gemini).
+WARNING: If you create a custom tool that enables the LLM to attach its own files without a code-enforced boundary, you are potentially exposing your PC's entire drive to the LLM depending on prompt injection.
+
+
+🔒 Security & Governance (what was bad, what was fixed)
+Critical Vulnerability Patched (The "Wormhole" Directory Symlink Escape):
+Impact if Unpatched: An attacker using prompt injection could trick the LLM into reading or writing through a directory symlink created inside the sandbox that actually points to a vital system directory (e.g., rewriting the Windows hosts file to redirect bank URLs to malware IPs). Standard string-based path checks would incorrectly validate the path as safe.
+The Fix: Implemented a deep recursive FollowLink stack-resolver. The engine now verifies the true physical path of every parent directory in the chain, ensuring the final resolved target remains physically bounded within the sandbox restrictions.
+
+
+Critical Vulnerability Patched (TOCTOU Race Conditions):
+Impact if Unpatched: Time-Of-Check to Time-Of-Use (TOCTOU) allowed a microscopic race condition where an attacker with background host access could swap a validated "safe" file for a malicious symlink in the exact millisecond before the SDK executed the read/write operation.
+The Fix: Replaced standard File.ReadAllText/WriteAllText with a "Lock and Verify" pattern. TOC_TOU_WriteText and TOC_TOU_ReadText now utilize FileStream with FileShare.None. The OS places a strict kernel-level lock on the file during operations, making it harder to swap out when acting on the file(s)
+
+
+Vulnerability Patched (Legacy DOS Device Deadlocks/Bypasses):
+Impact if Unpatched: LLMs instructed to read legacy Windows device names (CON, LPT0, PRN) could cause application thread hangs, or bypass path validation entirely due to parsing discrepancies between local Windows machines and CI/CD environments (like GitHub Actions).
+The Fix: Added a strict, deterministic, cross-platform BlackListed routine. It surgically filters reserved DOS names without accidentally catching legitimate dictionary words (e.g., Computer.txt) or blocking developer dotfiles (e.g., .env).
+
+Vulnerability Patched (OOM Memory Bombing):
+Impact if Unpatched: An LLM requesting to load a massive file (e.g., a 10GB .log file) would cause the .NET runtime to attempt to allocate the entire file into RAM, throwing a fatal OutOfMemoryException and crashing the host application.
+The Fix: Introduced FileReadSizeCap (defaulting to 20MB). Files exceeding this limit now safely throw a new, catchable FileIsGiganteException, which returns a clean error message to the LLM context window without crashing the pipeline. If you need larger size, subclass the tool as override FileReadSizeCap routine so it returns your new cap.
+Hardened Pipeline (Fail-Closed Architecture):
+The Fix: The core GetSecurePath routing is now wrapped in a strict fail-closed try/catch block. Unpredictable OS-level exceptions (such as infinite recursive symlink loops or PathTooLongException) now result in a graceful sandbox denial (null) rather than bubbling up and crashing the orchestrator.
+
+
+If you can't upgrade:
+Ensure you add some checking or keep the account running the LLM using ButlerSDK locked so it doesn't modify any files you don't want it too. I recommmand DO NOT RUN AS ADMIN or a Service account. Run it limited user if at all posble.
+
+Making the jump to this version:
+Decide where you want the tool to load files from.
+
 
 
 

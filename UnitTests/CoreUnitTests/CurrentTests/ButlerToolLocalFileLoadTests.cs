@@ -29,7 +29,7 @@ namespace CoreUnitTests.CurrentTests
             private  string _sandboxWrite;
             private  string _topSecretOutsideDir;
             private  string _nuclearCodesFile;
-
+            private string dotEnvFileNameTest;
             private  ButlerTool_LocalFile_Load _targetTool;
 
             [TestInitialize]
@@ -49,6 +49,8 @@ namespace CoreUnitTests.CurrentTests
 
                 _nuclearCodesFile = Path.Combine(_topSecretOutsideDir, "nuclear_codes.txt");
                 File.WriteAllText(_nuclearCodesFile, "LAUNCH_CODE_00000000");
+                dotEnvFileNameTest = Path.Combine(_sandboxRead, ".env");
+                File.WriteAllText(dotEnvFileNameTest, "Congratulation on having an enviroment file.");
 
                 // Initialize target with null Vault (allowed by your design)
                 _targetTool = new ButlerTool_LocalFile_Load(null);
@@ -229,6 +231,14 @@ namespace CoreUnitTests.CurrentTests
                 // File.ReadAllText("...\SandboxRead\CON") will HANG the thread indefinitely.
                 // Fix: Check if FileInfo.Exists and isn't a reserved device name.
                 Assert.IsNull(result);
+            }
+
+            [TestMethod]
+            public void API_SanityCheck_AcceptsEnvFile_()
+            {
+                string envFlag = Path.Combine(_sandboxRead, ".ENV");
+                string? result = AttackGetSecurePath(envFlag, ButlerTool_LocalFile_Load.SandBoxPathFilter.Read);
+                Assert.IsNotNull(result);
             }
         }
     

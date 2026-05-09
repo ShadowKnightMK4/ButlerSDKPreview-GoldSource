@@ -8,7 +8,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net.Security;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -20,6 +22,11 @@ namespace ButlerSDK.Tools
     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
     public class ButlerTool_LocalFile_Load : ButlerToolBase
     {
+        class FileIsGiganteException : Exception
+        {
+            public FileIsGiganteException(string message) : base(message) { }   
+        }
+
         private List<string> _SandboxWhiteList = new();
         private List<string> _SandBoxPathReadOnly=new();
         private List<string> _SandBoxPathWriteOnly= new();
@@ -29,6 +36,52 @@ namespace ButlerSDK.Tools
         readonly static List<string>  HardCodedBlackList = new List<string>() { "CON", "PRN", "AUX", "NUL" };
         readonly static List<string>  PrefixCodedBlackList = new List<string>() { "COM", "LPT" };
 
+        /// <summary>
+        /// roughly 20mb is the cap unless you subclass this tool and change the <see cref="FileReadSizeCap"/>
+        /// </summary>
+        protected readonly int DefaultReadSizeCap = 20000000;
+
+        /// <summary>
+        /// to have this tool not freak out at files larger than 20mb, override this to return the cap in bytes
+        /// </summary>
+        /// <returns></returns>
+        protected virtual int FileReadSizeCap()
+        {
+            return DefaultReadSizeCap;
+        }
+
+        /// <summary>
+        /// This is ment to be called <see cref="SaveMode(string, string, string, string?, ButlerTool_LocalFile_Load)"/> after it validates
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="data"></param>
+         void TOC_TOU_WriteText(string target, byte[] data)
+        {
+            using (var FN = File.Open(target, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                FN.Write(data);
+            }
+        }
+
+        byte[] TOC_TOU_ReadText(string target)
+        {
+            using (var FN = File.Open(target, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                if (FN.Length > FileReadSizeCap())
+                {
+                    throw new FileIsGiganteException(target);
+                }
+                else
+                {
+                    byte[] ret = new byte[FN.Length];
+                    if (ret is not null)
+                    {
+                        FN.Read(ret, 0, (int)FN.Length);
+                    }
+                    return ret;
+                }
+            }
+        }
         /// <summary>
         /// default is this returns true, enabling the list if on windows and false if not. Override as neeeded
         /// </summary>
@@ -50,6 +103,10 @@ namespace ButlerSDK.Tools
 
                 name = Path.GetFileNameWithoutExtension(name);
 
+                if (string.IsNullOrEmpty(name))
+                {
+                    name = Path.GetFileName(location);
+                }
                 if (string.IsNullOrEmpty(name))
                 {
                     return true;
@@ -550,7 +607,16 @@ namespace ButlerSDK.Tools
 
         static ButlerChatToolResultMessage? LoadMode(string target, string format, string? id, ButlerTool_LocalFile_Load that)
         {
-            string? sani_target = that.GetSecurePath(target, SandBoxPathFilter.Read);
+            string? sani_target;
+            try
+            {
+                sani_target = that.GetSecurePath(target, SandBoxPathFilter.Read);
+            }
+            catch (Exception)
+            {
+                // if anything happens, fail closed. The code shouldn't trigger stuff unless the path is weird anyway
+                sani_target = null;
+            }
             if (sani_target == null)
             {
                 return new ButlerChatToolResultMessage(id, $"Requested path {target} is outside the sanbox. Unable to load data with this tool.");
@@ -564,22 +630,37 @@ namespace ButlerSDK.Tools
                         string data;
                         try
                         {
-                            data = File.ReadAllText(sani_target);
+                            //data = File.ReadAllText(sani_target);
+                            var data_as_byte = that.TOC_TOU_ReadText(sani_target);
+                            data = Encoding.UTF8.GetString(data_as_byte);
+                        }
+                        catch (FileIsGiganteException e)
+                        {
+                            data = $"Error: The file is larger than the enviromental limit to load with this tool";
                         }
                         catch (IOException e)
                         {
-                            data = $"Error: This call failed. Exception data {e.Message}";
+                            data = $"Error: This call failed. Exception data \"{e.Message}\".";
                         }
                         ret = new ButlerChatToolResultMessage(id, data);
                         return ret;
                     }
-                default: return new ButlerChatToolResultMessage(id, $"Error: This mode is not supported: {format}");
+                default: return new ButlerChatToolResultMessage(id, $"Error: This mode is not supported: \"{format}\"");
             }
         }
 
         static ButlerChatToolResultMessage? SaveMode(string target, string format, string data, string? id, ButlerTool_LocalFile_Load that)
         {
-            string? sani_target = that.GetSecurePath(target, SandBoxPathFilter.Write);
+            string? sani_target;
+            try
+            {
+                sani_target = that.GetSecurePath(target, SandBoxPathFilter.Write);
+            }
+            catch (Exception)
+            {
+                // if anything happens, fail closed. The code shouldn't trigger stuff unless the path is weird anyway
+                sani_target = null;
+            }
             if (sani_target == null)
             {
                 return new ButlerChatToolResultMessage(id, $"Requested path {target} is outside the sanbox. Unable to save data with this tool.");
@@ -592,7 +673,7 @@ namespace ButlerSDK.Tools
                         
                         try
                         {
-                            File.WriteAllText(sani_target, data);
+                            that.TOC_TOU_WriteText(sani_target, Encoding.UTF8.GetBytes(data));
                             ret = new ButlerChatToolResultMessage(id, $"{sani_target} was successful saved as {format} data");
                         }
                         catch (IOException e)
@@ -603,10 +684,9 @@ namespace ButlerSDK.Tools
                     }
                 case format_ansi_text:
                     {
-                        byte[] DataAsBytes = Encoding.ASCII.GetBytes(data);
                         try
                         {
-                            File.WriteAllBytes(sani_target, DataAsBytes);
+                            that.TOC_TOU_WriteText(sani_target, Encoding.ASCII.GetBytes(data));
                             ret = new ButlerChatToolResultMessage(id, $"{sani_target} was successful saved as {format} data");
                         }
                         catch (IOException e)

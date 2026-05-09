@@ -1,4 +1,5 @@
-﻿using ButlerLLMProviderPlatform.DataTypes;
+﻿using ApiKeys;
+using ButlerLLMProviderPlatform.DataTypes;
 using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerToolContract.DataTypes;
 using System;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net.Security;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -102,7 +104,88 @@ namespace ButlerSDK.Tools
             }
                 _SandboxWhiteList.Add(path);
         }
- 
+
+        string? FollowLink(string requested_resource)
+        {
+            Stack<string> rev = new Stack<string>();
+            FileSystemInfo WalkMe=null;
+            requested_resource = Path.GetFullPath(requested_resource.Trim());
+            WalkMe = new FileInfo(requested_resource);
+            do
+            {
+               if ( (!string.IsNullOrWhiteSpace(WalkMe.LinkTarget)) && (!WalkMe.Exists == false))
+              
+                {
+                    return null;
+                }
+               else
+                {
+                    if (WalkMe.LinkTarget != null)
+                    {
+                        var x = WalkMe.ResolveLinkTarget(true);
+                        if (x is not null)
+                        {
+                            WalkMe = x;
+                        }
+                        else
+                        {
+                            string? ParentNode = Path.GetDirectoryName(WalkMe.FullName);
+                            if (ParentNode is null)
+                            {
+                                return WalkMe.FullName;
+                            }
+                            else
+                            {
+                                WalkMe = new FileInfo(ParentNode);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        string? ParentNode = Path.GetDirectoryName(WalkMe.FullName);
+                        if (ParentNode is null)
+                        {
+                            // I AM {g}rooot!
+                            // ok we have the final path but in re
+                            string ret = WalkMe.FullName;
+                            if (WalkMe.FullName.EndsWith(Path.AltDirectorySeparatorChar) || (WalkMe.FullName.EndsWith(Path.DirectorySeparatorChar)))
+                            {
+                                var s = rev.TryPeek(out string slash);
+                                if (slash?.Length > 0)
+                                {
+                                    if ((slash[0] == Path.AltDirectorySeparatorChar) || (slash[0] == Path.DirectorySeparatorChar))
+                                    {
+                                        rev.Pop();
+                                    }
+                                }
+                            }
+                            while (rev.Count > 0)
+                            {
+                                ret += rev.Pop();
+                            }
+                            WalkMe = null;
+                            return ret;
+                        }
+                        else
+                        {
+                            rev.Push(WalkMe.Name);
+                            rev.Push(Path.DirectorySeparatorChar.ToString());
+
+
+                            WalkMe = new FileInfo(ParentNode);
+                        }
+                    }
+                }
+            } while (WalkMe is not null);
+            if (WalkMe is not null)
+            {
+                return WalkMe.FullName;
+            }
+            else
+            {
+                return null;
+            }
+        }
         string? CheckAttachments(string requested_file)
         {
             FileInfo info;
@@ -148,22 +231,88 @@ namespace ButlerSDK.Tools
         /// <remarks>ensure trusted folks and NOT LLM can call AttachFile only.</remarks>
         string? GetSecurePath(string RequestedPath, SandBoxPathFilter Filter)
         {
-            RequestedPath = Path.GetFullPath(RequestedPath);
-            RequestedPath = RequestedPath.Trim();
+
+            if (string.IsNullOrEmpty(RequestedPath))
+            {
+                return null;
+            }
+
+            RequestedPath = FollowLink(RequestedPath);
+            if (RequestedPath is null)
+            {
+                return null;
+            }
+            RequestedPath = Path.GetFullPath(RequestedPath.Trim());
             if (string.IsNullOrEmpty(RequestedPath))
                 return null;
             else
             {
-                if ((Filter == SandBoxPathFilter.Read) || (Filter == SandBoxPathFilter.Both))
+
+                string? link_marker = null;
+                if (Directory.Exists(RequestedPath))
                 {
-                    string? whitelist = CheckAttachments(RequestedPath);
-                    if (whitelist is not null)
+                    DirectoryInfo x = new DirectoryInfo(RequestedPath);
+                    if (x.Exists)
                     {
-                        return whitelist;
+                        if (x.LinkTarget != null)
+                        {
+                            var Final = x.ResolveLinkTarget(true);
+                            if (Final is not null)
+                            {
+                                if (Final.Exists)
+                                {
+                                    link_marker = Final.FullName;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            link_marker = null;
+                        }
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    if (File.Exists(RequestedPath))
+                    {
+                        FileInfo x = new FileInfo(RequestedPath);
+                        if (x.Exists)
+                        {
+                            if (x.LinkTarget is not null)
+                            {
+                                var Finale = x.ResolveLinkTarget(true);
+                                if (Finale is not null)
+                                {
+                                    if (Finale.Exists)
+                                    {
+                                        link_marker = Finale.FullName;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            return null;
+                        }
                     }
                 }
             }
-                List<string> search;
+
+            if ((Filter == SandBoxPathFilter.Read) || (Filter == SandBoxPathFilter.Both))
+            {
+                string? whitelist = CheckAttachments(RequestedPath);
+                if (whitelist is not null)
+                {
+                    return whitelist;
+                }
+            }
+
+
+            List<string> search;
 
 
             switch (Filter)
@@ -175,38 +324,44 @@ namespace ButlerSDK.Tools
                     search = _SandBoxPathReadOnly;
                     break;
                 case SandBoxPathFilter.Both:
-                    search = new();
-                    search.AddRange( _SandBoxPathWriteOnly );
-                    search.AddRange(_SandBoxPathReadOnly);
+                    search = _SandBoxPathReadOnly.Concat(_SandBoxPathWriteOnly).ToList();
                     break;
                 default:
                     throw new InvalidEnumArgumentException("Unknown/unsupported enum. Select Both, Read or Write");
             }
 
      
-            if ( (search is null))
+            if ( (search is null) || (search.Count == 0))
             {
                 return null;
             }
             
-            if (search.Count == 0)
-            {
-                return null;
-            }
+            
 
             bool one = false;
 
 
            foreach (string s in search)
             {
-                string target;
-                if (!(s.EndsWith(Path.DirectorySeparatorChar) || (s.EndsWith(Path.AltDirectorySeparatorChar))))
+                if (string.IsNullOrEmpty(s))
+                    continue;
+
+                string target = Path.GetFullPath(s.Trim());
+
+                /*
+                 * for future symbolink link following
+                if (Directory.Exists(target))
                 {
-                    target = Path.GetFullPath(s) + Path.DirectorySeparatorChar;
-                }
-                else
+                    var fn = new DirectoryInfo(target);
+                    var newtarget = fn.ResolveLinkTarget(true);
+                    if (newtarget is not null)
+                    {
+                        target = Path.GetFullPath(newtarget.FullName.Trim());
+                    }
+                }*/
+                if (!(target.EndsWith(Path.DirectorySeparatorChar) || (target.EndsWith(Path.AltDirectorySeparatorChar))))
                 {
-                    target = Path.GetFullPath(s);
+                    target += Path.DirectorySeparatorChar;
                 }
                 
                 if (Environment.OSVersion.Platform == PlatformID.Win32NT)
@@ -282,6 +437,8 @@ namespace ButlerSDK.Tools
         public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler, List<string> AllowedReads) : base(KeyHandler)
         {
             this._SandBoxPathReadOnly = new();
+            this._SandBoxPathWriteOnly = new();
+
             this._SandBoxPathReadOnly.AddRange(AllowedReads);
         }
 
@@ -306,10 +463,28 @@ namespace ButlerSDK.Tools
         }
 
 
+        static string FullAndSlashPath(string x)
+        {
+            if (string.IsNullOrEmpty(x))
+                return x;
+            else
+            {
+                x = x.Trim();
+                x = Path.GetFullPath(x);
+                if (!x.EndsWith('/'))
+                {
+                    if (!x.EndsWith('\\'))
+                    {
+                        x += '\\';
+                    }
+                }
+                return x.Trim();
+            }
+        }
 
         static ButlerChatToolResultMessage? LoadMode(string target, string format, string? id, ButlerTool_LocalFile_Load that)
         {
-            string? sani_target = that.GetSecurePath(target, SandBoxPathFilter.Write);
+            string? sani_target = that.GetSecurePath(target, SandBoxPathFilter.Read);
             if (sani_target == null)
             {
                 return new ButlerChatToolResultMessage(id, $"Requested path {target} is outside the sanbox. Unable to load data with this tool.");

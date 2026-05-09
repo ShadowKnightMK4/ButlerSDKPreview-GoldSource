@@ -26,6 +26,64 @@ namespace ButlerSDK.Tools
         public IReadOnlyList<string> ReadOnlySandBoxPath => _SandBoxPathReadOnly;
         public IReadOnlyList<string> WriteOnlySandBoxPath => _SandBoxPathWriteOnly;
 
+        readonly static List<string>  HardCodedBlackList = new List<string>() { "CON", "PRN", "AUX", "NUL" };
+        readonly static List<string>  PrefixCodedBlackList = new List<string>() { "COM", "LPT" };
+
+        /// <summary>
+        /// default is this returns true, enabling the list if on windows and false if not. Override as neeeded
+        /// </summary>
+        /// <returns></returns>
+        protected virtual bool BlackListSetup()
+        {
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                return true;
+            }
+            return false;
+
+        }
+        private static bool BlackListed(string location)
+        {
+            
+            {
+                string name = (location);
+
+                name = Path.GetFileNameWithoutExtension(name);
+
+                if (string.IsNullOrEmpty(name))
+                {
+                    return true;
+                }
+                else
+                { 
+                    if (HardCodedBlackList.Contains(name, StringComparer.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                else
+                {
+                    for (int i = 0; i < PrefixCodedBlackList.Count; i++)
+                    {
+                            if (name.Length == 4)
+                            {
+                                if (name.StartsWith(PrefixCodedBlackList[i], StringComparison.OrdinalIgnoreCase) )
+                                {
+                                    char lastChar = name[3];
+                                    // Check if the 4th character is a digit between 1 and 9
+                                    if (lastChar >= '0' && lastChar <= '9')
+                                    {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+
+                    return false;
+                }
+                }
+                return true;
+            }
+        }
         public enum SandBoxPathFilter
         {
             Unknown =0,
@@ -236,6 +294,7 @@ namespace ButlerSDK.Tools
             {
                 return null;
             }
+            
 
             RequestedPath = FollowLink(RequestedPath);
             if (RequestedPath is null)
@@ -243,6 +302,7 @@ namespace ButlerSDK.Tools
                 return null;
             }
             RequestedPath = Path.GetFullPath(RequestedPath.Trim());
+
             if (string.IsNullOrEmpty(RequestedPath))
                 return null;
             else
@@ -301,6 +361,12 @@ namespace ButlerSDK.Tools
                     }
                 }
             }
+
+            if (BlackListSetup() && BlackListed(RequestedPath))
+            {
+                return null;
+            }
+
 
             if ((Filter == SandBoxPathFilter.Read) || (Filter == SandBoxPathFilter.Both))
             {

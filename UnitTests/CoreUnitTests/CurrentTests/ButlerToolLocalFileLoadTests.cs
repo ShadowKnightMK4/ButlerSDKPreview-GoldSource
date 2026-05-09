@@ -152,7 +152,8 @@ namespace CoreUnitTests.CurrentTests
                     // OS might block symlink creation without Admin/Dev rights. Skip if so.
                     Console.WriteLine("Smybol Link blocked. This does actual test the code. ");
                     Console.WriteLine("Failure here is possible config issue and NOT THE TEST ITSELF FAILING");
-                    return;
+                    Assert.Inconclusive("Not a failure. symbol link to do this test blocked");
+                return;
                 }
 
                 // Sombra attaches the symlink. Your code resolves it to _nuclearCodesFile.
@@ -186,7 +187,7 @@ namespace CoreUnitTests.CurrentTests
                 {
                     Console.WriteLine("Smybol Link blocked. This does actual test the code. ");
                     Console.WriteLine("Failure here is possible config issue and NOT THE TEST ITSELF FAILING");
-                Assert.Fail("Not a failure. symbol link to do this test blocked");
+                Assert.Inconclusive("Not a failure. symbol link to do this test blocked");
                     return; // OS permissions blocking test setup
                 }
             Console.WriteLine($"Currently {maliciousSymlinkDir} is a symbolic link pointing to {_topSecretOutsideDir} The code should be smart enough to see that and block it.");

@@ -7,7 +7,7 @@ This update introduces a major security hardening of the ButlerTool_LocalFile_Lo
 All developers utilizing LLM file-access tools are strongly encouraged to review these changes.
 
 
-🛡️ The Sandbox: What it is and What changed (No Fluff)
+🛡️ The Sandbox: What it is and What changed 
 Before v1.1.2:
 The file tool essentially acted as a passthrough. If an LLM hallucinated a path, or a user used prompt injection to ask the LLM to read C:\Windows\System32\drivers\etc\hosts or ~/.bashrc, the tool would execute the read/write as long as the host application had the OS permissions to do so. The LLM had the run of your hard drive.
 
@@ -67,7 +67,7 @@ Ensure you add some checking or keep the account running the LLM using ButlerSDK
 Making the jump to this version:
 Decide where you want the tool to load files from.
 
-
+Note: With the changes, it is recommanded to not rely on discoverer tool to find this tool. The default constructor it calls sets the sandbox to read / write temporary folder. It's recommended to manually add the tool when needed and specify where you want your sandbox folders to be.
 
 
 🚀 Release Notes: ButlerSDK v1.1.1-preview (Security Hotfix)

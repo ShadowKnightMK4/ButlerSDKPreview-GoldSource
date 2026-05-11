@@ -27,6 +27,14 @@ namespace ButlerSDK.Tools
             public FileIsGiganteException(string message) : base(message) { }   
         }
 
+        class SandBoxException: IOException
+        {
+            public SandBoxException(string message): base(message)
+            {
+
+            }
+        }
+
         private List<string> _SandboxWhiteList = new();
         private List<string> _SandBoxPathReadOnly=new();
         private List<string> _SandBoxPathWriteOnly= new();
@@ -45,7 +53,7 @@ namespace ButlerSDK.Tools
         /// to have this tool not freak out at files larger than 20mb, override this to return the cap in bytes
         /// </summary>
         /// <returns></returns>
-        protected virtual int FileReadSizeCap()
+        protected virtual long FileReadSizeCap()
         {
             return DefaultReadSizeCap;
         }
@@ -59,14 +67,25 @@ namespace ButlerSDK.Tools
         {
             using (var FN = File.Open(target, FileMode.Create, FileAccess.Write, FileShare.None))
             {
+                // check when the os has a lock also, 
+                // yes extra work, but it's extra work we do to ensure someone can't swap it out
+                if (GetSecurePath(FN.Name, SandBoxPathFilter.Write) == null)
+                {
+                    throw new SandBoxException(Path.GetFileName(target));
+                }
                 FN.Write(data);
             }
         }
+
 
         byte[] TOC_TOU_ReadText(string target)
         {
             using (var FN = File.Open(target, FileMode.Open, FileAccess.Read, FileShare.None))
             {
+                if (GetSecurePath(FN.Name, SandBoxPathFilter.Read) == null)
+                {
+                    throw new SandBoxException(Path.GetFileName(target));
+                }
                 if (FN.Length > FileReadSizeCap())
                 {
                     throw new FileIsGiganteException(target);
@@ -77,11 +96,16 @@ namespace ButlerSDK.Tools
                     if (ret is not null)
                     {
                         FN.Read(ret, 0, (int)FN.Length);
+                        return ret;
                     }
-                    return ret;
+                    else
+                    {
+                        return Array.Empty<byte>();
+                    }
                 }
             }
         }
+
         /// <summary>
         /// default is this returns true, enabling the list if on windows and false if not. Override as neeeded
         /// </summary>
@@ -112,18 +136,18 @@ namespace ButlerSDK.Tools
                     return true;
                 }
                 else
-                { 
+                {
                     if (HardCodedBlackList.Contains(name, StringComparer.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-                else
-                {
-                    for (int i = 0; i < PrefixCodedBlackList.Count; i++)
                     {
+                        return true;
+                    }
+                    else
+                    {
+                        for (int i = 0; i < PrefixCodedBlackList.Count; i++)
+                        {
                             if (name.Length == 4)
                             {
-                                if (name.StartsWith(PrefixCodedBlackList[i], StringComparison.OrdinalIgnoreCase) )
+                                if (name.StartsWith(PrefixCodedBlackList[i], StringComparison.OrdinalIgnoreCase))
                                 {
                                     char lastChar = name[3];
                                     // Check if the 4th character is a digit between 1 and 9
@@ -135,10 +159,9 @@ namespace ButlerSDK.Tools
                             }
                         }
 
-                    return false;
+                        return false;
+                    }
                 }
-                }
-                return true;
             }
         }
         public enum SandBoxPathFilter

@@ -16,6 +16,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 namespace ButlerSDK.Tools
 {
+    [ToolSupport.DiscoverTool.ButlerTool_DiscoverAttributes(true)]
     /// <summary>
     /// load text from disk and save text to disk
     /// </summary>

@@ -6,6 +6,10 @@
 
 namespace ButlerSDK
 {
+    public interface IApiKeyRateLimiterAtomicCharge: IApiKeyRateLimiter
+    {
+        public bool CheckForCallPermissionAndCharge(string ServiceName, int CallCount = 1);
+    }
     public interface IApiKeyRateLimiter
     {
         /// <summary>

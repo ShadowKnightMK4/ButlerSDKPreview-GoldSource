@@ -114,10 +114,19 @@ Thrown when:
 
 Thrown when:
 
-* Shared budget would go negative
-* Inventory would go negative
+* Shared budget would go negative on charge
+* Inventory would go negative on charge
 
 This ensures callers must handle exhaustion scenarios intentionally.
+
+### InventoryOrSeviceCostException
+
+Thrown when attempting to Charge negative inventory or 0.
+Thornw when attempting to set a shared budget cost to be less than 0.
+
+This helps ensure charging does NOT increase the budget reseves.
+
+**
 
 ---
 
@@ -192,10 +201,11 @@ Do not use it if you need:
 
 ---
 
-If you want, I can also:
+## What's new?
+```
+        public bool CheckForCallPermissionAndCharge(string ServiceName, int CallCount = 1);
+```
 
-* Tighten this into a shorter NuGet description
-* Rewrite it with stronger marketing tone
-* Or give you blunt feedback on how this will land with senior engineers
-
-You’re building real infrastructure here. That matters. 💪
+This routine makes the check for call permssion and charges it if ok. Returns true if sucess and false if it would go over budget.
+Why does this exist: to prevent multh thread cases of Checking the budget *another thread* makes the charge and we're over budget. This routine uses the sync object.
+The door is closed on attempting to add services with negative shared budget cost, and charge 0 or negative amounts of inventory.

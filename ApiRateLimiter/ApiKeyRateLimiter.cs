@@ -5,6 +5,7 @@
   */
 
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
 
 namespace ButlerSDK
@@ -12,7 +13,7 @@ namespace ButlerSDK
     /// <summary>
     /// A quick primer on this class. It collects a Service description with its <see cref="AddService(string, decimal, ulong, ulong, ApiKeyRateLimiter.ButlerApiLimitType, bool)"/> call. In that you define how to limit, an inventory of calls and a cost per call that gets deducted from the shared budget. Inventory is unique for each service.
     /// </summary>
-    public class ApiKeyRateLimiter : IApiKeyRateLimiter
+    public class ApiKeyRateLimiter : IApiKeyRateLimiterAtomicCharge
     {
         /// <summary>
         /// Thrown if trying to get info on a service the class doesn't know about.
@@ -23,6 +24,19 @@ namespace ButlerSDK
             public ServiceNonExistentException(string message, Exception Inner) : base(message, Inner) { }
 
             public ServiceNonExistentException()
+            {
+            }
+        }
+
+        /// <summary>
+        /// This triggers if attempting to assign a shared budget cost of less than 0, or attempting to dedect a negative amouont of inventory
+        /// </summary>
+        public class InventoryOrSeviceCostException: Exception
+        {
+            public InventoryOrSeviceCostException(string message) : base(message) { }
+            public InventoryOrSeviceCostException(string message, Exception Inner) : base(message, Inner) { }
+
+            public InventoryOrSeviceCostException()
             {
             }
         }
@@ -161,6 +175,11 @@ namespace ButlerSDK
         bool IsCallAfforded(ApiEntry Service, int CallCount)
         {
             ArgumentNullException.ThrowIfNull(Service);
+            if (CallCount < 0)
+            {
+                throw new InventoryOrSeviceCostException($"{Service.ServiceName} IsCallAfforded check with negative call count is not supported");
+            }
+            
             decimal CostCalculated;
             if (CallCount == 0) return true;
 
@@ -188,6 +207,10 @@ namespace ButlerSDK
       
         public void AddService(string ServiceName, decimal CostPerCall, ulong CurrentInventory, ulong MaxInventory, ButlerApiLimitType LimitKind, bool ReplaceIfExists = false)
         {
+            if (CostPerCall < 0)
+            {
+                throw new InventoryOrSeviceCostException($"{ServiceName} add attempt with a negative cost per call. This is not supported. If you ment it to not cost anything per call, use 0 instead.");
+            }
             lock (SynchObject)
             {
                 if (Data.ContainsKey(ServiceName) && ReplaceIfExists == false)
@@ -219,6 +242,95 @@ namespace ButlerSDK
             }
         }
 
+        /// <summary>
+        /// Internal routine used by <see cref="ChargeService(string, int)"/>
+        /// </summary>
+        /// <param name="CallCharge">OUTPUT: price to charge charged budget</param>
+        /// <param name="CallNumber">inventory to charge the service</param>
+        /// <param name="Inv">OUTPUT: inventory to adjust budget</param>
+        /// <param name="BudgetOk">set to true if Budget was not overflow, false otherwise</param>
+        /// <param name="InventoryOk">set to true if Inventory was not underflow, false otherwise</param>
+        /// <param name="Service">Service to charge</param>
+        /// <exception cref="OverBudgetException"></exception>
+        /// <exception cref="ArgumentNullException">If Passed service is null</exception>
+        /// <exception cref="NegativeInventoryOrSeviceCostException"> if sevice cost is negative, or inventory is negative</exception>
+        internal bool ChargeServiceCalculation(ref decimal CallCharge, decimal CallNumber, ref decimal Inv, ref bool BudgetOk, ref bool InventoryOk, ApiEntry Service)
+        {
+            /*
+             * This routine calculates the charge(s), updated the ref variables.
+             * IT DOES NOT mutate the passed service, that's ChargeService() or the AtomicUpgrade
+             */
+            ArgumentNullException.ThrowIfNull(Service);
+            BudgetOk = InventoryOk = false;
+
+            if (Service.Limit.HasFlag(ButlerApiLimitType.SharedBudget))
+            {
+                CallCharge = Service.CostPerCall * CallNumber;
+            }
+            else
+            {
+                CallCharge = 0;
+            }
+
+            if (Service.Limit.HasFlag(ButlerApiLimitType.PerCall))
+            {
+                Inv = CallNumber;
+                if (Inv == 0)
+                {
+                    throw new InventoryOrSeviceCostException($"{Service.ServiceName} attempt to deduct 0 inventory with charge per call. This isn't supported. minimum dedect is 1 if Charging per call");
+                }
+            }
+            else
+            {
+                Inv = 0;
+            }
+
+            if (Service.CostPerCall < 0)
+            {
+                throw new InventoryOrSeviceCostException($"{Service.ServiceName} has negative cost per call. This is not supported. Ensure cost 0 or greater");
+            }
+            if (Inv < 0)
+            {
+                throw new InventoryOrSeviceCostException($"{Service.ServiceName} has negative inventory request. This is not supported. Ensure positive numbers for inventory or skip that");
+            }
+
+            if (SharedBudget - CallCharge < 0)
+            {
+                throw new OverBudgetException($"Calling Tool or Service {Service.ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase budget in the software.");
+            }
+            else
+            {
+                BudgetOk = true;
+            }
+            if (Service.Inventory - Inv < 0)
+            {
+                throw new OverBudgetException($"Calling Tool or Service {Service.ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase inventory in the software.");
+            }
+            else
+            {
+                InventoryOk = true;
+            }
+
+            if (InventoryOk && BudgetOk)
+            {
+                return true;
+                /*SharedBudget -= CallCharge;
+                Service.Inventory -= Inv;*/
+            }
+            else
+            {
+                if (!BudgetOk)
+                {
+                    throw new OverBudgetException($"Calling Tool or Service {Service.ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase budget in the software.");
+                }
+                if (!InventoryOk)
+                {
+                    throw new OverBudgetException($"Calling Tool or Service {Service.ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase inventory in the software.");
+                }
+            }
+            return false;
+
+        }
         public void ChargeService(string ServiceName, int CallNumber)
         {
             lock (SynchObject)
@@ -232,8 +344,21 @@ namespace ButlerSDK
                 {
                     bool BudgetOk = false;
                     bool InventoryOk = false;
-                    decimal CallCharge;
-                    decimal Inv;
+                    decimal CallCharge=0;
+                    decimal Inv=0;
+                    if (ChargeServiceCalculation(ref CallCharge, CallNumber, ref Inv,ref BudgetOk, ref InventoryOk, Service))
+                    {
+                        if (BudgetOk)
+                        {
+                            SharedBudget -= CallCharge;
+                        }
+                        if (InventoryOk)
+                        {
+                            Service.Inventory -= Inv;
+                        }
+                    }
+
+                    /*
                     if (Service.Limit.HasFlag(ButlerApiLimitType.SharedBudget))
                     {
                         CallCharge = Service.CostPerCall * CallNumber;
@@ -286,7 +411,7 @@ namespace ButlerSDK
                             throw new OverBudgetException($"Calling Tool or Service {ServiceName} {CallNumber} of times is outside of budget. Cannot do it. Increase inventory in the software.");
                         }
                     }
-
+                    */
                     /*
                     if (SharedBudget - CallCharge < 0)
                     {
@@ -396,6 +521,10 @@ namespace ButlerSDK
        
         public void AssignNewCost(string ServiceName, decimal Cost)
         {
+            if (Cost < 0)
+            {
+                throw new InventoryOrSeviceCostException($"{ServiceName} add attempt with a negative cost per call. This is not supported. If you ment it to not cost anything per call, use 0 instead.");
+            }
             lock (SynchObject)
             {
 
@@ -425,9 +554,60 @@ namespace ButlerSDK
             }
         }
 
-     
 
-  
+        /// <summary>
+        /// This will see if the charge is valided and charge the service.  
+        /// </summary>
+        /// <param name="ServiceName"></param>
+        /// <param name="CallCount">int larger than 0</param>
+        /// <returns>true if charge went thru and false if non</returns>
+        /// <exception cref="ServiceNonExistentException"></exception>
+        /// <exception cref="ApiKeyRateLimiter.InventoryOrSeviceCostException">If you try to charge call count less than 0</exception>
+        /// <remarks>Thank you for the idea win32 api routine FreeLibraryAndExitThread. </remarks>
+        public bool CheckForCallPermissionAndCharge(string ServiceName, int CallCount = 1)
+        {
+            bool HasCharged = false;
+            if (!DoesServiceExist(ServiceName))
+            {
+                throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+            }
+            lock (SynchObject)
+            {
+                ApiEntry? Service = this.LookUpService(ServiceName);
+                if (Service is null)
+                    return false;
+
+                try
+                {
+                    if (IsCallAfforded(ServiceName, CallCount))
+                    {
+
+
+                        bool BudgetOk = false;
+                        bool InventoryOk = false;
+                        decimal CallCharge = 0;
+                        decimal Inv = 0;
+                        if (ChargeServiceCalculation(ref CallCharge, CallCount, ref Inv, ref BudgetOk, ref InventoryOk, Service))
+                        {
+                            if (BudgetOk)
+                            {
+                                SharedBudget -= CallCharge;
+                            }
+                            if (InventoryOk)
+                            {
+                                Service.Inventory -= Inv;
+                            }
+                        }
+                        HasCharged = true;
+                    }
+                }
+                catch (OverBudgetException)
+                {
+                    HasCharged = false;
+                }
+                return HasCharged;
+            }
+        }
 
     }
 }

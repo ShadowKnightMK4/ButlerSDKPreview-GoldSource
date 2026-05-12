@@ -477,117 +477,48 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <remarks>The multo thread guard stuff is in the public api. This internal routine knows no such perks</remarks>
         internal ButlerChatToolResultMessage? CallToolFunctionInternalSync(string? FunctionName, string? CallId, string? Arguments, IButlerToolBaseInterface? ForceUser, out bool OK)
         {
+            ButlerChatToolResultMessage? err_reply = null;
             IButlerToolBaseInterface? Tool = null;
-            if (string.IsNullOrEmpty(FunctionName) && (ForceUser is null))
+            if (CallToolFunctionInternalPREPWORK(FunctionName, CallId, Arguments, ForceUser, ref err_reply, ref Tool))
             {
-                OK = false;
-                throw new ArgumentException("ERROR: FunctionName and ForceUser args must not be null");
-            }
-            else
-            {
+                // the tole payed, go run it.
 
-                // first check if we got an entry for the function we are calling
-
-                if (FunctionName is not null)
+                if (Tool is IButlerToolAsyncResolver AsyncTool)
                 {
-                    Tool = ChatToTool(FunctionName);
-                }
-
-                // nope, try subbing the one indicated with ForceUser
-                if (Tool is null)
-                {
-                    if (ForceUser is not null)
-                    {
-                        Tool = ForceUser;
-                        FunctionName = ForceUser.ToolName; // don't forget this, the code below assumes FunctionName is NOT NULL
-                    }
-                    else
-                    {
-                        OK = false;
-                        throw new ToolNotFoundException("Attempt to call unknown tool");
-                    }
-                }
-
-                // still nope? Give up
-                if (Tool is null)
-                {
-                    OK = false;
-                    throw new ToolNotFoundException("Someone added a blank tool to the tool list.");
-                }
-
-                /*
-                 * This work flow works:
-                 * #1, tool must validate its arguments and reject invalid ones,
-                 * #2, if #1 passes, do we have permission to call?
-                 * #3 if #2 passes,  update the call inventory (or service) and make the call, returning the result;
-                 */
-                JsonDocument JsonArgs;
-                if (Arguments is not null)
-                {
-                    JsonArgs= JsonSerializer.SerializeToDocument(Arguments);
-                    if (JsonArgs.RootElement.ValueKind == JsonValueKind.String)
-                    {
-                        // defensive check
-                        string? PossibleNullString = JsonArgs.RootElement.GetString();
-                        if (PossibleNullString is not null)
-                            JsonArgs = JsonDocument.Parse(PossibleNullString);
-                        else
-                        {
-                            // fall back to none.
-                            JsonArgs = JsonSerializer.SerializeToDocument("{}");
-                        }
-                    }
+                    OK = true;
+                    // THE ESCAPE HATCH: 
+                    // We push the async execution to the ThreadPool to escape any UI SynchronizationContext,
+                    // preventing deadlocks in MAUI/WPF apps, then safely block and unwrap the result.
+                    return Task.Run(async () => await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null))
+                               .ConfigureAwait(false)
+                               .GetAwaiter()
+                               .GetResult();
                 }
                 else
                 {
-                    // default args. NONE
-                    JsonArgs = JsonSerializer.SerializeToDocument("{}");
-                }
-
-                if (Tool.ValidateToolArgs(null, JsonArgs))
-                {
-                    bool HasPermission;
-                    if (Tool is IButlerCritPriorityTool) // crit priority tools can be called as much as the LLM or the thing scheduling tools wants. Treat with care.
-                        HasPermission = true;
-                    else
-                    {
-                        HasPermission = Limiter.CheckForCallPermission(FunctionName!);
-                    }
-                    // upper code already establishes the name of the function  is not null
-                    if (!HasPermission)
-                    {
-                        OK = false;
-                        return new ButlerChatToolResultMessage(CallId, LimitExceeded);
-                    }
-                    else
-                    {
-                        Limiter.ChargeService(FunctionName!, 1);
-                        OK = true;
-                        return Tool.ResolveMyTool(Arguments, CallId, null);
-                    }
-                }
-                else
-                {
-                    OK = false;
-                    var ret = new ButlerChatToolResultMessage(CallId, ToolValidateFailureArg, Arguments);
-                    ret.ToolName = Tool.ToolName;
-                    return ret;
+                    OK = true;
+                    // the prepwork should return false, triggering this to never actually work.
+                    return Tool!.ResolveMyTool(Arguments, CallId, null);
                 }
             }
+            OK = false;
+            return err_reply;
+
+          
         }
 
-        internal async Task<ButlerChatToolResultMessage?> CallToolFunctionInternalAsync(string? FunctionName, string? CallId, string Arguments, IButlerToolBaseInterface? ForceUser)
+        internal bool CallToolFunctionInternalPREPWORK(string? FunctionName, string? CallId, string? Arguments, IButlerToolBaseInterface? ForceUser, ref ButlerChatToolResultMessage? ErrorCode, ref IButlerToolBaseInterface? ToolRef)
         {
-     
+
             IButlerToolBaseInterface? Tool = null;
             if (string.IsNullOrEmpty(FunctionName) && (ForceUser is null))
             {
-            
+
                 throw new ArgumentException("ERROR: FunctionName and ForceUser args must not be null");
             }
             else
             {
-
+                ErrorCode = null;
                 // first check if we got an entry for the function we are calling
 
                 if (FunctionName is not null)
@@ -605,15 +536,15 @@ namespace ButlerSDK.ToolSupport.Bench
                     }
                     else
                     {
-                     
+
                         throw new ToolNotFoundException("Attempt to call unknown tool");
                     }
                 }
-
+                ToolRef = Tool;
                 // still nope? Give up
                 if (Tool is null)
                 {
-                       throw new ToolNotFoundException("Someone added a blank tool to the tool list.");
+                    throw new ToolNotFoundException("Someone added a blank tool to the tool list.");
                 }
 
                 /*
@@ -637,40 +568,106 @@ namespace ButlerSDK.ToolSupport.Bench
                 }
                 if (Tool.ValidateToolArgs(null, JsonArgs))
                 {
-                    bool HasPermission;
-                    if (Tool is IButlerCritPriorityTool) // crit priority tools can be called as much as the LLM or the thing scheduling tools wants. Treat with care.
-                        HasPermission = true;
-                    else
-                    {
-                        HasPermission = Limiter.CheckForCallPermission(FunctionName!);
-                    }
-                    // upper code already establishes the name of the function  is not null
-                    if (!HasPermission)
-                    {
-                         return new ButlerChatToolResultMessage(CallId, LimitExceeded);
-                    }
-                    else
-                    {
-                        Limiter.ChargeService(FunctionName!, 1);
+                    bool HasPermission = false;
 
-                        if (Tool is IButlerToolAsyncResolver AsyncTool)
+                    if (Tool is IButlerCritPriorityTool)
+                    {
+                        HasPermission = true;
+                    }
+                    if (Limiter is IApiKeyRateLimiterAtomicCharge atomicCharge)
+                    {
+                        if (!HasPermission) // crit priority tool check sets to true, triggering skip
                         {
-                            return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                            HasPermission = atomicCharge.CheckForCallPermissionAndCharge(FunctionName!);
+                        }
+                        // upper code already establishes the name of the function  is not null
+                        if (!HasPermission)
+                        {
+                            ErrorCode = new ButlerChatToolResultMessage(CallId, LimitExceeded);
+                            return false;
                         }
                         else
                         {
-                            return Tool.ResolveMyTool(Arguments, CallId, null);
+                            // the tole payed, go run it.
+                            /*
+                            if (Tool is IButlerToolAsyncResolver AsyncTool)
+                            {
+                                return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                            }
+                            else
+                            {
+                                return Tool.ResolveMyTool(Arguments, CallId, null);
+                            }*/
+                            return true;
                         }
                     }
+                    else
+                    {
+                        // legacy path. It's fine.
+                        if (Tool is IButlerCritPriorityTool) // crit priority tools can be called as much as the LLM or the thing scheduling tools wants. Treat with care.
+                            HasPermission = true;
+                        else
+                        {
+                            HasPermission = Limiter.CheckForCallPermission(FunctionName!);
+                        }
+                        // upper code already establishes the name of the function  is not null
+                        if (!HasPermission)
+                        {
+                            ErrorCode= new ButlerChatToolResultMessage(CallId, LimitExceeded);
+                            return false;
+                        }
+                        else
+                        {
+                            Limiter.ChargeService(FunctionName!, 1);
+
+                            // the tole payed, go run it.
+                            /*
+                            if (Tool is IButlerToolAsyncResolver AsyncTool)
+                            {
+                                return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                            }
+                            else
+                            {
+                                return Tool.ResolveMyTool(Arguments, CallId, null);
+                            }*/
+                            return true;
+                        }
+                    }
+
+
                 }
                 else
                 {
-               
+
                     var ret = new ButlerChatToolResultMessage(CallId, ToolValidateFailureArg, Arguments);
                     ret.ToolName = Tool.ToolName;
-                    return ret;
+                    ErrorCode = ret;
+                    return false;
                 }
             }
+        }
+        internal async Task<ButlerChatToolResultMessage?> CallToolFunctionInternalAsync(string? FunctionName, string? CallId, string Arguments, IButlerToolBaseInterface? ForceUser)
+        {
+            ButlerChatToolResultMessage? err_reply = null;
+            IButlerToolBaseInterface? Tool = null;
+            if (CallToolFunctionInternalPREPWORK(FunctionName, CallId, Arguments, ForceUser,  ref err_reply, ref Tool))
+            {
+                // the tole payed, go run it.
+                
+                if (Tool is IButlerToolAsyncResolver AsyncTool)
+                {
+                    return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                }
+                else
+                {
+                    // the prepwork should return false, triggering this to never actually work.
+                    return Tool!.ResolveMyTool(Arguments, CallId, null);
+                }
+            }
+            return err_reply;
+
+
+
         }
 
         protected virtual void Dispose(bool disposing)

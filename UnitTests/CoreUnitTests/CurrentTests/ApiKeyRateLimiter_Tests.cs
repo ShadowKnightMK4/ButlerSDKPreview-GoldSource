@@ -1,4 +1,5 @@
 using ButlerSDK;
+using NuGet.Frameworks;
 
 
 namespace UnitTests.CurrentTests
@@ -44,6 +45,135 @@ namespace UnitTests.CurrentTests
 
             Assert.AreEqual(test_string, testme.Message);
             Assert.AreEqual(Inner, testme.InnerException);
+        }
+    }
+
+    [TestClass]
+    public class ApiKeyRateLimiter_AtomicCharge_tests()
+    {
+        /// <summary>
+        /// Ensure we can create an instance of this class without the kaboom
+        /// </summary>
+        [TestMethod]
+        public void CanInstance_ShouldBeNotNull()
+        {
+            Assert.IsNotNull(new ApiKeyRateLimiter());
+        }
+
+        [TestMethod]
+        public void AddService_RejectsNegativeCost()
+        {
+            var testme = new ApiKeyRateLimiter();
+            Assert.ThrowsException<ApiKeyRateLimiter.InventoryOrSeviceCostException>(() => {
+                testme.AddService("TEST", -2, 0, 1000, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.SharedBudget);
+            });
+        }
+
+
+        [TestMethod]
+        public void AddService_AcceptsZeroCost()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 0, 0, 1000, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.PerCall);
+
+            Assert.AreEqual(testme.GetCurrentCost("TEST"), 0);
+        }
+
+        [TestMethod]
+        public void UpdateServiceCost_RejectsNegativeCost()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 20, 0, 1000, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.SharedBudget);
+            Assert.AreEqual(testme.GetCurrentCost("TEST"), 20);
+            Assert.ThrowsException<ApiKeyRateLimiter.InventoryOrSeviceCostException>(() => {
+                testme.AssignNewCost("TEST", -20);
+            });
+        }
+
+
+        [TestMethod]
+        public void UpdateServiceCost_AcceptsZeroCost()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 245, 0, 1000, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.PerCall);
+
+            Assert.AreEqual(testme.GetCurrentCost("TEST"), 245);
+
+            testme.AssignNewCost("TEST", 0);
+        }
+
+        [TestMethod]
+        
+        public void InventoryTest_Rejects_NegativeInventoryDeduct()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 1, 10, 1000, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.PerCall);
+
+            Assert.ThrowsException<ApiKeyRateLimiter.InventoryOrSeviceCostException>(()  => {
+                testme.ChargeService("TEST", -5);
+            });
+        }
+
+        [TestMethod]
+        public void InventoryTest_Rejects_NegativeInventory_DedectingZero()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 1, 10, 1000, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.PerCall);
+
+            Assert.ThrowsException<ApiKeyRateLimiter.InventoryOrSeviceCostException>(() => {
+                testme.ChargeService("TEST", 0);
+            });
+        }
+
+        [TestMethod]    
+        public void AtomicChargine_Works()
+        {
+            ulong inv = 255;
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 0, inv, inv, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.PerCall);
+
+            Assert.AreEqual(testme.GetCurrentCost("TEST"), 0);
+
+            Assert.IsTrue(testme.CheckForCallPermissionAndCharge("TEST", 20));
+
+            Assert.AreEqual(testme.GetServiceInventory("TEST"), inv - 20);
+
+        }
+
+        [TestMethod]
+        public void AtomicChargine_RejectsNegativeInventory_()
+        {
+            ulong inv = 255;
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 0, inv, inv, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.PerCall);
+
+
+            Assert.ThrowsException<ApiKeyRateLimiter.InventoryOrSeviceCostException>(() =>
+            {
+                /* stricly speaking, this assert.isfalse() should not actually be triggerd. The xception that happens when negative inventory charge is what we're testing for. This is here incase the standard changes"*/
+                Assert.IsFalse(testme.CheckForCallPermissionAndCharge("TEST", -20));
+            });
+ 
+
+        }
+
+        [TestMethod]
+        public void AtomicChargine_Rejects_ZeroInventoryCheck()
+        {
+            int inv = 255;
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", inv, 1000, 1000, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.PerCall);
+
+            Assert.AreEqual(testme.GetCurrentCost("TEST"), inv);
+
+
+            Assert.ThrowsException<ApiKeyRateLimiter.InventoryOrSeviceCostException>(() =>
+            {
+                /* stricly speaking, this assert.isfalse() should not actually be triggerd. The xception that happens when negative inventory charge is what we're testing for. This is here incase the standard changes"*/
+                Assert.IsFalse(testme.CheckForCallPermissionAndCharge("TEST", 0));
+            });
+
+
         }
     }
     [TestClass]

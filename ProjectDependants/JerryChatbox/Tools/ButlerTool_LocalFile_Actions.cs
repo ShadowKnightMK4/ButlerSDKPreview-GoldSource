@@ -66,7 +66,7 @@ namespace ButlerSDK.Tools
         /// <param name="data"></param>
          void TOC_TOU_WriteText(string target, byte[] data)
         {
-            using (var FN = File.Open(target, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var FN = File.Open(target, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
                 // check when the os has a lock also, 
                 // yes extra work, but it's extra work we do to ensure someone can't swap it out
@@ -74,6 +74,7 @@ namespace ButlerSDK.Tools
                 {
                     throw new SandBoxException(Path.GetFileName(target));
                 }
+                FN.SetLength(0);
                 FN.Write(data);
             }
         }
@@ -247,7 +248,7 @@ namespace ButlerSDK.Tools
         string? FollowLink(string requested_resource)
         {
             Stack<string> rev = new Stack<string>();
-            FileSystemInfo WalkMe=null;
+            FileSystemInfo? WalkMe=null;
             requested_resource = Path.GetFullPath(requested_resource.Trim());
             WalkMe = new FileInfo(requested_resource);
             do
@@ -289,10 +290,18 @@ namespace ButlerSDK.Tools
                             string ret = WalkMe.FullName;
                             if (WalkMe.FullName.EndsWith(Path.AltDirectorySeparatorChar) || (WalkMe.FullName.EndsWith(Path.DirectorySeparatorChar)))
                             {
-                                var s = rev.TryPeek(out string slash);
+                                var s = rev.TryPeek(out string? slash);
+
                                 if (slash?.Length > 0)
                                 {
                                     if ((slash[0] == Path.AltDirectorySeparatorChar) || (slash[0] == Path.DirectorySeparatorChar))
+                                    {
+                                        rev.Pop();
+                                    }
+                                }
+                                else
+                                {
+                                    if (slash is null)
                                     {
                                         rev.Pop();
                                     }
@@ -370,29 +379,29 @@ namespace ButlerSDK.Tools
         /// <remarks>ensure trusted folks and NOT LLM can call AttachFile only.</remarks>
         string? GetSecurePath(string RequestedPath, SandBoxPathFilter Filter)
         {
-
+            string? safe_path;
             if (string.IsNullOrEmpty(RequestedPath))
             {
                 return null;
             }
-            
 
-            RequestedPath = FollowLink(RequestedPath);
-            if (RequestedPath is null)
+
+            safe_path = FollowLink(RequestedPath);
+            if (safe_path is null)
             {
                 return null;
             }
-            RequestedPath = Path.GetFullPath(RequestedPath.Trim());
+            safe_path = Path.GetFullPath(safe_path.Trim());
 
-            if (string.IsNullOrEmpty(RequestedPath))
+            if (string.IsNullOrEmpty(safe_path))
                 return null;
             else
             {
 
                 string? link_marker = null;
-                if (Directory.Exists(RequestedPath))
+                if (Directory.Exists(safe_path))
                 {
-                    DirectoryInfo x = new DirectoryInfo(RequestedPath);
+                    DirectoryInfo x = new DirectoryInfo(safe_path);
                     if (x.Exists)
                     {
                         if (x.LinkTarget != null)
@@ -418,9 +427,9 @@ namespace ButlerSDK.Tools
                 }
                 else
                 {
-                    if (File.Exists(RequestedPath))
+                    if (File.Exists(safe_path))
                     {
-                        FileInfo x = new FileInfo(RequestedPath);
+                        FileInfo x = new FileInfo(safe_path);
                         if (x.Exists)
                         {
                             if (x.LinkTarget is not null)
@@ -443,7 +452,7 @@ namespace ButlerSDK.Tools
                 }
             }
 
-            if (BlackListSetup() && BlackListed(RequestedPath))
+            if (BlackListSetup() && BlackListed(safe_path))
             {
                 return null;
             }
@@ -451,7 +460,7 @@ namespace ButlerSDK.Tools
 
             if ((Filter == SandBoxPathFilter.Read) || (Filter == SandBoxPathFilter.Both))
             {
-                string? whitelist = CheckAttachments(RequestedPath);
+                string? whitelist = CheckAttachments(safe_path);
                 if (whitelist is not null)
                 {
                     return whitelist;
@@ -513,7 +522,7 @@ namespace ButlerSDK.Tools
                 
                 if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
-                    if (RequestedPath.StartsWith(target, StringComparison.OrdinalIgnoreCase))
+                    if (safe_path.StartsWith(target, StringComparison.OrdinalIgnoreCase))
                     {
                         one = true;
                         break;
@@ -521,7 +530,7 @@ namespace ButlerSDK.Tools
                 }
                 else
                 {
-                    if (RequestedPath.StartsWith(target))
+                    if (safe_path.StartsWith(target))
                     {
                         one = true;
                         break;
@@ -531,7 +540,7 @@ namespace ButlerSDK.Tools
             }
             if (one)
             {
-                return RequestedPath;
+                return safe_path;
             }
             else
             {
@@ -658,7 +667,7 @@ namespace ButlerSDK.Tools
                             var data_as_byte = that.TOC_TOU_ReadText(sani_target);
                             data = Encoding.UTF8.GetString(data_as_byte);
                         }
-                        catch (FileIsGiganteException e)
+                        catch (FileIsGiganteException)
                         {
                             data = $"Error: The file is larger than the enviromental limit to load with this tool";
                         }

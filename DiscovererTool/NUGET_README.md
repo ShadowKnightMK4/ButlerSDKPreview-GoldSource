@@ -1,8 +1,11 @@
 ﻿
 
-# ButlerSDK.Tools.DiscovererTool
+# ButlerSDK.Tools.DiscovererTool (version 1.2.0preview)
 
-[![NuGet](https://img.shields.io/badge/nuget-v1.0.3--preview-blue.svg)](https://www.nuget.org/packages/ButlerSDK.Tools.DiscovererTool/)
+
+## What's new:
+Due to an some fixes and updatees the the SDK, including the base ButlerSDK.Abstractions project, this was bumped to v1.2.0preview to keep in step.
+
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 **Dynamic, on-demand tool loading for ButlerSDK.**
@@ -23,7 +26,7 @@ The Discoverer creates a specific workflow:
 3.  **Execute:** The tool is added to the active `Butler` session for use.
 4.  **Wind-down:** When the task is done, the tools can be unloaded to free up context.
 
-*Note: This pattern works best with high-intelligence Cloud Models (GPT-4o, Gemini 1.5 Pro).*
+*Note: This pattern works best with high-intelligence Cloud Models (GPT-4o, Gemini 3.1 Pro).*
 
 ---
 

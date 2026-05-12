@@ -6,6 +6,7 @@ Contains ButlerSDK's tool bench (how each of it's chat session objects hold tool
 
 ---
 Changes:
+With the edition of ButlerSDK.Core.Abstractions being pumped to 1.2.0preview because of update. This has been bumped too.
 Interface that the Bench matches moved to ButlerSDK.Core.Abstractions 1.0.2-preview and above
 
 ---

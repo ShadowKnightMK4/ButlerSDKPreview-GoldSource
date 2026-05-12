@@ -4,7 +4,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.1.3-preview</Version>
     <!-- Note: IsPackable, GeneratePackageOnBuild, and PackageReadmeFile are inherited from build.props so you don't even need them here! -->
   </PropertyGroup>
 

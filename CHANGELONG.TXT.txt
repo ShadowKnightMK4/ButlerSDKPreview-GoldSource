@@ -1,14 +1,20 @@
 
+
 🚀 Release Notes: ButlerSDK v1.2.0-preview (The Zero-Trust I/O Update )
 
 Summary: This update introduces a complete architectural overhaul of the local
 file-handling tool (ButlerTool_LocalFile_Load) and implements a
-thread-safe, atomic transaction pipeline for the API Rate Limiter.
+thread-safe, atomic transaction pipeline for the API Rate Limiter. The default
+tool resolver prefers this pipeline but will fallback to the original if a custom
+ApiRateLimiter does not implement the new pipeline.
+
 
 Note: Due to the introduction of a new core interface
 (IApiKeyRateLimiterAtomicCharge), all 23 packages in the ButlerSDK ecosystem
-have been bumped to v1.2.0-preview to ensure strict version alignment and
+have been bumped to v1.2.0-preview to ensure version alignment and
 dependency stability.
+
+
 
 🔒 Security & Governance: The ButlerTool_LocalFile_Load is the star here. It 
 has been make harder for an LLM to try breaking out of allowed locations for 

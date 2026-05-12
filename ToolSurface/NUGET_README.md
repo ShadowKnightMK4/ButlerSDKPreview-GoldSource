@@ -1,11 +1,12 @@
 ***
 
 ```markdown
-# ButlerSDK.ToolSupport (Preview 1)
+# ButlerSDK.ToolSupport (Preview 1) Version v1.2.0preview
 
 **A capability-based security and routing engine for LLM/AI Tool calling in .NET.**
 
 This package is a core component of the **ButlerSDK** AI orchestration framework. It provides the foundational security attributes, interfaces, and validation engines that allow you to treat AI-driven tools as **untrusted components**, forcing explicit permission declarations before an LLM is allowed to execute them.
+
 
  ⚠️ **CRITICAL SECURITY ADVISORY (Update Highly recommended. Required)**
  

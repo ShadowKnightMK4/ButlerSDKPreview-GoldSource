@@ -1,6 +1,6 @@
 ﻿# ButlerSDK - AI Orchestration Framework (Preview 1)
 
-[![NuGet](https://img.shields.io/badge/nuget-v1.1.1--preview-blue.svg)](https://www.nuget.org/packages/ButlerSDK/)
+[![NuGet](https://img.shields.io/badge/nuget-v1.2.0--preview-blue.svg)](https://www.nuget.org/packages/ButlerSDK/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Platform: .NET 8](https://img.shields.io/badge/Platform-.NET%208-purple.svg)](https://dotnet.microsoft.com/)
 
@@ -9,10 +9,21 @@
 ButlerSDK aims to transform Large Language Models (LLMs) from unpredictable chatbots into reliable infrastructure components. It provides a unified abstraction layer over **OpenAI**, **Google Gemini**, and **Ollama**, while enforcing tool infrastructure, strict C# Tool typing, and opening the door to letting the developer intercept the streaming LLM to steer it or filter for agentic workflows.
 
 
---- What's new from v1.1.1 preview?
+--- What's new from v1.2.0 preview?
 The change log goes over a lot of things. However there is a critical bug fix in tool surface scope nuget. That verison has been bumped to v1.1.1preview.
-The rest of the code is equivelent to verison 1.1.0preview.
+The rest of the code is equivelent to verison 1.1.1preview.
 
+
+The basic changes are ButlerTool_LocalFile_Load has a sandbox now, you'll need to decide what the LLM is allowed to read from and write too.
+Additionally, the cocept of an AttachFile() (ala upload to ChatGPT / Gemini) is added. It functions as a white list escape for devs. WARNNG:
+Do not allow a pathway from the LLM or untrusted user to specify what what to Attach.
+
+
+The ApiKeyRateLimiter has an update in terms of atomic level up. The old code used a sync object when checking stuff but one would have
+to check, then charge for the call, leaving possiblity of opening up an edit before the charge. The updated routine (the interface expansion)
+allows for checking for charge if there's enough and charging while the code has the sync object locked, helping block state desync.
+
+The tool resolver code now preferences the Atomic call routine if the interface exists but falls back to the original charge, then verify if not - such bringing your old resolver.
 
 ---
 

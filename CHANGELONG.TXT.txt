@@ -1,3 +1,8 @@
+🚀 DEVNOTE for pending update. Until released as tagged release these changes are not final:
+Planning to add VertexAI support for the Gemini Provider and a new provider (ala the OllamaShim) to let devs use it easy.
+Gemini Provider will likly gain some extra constructors to let the dev just inject the code
+new interface in the gemini provider, an internal one.
+
 
 
 🚀 Release Notes: ButlerSDK v1.2.0-preview (The Zero-Trust I/O Update )

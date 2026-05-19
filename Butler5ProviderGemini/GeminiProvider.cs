@@ -1,5 +1,6 @@
 ﻿using ButlerLLMProviderPlatform.DataTypes;
 using ButlerLLMProviderPlatform.Protocol;
+using ButlerSDK.Provider.Gemini;
 using ButlerSDK.Providers.Gemini;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
@@ -110,11 +111,55 @@ public static class DebugSettings
 #endif
     public class ButlerGeminiProvider : IButlerLLMProvider, IButlerChatCreationProvider, IButlerLLMProviderToolRequests, IButlerLLMProvider_SpecificToolExecutionPostCall
     {
-        GenerativeAI.GoogleAi? api;
+        public enum GoogleEndPointMode
+        {
+            AiStudio = 0,
+            VertexAi = 1
+        }
+
+        protected GoogleEndPointMode EndPointMode { get; set; } = GoogleEndPointMode.AiStudio;
+
+        GenerativeAI.VertexAI? enterprise;
+        GenerativeAI.GoogleAi? apiOLD;
+        SchrodingerCat? api; // unit initalized this could be other VertexAI or GoogleAI. The code does enforce the right open for level though.
         /* has unit tests*/
+
+        /// <summary>
+        /// Uses the API key varient  GenerativeAI.GoogleAi
+        /// </summary>
         public ButlerGeminiProvider()
         {
+            this.EndPointMode = GoogleEndPointMode.AiStudio;
+        }
 
+        public ButlerGeminiProvider(GoogleEndPointMode mode)
+        {
+            switch (mode)
+            {
+                case GoogleEndPointMode.AiStudio:
+                case GoogleEndPointMode.VertexAi:
+                    this.EndPointMode = mode;
+                    break;
+                default:
+#if DEBUG
+                    throw new ArgumentException("Unsupported End Point mode.  Pick GoogleEndPointMode.AiStudio or GoogleEndPointMode.VertexAi ");
+#else
+                    throw new ArgumentException("Unsupported End Point mode.");
+#endif
+            }
+            this.EndPointMode = mode;
+        }
+
+
+        /// <summary>
+        /// Inject a VertexAI handler
+        /// </summary>
+        /// <param name="vertexAI"></param>
+        public ButlerGeminiProvider(VertexAI vertexAI)
+        {
+            this.EndPointMode = GoogleEndPointMode.VertexAi;
+            this.api = (SchrodingerCat) vertexAI;
+            ArgumentNullException.ThrowIfNull(vertexAI);
         }
         public IButlerChatCreationProvider ChatCreationProvider
         {
@@ -211,21 +256,26 @@ public static class DebugSettings
         {
             if (api is null)
             {
-                throw new InvalidOperationException("Google Gemini Provider not initialized. Do that first.");
+                {
+                    throw new InvalidOperationException("Google Gemini Provider not initialized. Do that first.");
+                }
             }
-
-            var provider_client = api.CreateGenerativeModel(model);
-            provider_client.FunctionCallingBehaviour = new GenerativeAI.Core.FunctionCallingBehaviour()
+            else
             {
-                AutoCallFunction = false
-            };
 
-            IGenerativeModel? gen_model = new GenericModelForward(provider_client);
-            if (gen_model is null)
-            {
-                throw new InvalidOperationException("Failed to create Gemini chat client for model " + model);
+                var provider_client = api.CreateGenerativeModel(model);
+                provider_client.FunctionCallingBehaviour = new GenerativeAI.Core.FunctionCallingBehaviour()
+                {
+                    AutoCallFunction = false
+                };
+
+                IGenerativeModel? gen_model = new GenericModelForward(provider_client);
+                if (gen_model is null)
+                {
+                    throw new InvalidOperationException("Failed to create Gemini chat client for model " + model);
+                }
+                return new ButlerGeminiChatClient(gen_model, this, PPR);
             }
-            return new ButlerGeminiChatClient(gen_model, this, PPR);
         }
 
         public IButlerLLMProvider.ToolProviderCallBehavior GetToolMode()
@@ -241,9 +291,19 @@ public static class DebugSettings
                 throw new ArgumentException("Google Gemini Provider needs non empty key. Go set that API at https://aistudio.google.com/ and DO NOT hard code it in you source code if using source control (i.e. GitHub)");
             }
 
+
             if (api is null)
             {
-                api = new GoogleAi(x.DecryptString());
+                switch (this.EndPointMode)
+                {
+                    case GoogleEndPointMode.AiStudio:
+                        api = (SchrodingerCat)new GoogleAi(x.DecryptString());
+                        break;
+                    case GoogleEndPointMode.VertexAi:
+                        api = (SchrodingerCat) new VertexAI();
+                        break;
+                }
+                
             }
 
             if (api is null)

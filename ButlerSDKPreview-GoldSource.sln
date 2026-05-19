@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36310.24 d17.14
+VisualStudioVersion = 17.14.36310.24
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ButlerSDK.Core", "ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj", "{6AE5E9F0-211B-41E1-BF49-9F7EBFCB549B}"
 EndProject
@@ -14,9 +14,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiKeys", "ApiKeys\ApiKeys.csproj", "{04050F8C-745F-4241-BBAF-999D683777F9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ProviderWrappers", "ProviderWrappers", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		..\..\..\Downloads\GeminiProvider.cs = ..\..\..\Downloads\GeminiProvider.cs
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.OpenAI", "Butler5ProviderOpenAI\ButlerSDK.Provider.OpenAI.csproj", "{DDDC39C4-3F43-484F-9632-E4BFC49A0DA3}"
 EndProject
@@ -113,6 +110,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Tools.Resolver", "ButlerSDK.Tools.Resolver\ButlerSDK.Tools.Resolver.csproj", "{9BD76351-9C11-4B28-8B2E-51D67785D9D2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscoverToolUnitTests", "DiscoverToolUnitTests\DiscoverToolUnitTests.csproj", "{72C746E4-B1E5-9DAE-9D32-9894DA1137C5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.Gemini.Vertex", "Butler5GeminiVerfixProvider\ButlerSDK.Provider.Gemini.Vertex.csproj", "{94E86723-79F2-4B3B-B04F-8E78F43B8815}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -280,6 +279,10 @@ Global
 		{72C746E4-B1E5-9DAE-9D32-9894DA1137C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72C746E4-B1E5-9DAE-9D32-9894DA1137C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72C746E4-B1E5-9DAE-9D32-9894DA1137C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94E86723-79F2-4B3B-B04F-8E78F43B8815}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94E86723-79F2-4B3B-B04F-8E78F43B8815}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94E86723-79F2-4B3B-B04F-8E78F43B8815}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94E86723-79F2-4B3B-B04F-8E78F43B8815}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -326,6 +329,7 @@ Global
 		{6277C530-ADC8-4E7D-B6F1-811D935F3551} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{9BD76351-9C11-4B28-8B2E-51D67785D9D2} = {362C5453-F0ED-480E-A297-F94779B3805F}
 		{72C746E4-B1E5-9DAE-9D32-9894DA1137C5} = {B6D434AF-AA6F-407F-AB28-FDF146EFAB97}
+		{94E86723-79F2-4B3B-B04F-8E78F43B8815} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E98753D-786C-427A-9051-6515CCB6B063}

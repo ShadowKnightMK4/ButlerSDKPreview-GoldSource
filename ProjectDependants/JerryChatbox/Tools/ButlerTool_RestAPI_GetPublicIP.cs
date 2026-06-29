@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ButlerToolContract;
+using System.Net;
 
 namespace ButlerSDK.Tools
 {
@@ -79,6 +80,7 @@ namespace ButlerSDK.Tools
                 return null;
             }
 
+
             var json = JsonDocument.Parse(FunctionCallArguments);
             if (!ValidateToolArgs(Call, json))
                 return null;
@@ -87,7 +89,33 @@ namespace ButlerSDK.Tools
 
                 var ret = await HttpClientStuff.ButlerToolHttpTransport.RequestPage(site_template);
 
-                return new ButlerChatToolResultMessage(FuncId, ret.Content.ReadAsStringAsync().Result);
+                var results = await ret.Content.ReadAsStringAsync();
+                if (!string.IsNullOrEmpty(results))
+                {
+                    /* ok the call went thru*/
+                    results = results.Trim();
+                    for (int i = 0; i < results.Length; i++)
+                    {
+                        if (char.IsWhiteSpace(results[i]))
+                        {
+                            results = results.Substring(0, i);
+                            break;
+                        }
+                    }
+                    if (IPAddress.TryParse(results, out var ActualIp))
+                    {
+                        return new ButlerChatToolResultMessage(FuncId, results);
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    // this will properate in the defualt setting upstream to go *hey something happened*
+                    return null;
+                }
             }
         }
     }

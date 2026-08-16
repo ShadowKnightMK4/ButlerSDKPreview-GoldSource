@@ -1,17 +1,18 @@
-﻿using ButlerSDK.ApiKeyMgr.Contract;
-using ButlerLLMProviderPlatform.DataTypes;
-using ButlerToolContract.DataTypes;
+﻿using ButlerLLMProviderPlatform.DataTypes;
+using ButlerSDK;
+using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK.HttpClientStuff;
+using ButlerToolContract;
+using ButlerToolContract.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design.Serialization;
 using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using ButlerToolContract;
-using ButlerSDK;
 
 namespace ButlerSDK.Tools
 {
@@ -21,42 +22,13 @@ namespace ButlerSDK.Tools
     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
     public abstract class ButlerTool_RestAPI_GetPublicHolidaysBase : ButlerToolBase, IButlerToolAsyncResolver
     {
-
-        const string SiteTemplateBase = @"https://date.nager.at/api/v4/publicholidays/{countrycode}/{year}/";
+        protected abstract string build_url(string year, string month);
+        protected const string SiteTemplateBase = @"https://nagerholidays.com/api/v4/Holidays/{countrycode}/{year}/";
         protected readonly List<string> SiteTemplateTryArray = new List<string>();
 
-        /// <summary>
-        /// called on spinup. Set as virtual to allow customization of the end point this tool loops thru.
-        /// </summary>
-        protected virtual void preflight_check()
-        {
-            if ((SiteTemplateBase.Length != 0) & (SiteTemplateTryArray.Count != 0))
-            {
-                SiteTemplateTryArray.Add(SiteTemplateBase);
-            }
-        }
+ 
 
-        /// <summary>
-        /// called to 
-        /// </summary>
-        /// <param name="year"></param>
-        /// <param name="month"></param>
-        /// <returns>returns null if there's no entry which the default does provide! </returns>
-        protected virtual string? flight_check(string year, string country)
-        {
-            if (SiteTemplateTryArray.Count == 0)
-            {
-                return null;
-            }
-            string final_url = SiteTemplateTryArray[0].Replace("{year}", year);
-            final_url = final_url.Replace("{countrycode}", country);
-            return final_url;
-        }
-        public override void Initialize()
-        {
-            base.Initialize();
-            preflight_check();
-        }
+    
         //      const string site_template = @"https://date.nager.at/api/v4/publicholidays/{countrycode}{year}/";
         const string json_template = @"{
     ""type"": ""object"",
@@ -103,6 +75,7 @@ namespace ButlerSDK.Tools
 
             JsonDocument? FunctionCheck = null;
 
+            
             if (Doc is not null)
             {
                 FunctionCheck = Doc;
@@ -163,7 +136,11 @@ namespace ButlerSDK.Tools
                 }
                 else
                 {
-                    if (int.TryParse(Year.GetString(), out _))
+                    if (!int.TryParse(Year.GetString(), out int Testval))
+                    {
+                        return false;
+                    }
+                   if (Testval < 1)
                     {
                         return false;
                     }
@@ -171,8 +148,14 @@ namespace ButlerSDK.Tools
             }
             else
             {
-                var year = Year.GetUInt32();
+                var n = Year.GetInt32();
+                if (n < 1)
+                {
+                    return false;
+                }
             }
+          
+            
 
 
 
@@ -201,7 +184,14 @@ namespace ButlerSDK.Tools
         }
         public override ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
         {
-            return ResolveMyToolAsync(FunctionCallArguments, FuncId, Call).GetAwaiter().GetResult();
+            /* ship the below one not this code */
+            // DEBUG CODE ONLY]
+            // DO NOT UNCOMMENT THSI CODE =>  return ResolveMyToolAsync(FunctionCallArguments, FuncId, Call).GetAwaiter().GetResult();
+            // the below is the one that won't red mark SyncCode_HostileSync_DontFreeze calavera unit test. 
+            return Task.Run(() =>
+                        ResolveMyToolAsync(FunctionCallArguments, FuncId, Call))
+                       .GetAwaiter()
+                       .GetResult();
         }
 
 
@@ -231,85 +221,155 @@ namespace ButlerSDK.Tools
             else
             {
 
+                JsonElement YearStr;
+                JsonElement CountryStr;
+                string YEAR;
+                string CC;
+                
                 var root = doc.RootElement;
-                if (!root.TryGetProperty("year", out JsonElement YearStr))
+                if (!root.TryGetProperty("year", out  YearStr))
                 {
-                    return null;
-                }
-                if (!root.TryGetProperty("country", out JsonElement CountryStr))
-                {
-                    return null;
-                }
-                if (CountryStr.ValueKind != JsonValueKind.String)
-                {
-                    return null;
+                    return new ButlerChatToolResultMessage(FuncId, $"Error: tool requests a year argument for the holidays to day");
                 }
                 else
                 {
-                    country = CountryStr.GetString() ?? "";
+                    YEAR = YearStr.ToString();
                 }
 
-                if (country.Length != 2)
+                if (!root.TryGetProperty("country", out CountryStr))
                 {
-                    return null;
+                    return new ButlerChatToolResultMessage(FuncId, $"Error: tool requests a Country code argument for the holidays to day");
                 }
-
-                if (YearStr.ValueKind == JsonValueKind.Number)
+                else
                 {
-                    if (!YearStr.TryGetInt32(out var YearInt))
+                    CC = CountryStr.GetString()!;
+                    if (CC is not null)
                     {
-                        return null;
+                        CC = CC.ToUpperInvariant();
                     }
                     else
                     {
-                        year = $"{YearInt}";
+                        return new ButlerChatToolResultMessage(FuncId, $"Error: tool requests a Country code argument  for the holidays to day that's a string");
                     }
                 }
-                else if (YearStr.ValueKind == JsonValueKind.String)
-                {
-                    year = YearStr.GetString() ?? "";
-                    if (!int.TryParse(year, out _))
-                    {
-                        return null;
-                    }
-                }
-                else
+
+
+
+
+                if (CC.Length != 2)
                 {
                     return null;
                 }
-            }
-
-
-
-
-            string? final_url = flight_check(year, country);
-            /*            string final_url = site_template.Replace("{year}", year);
-                        final_url = final_url.Replace("{countrycode}", country);*/
-
-            {
-                var combined_calls = ButlerToolHttpTransport.CreateCombinedCall();
-
-                ButlerToolHttpTransport.AddCombinedCall(combined_calls, final_url);
-                ButlerToolHttpTransport.CombinedCallsResolve(combined_calls).Wait();
-
-
+                string? final_url = build_url(YEAR, CC);
+                string results;
+                HttpResponseMessage? ret = null;
                 {
-                    StringBuilder ret = new();
-                    ret.Append($"This and the {combined_calls.Url.Count} tool messages are part of this call.");
-                    foreach (var call in combined_calls.Url)
+                    try
                     {
-                        if (call.Value is not null)
+                        if (Override != null)
                         {
-                            string request;
-                            request = await call.Value.Content.ReadAsStringAsync();
-                            ret.Append(request);
+                            ret = await Override.GetAsync(final_url).WaitAsync(LagCounter);
+                        }
+                        else
+                        {
+                            ret = await HttpClientStuff.ButlerToolHttpTransport.RequestPage(final_url).WaitAsync(LagCounter);
+                        }
+                        if (ret.IsSuccessStatusCode)
+                        {
+                            results = await ret.Content.ReadAsStringAsync().WaitAsync(TimeSpan.FromMilliseconds(200));
+                            if (ret is not null)
+                            {
+                                if (ret.IsSuccessStatusCode)
+                                {
+                                    if (!string.IsNullOrEmpty(results))
+                                    {
+                                        /* ok the call went thru*/
+                                        results = results.Trim();
+                                        return new ButlerChatToolResultMessage(FuncId, results);
+                                    }
+                                    else
+                                    {
+                                        // this will properate in the defualt setting upstream to go *hey something happened*
+                                        return null;
+                                    }
+                                }
+                                else
+                                {
+                                    return new ButlerChatToolResultMessage(FuncId, $"Connection OK. Failure response in getting holiday list. Http code {ret.StatusCode}");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            return new ButlerChatToolResultMessage(FuncId, $"Error: Unable to get holiday list. Http reason {ret.StatusCode}");
                         }
                     }
-                    return new ButlerChatToolResultMessage(FuncId, ret.ToString());
+                    catch (TimeoutException)
+                    {
+                        if (ret != null)
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        if (ret != null)
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
+                    }
+                    catch (UriFormatException)
+                    {
+                        if (ret != null)
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
+                    }
+                    catch (HttpRequestException)
+                    {
+                        if (ret != null)
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
+                    }
+                    catch (HttpIOException)
+                    {
+                        if (ret != null)
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
+                    }
                 }
             }
+            return null;
+
+
+
+
+
         }
 
+        /// <summary>
+        /// calling this in the class
+        /// </summary>
+        /// <param name="Override"></param>
+        protected virtual void ForceHttpClient(HttpClient Override)
+        {
+            this.Override = Override;
+        }
+
+        protected virtual void SetTimeOut(TimeSpan x)
+        {
+            LagCounter = x;
+        }
+
+        HttpClient? Override = null;
+        TimeSpan LagCounter = TimeSpan.FromMilliseconds(1000);
         public override string ToolDescription => @"This tool makes an HTTP call to https://date.nager.at/api/v2/publicholidays/<YEAR>/<country> to load json describing USA dates that year";
         public override string ToolName => "GetUSAHolidayByYear";
         public override string ToolVersion => "YES";
@@ -324,6 +384,7 @@ namespace ButlerSDK.Tools
     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
     public class ButlerTool_RestAPI_GetPublicHolidays : ButlerTool_RestAPI_GetPublicHolidaysBase, IButlerToolAsyncResolver
     {
+
         public ButlerTool_RestAPI_GetPublicHolidays(IButlerVaultKeyCollection key) : base(key)
         {
         }
@@ -331,6 +392,11 @@ namespace ButlerSDK.Tools
         public override string ToolDescription => @"This tool makes an HTTP call to https://date.nager.at/api/v2/publicholidays/<country>/<YEAR>/ to load json describing USA dates that year";
         public override string ToolName => "GetUSAHolidayByYear";
         public override string ToolVersion => "YES";
+
+        protected override string build_url(string year, string code)
+        {
+            return SiteTemplateBase.Replace("{year}", year).Replace("{countrycode}",code);
+        }
     }
 
 }

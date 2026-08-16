@@ -564,7 +564,7 @@ namespace ButlerToolContract.DataTypes
         private int _AgeOutContextWindowMessages_Counter = DefaultMaxContextWindowMessages;
         protected void AgeOutContextWindowMessages(int MaxMessages)
         {
-            if (MaxMessages == UnlimitedContextWindow)
+            if ( (MaxMessages == UnlimitedContextWindow) || (MaxMessages == 0))
             {
                 return;
             }

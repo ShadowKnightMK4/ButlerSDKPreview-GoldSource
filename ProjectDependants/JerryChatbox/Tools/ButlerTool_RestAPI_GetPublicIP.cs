@@ -78,7 +78,7 @@ namespace ButlerSDK.Tools
             /* ship the below one not this code */
             // DEBUG CODE ONLY]
             // DO NOT UNCOMMENT THSI CODE =>  return ResolveMyToolAsync(FunctionCallArguments, FuncId, Call).GetAwaiter().GetResult();
-            // the below is the one that won't red mark SyncCode_HostileSync_DontFreeze calavera unit test.
+            // the below is the one that won't red mark SyncCode_HostileSync_DontFreeze calavera unit test. 
             return Task.Run(() =>
                         ResolveMyToolAsync(FunctionCallArguments, FuncId, Call))
                        .GetAwaiter()

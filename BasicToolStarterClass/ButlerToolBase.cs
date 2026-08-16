@@ -110,13 +110,21 @@ namespace ButlerSDK
             }
             if (Call is not null)
             {
-                if (Call.FunctionArguments is not null)
+                try
                 {
-                    args = JsonDocument.Parse(Call.FunctionArguments);
+                    if (Call.FunctionArguments is not null)
+                    {
+                        args = JsonDocument.Parse(Call.FunctionArguments);
+                    }
+                    else
+                    {
+                        args = JsonDocument.Parse(NoArgJson);
+                    }
                 }
-                else
+                catch (JsonException)
                 {
-                    args = JsonDocument.Parse(NoArgJson);
+                    args = null!;
+                    return false;
                 }
                 if (that.ValidateToolArgs(Call, args) == false)
                     return false;
@@ -124,13 +132,21 @@ namespace ButlerSDK
             }
             else
             {
-                if (string.IsNullOrEmpty(FunctionCallArguments))
+                try
                 {
-                    args = JsonDocument.Parse(NoArgJson);
+                    if (string.IsNullOrEmpty(FunctionCallArguments))
+                    {
+                        args = JsonDocument.Parse(NoArgJson);
+                    }
+                    else
+                    {
+                        args = JsonDocument.Parse(FunctionCallArguments);
+                    }
                 }
-                else
+                catch (JsonException)
                 {
-                    args = JsonDocument.Parse(FunctionCallArguments);
+                    args = null!;
+                    return false;
                 }
                 if (that.ValidateToolArgs(null, args) == false)
                 {

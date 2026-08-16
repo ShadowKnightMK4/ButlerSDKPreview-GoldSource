@@ -12,7 +12,7 @@ using UnitTests.UnitTestingTools;
 using ButlerSDK.Tools;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace CoreUnitTests.CurrentTests
+namespace CoreUnitTests.Calavera.ToolGenTests.ButlerTool_LocalFile_LoadTests
 { 
 
  

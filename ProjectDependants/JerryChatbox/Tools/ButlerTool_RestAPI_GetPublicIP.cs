@@ -18,9 +18,30 @@ namespace ButlerSDK.Tools
     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
     public class ButlerTool_RestAPI_GetPublicIP: ButlerToolBase, IButlerToolAsyncResolver
     {
+        private TimeSpan LagCounter = TimeSpan.FromMilliseconds(300);
+        private HttpClient? Override = null;
+        string[] AddressList =
+        {
+            "https://api64.ipify.org/",
+            "https://api.ipify.org"
+        };
         public ButlerTool_RestAPI_GetPublicIP(IButlerVaultKeyCollection key) : base(key)
         {
 
+        }
+
+        /// <summary>
+        /// calling this in the class
+        /// </summary>
+        /// <param name="Override"></param>
+        protected void ForceHttpClient(HttpClient Override)
+        {
+            this.Override = Override;
+        }
+
+        protected void SetTimeOut(TimeSpan x)
+        {
+            LagCounter = x;
         }
         const string site_template = @"https://api.ipify.org/";
         /*const string json_template = @"{
@@ -30,9 +51,9 @@ namespace ButlerSDK.Tools
         ""required"": [ ]
     }";*/
         readonly string json_template = NoArgJson;
-    public override string ToolVersion => "YES";
+    public override string ToolVersion => "1.1.0";
         public override string ToolName => "GetUserDevicePublicIP";
-        public override string ToolDescription => "Gets the user device's public IP via api.ipify.org. Can be used any where that info is needed.";
+        public override string ToolDescription => "Gets the user device's public IP via a RESTful request. Can be used any where that info is needed.";
         
         
 
@@ -51,10 +72,17 @@ namespace ButlerSDK.Tools
         {
             return base.ResolveMyTool(Call);
         }
-        
+
         public override ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
         {
-            return ResolveMyToolAsync(FunctionCallArguments, FuncId, Call).GetAwaiter().GetResult();    
+            /* ship the below one not this code */
+            // DEBUG CODE ONLY]
+            // DO NOT UNCOMMENT THSI CODE =>  return ResolveMyToolAsync(FunctionCallArguments, FuncId, Call).GetAwaiter().GetResult();
+            // the below is the one that won't red mark SyncCode_HostileSync_DontFreeze calavera unit test.
+            return Task.Run(() =>
+                        ResolveMyToolAsync(FunctionCallArguments, FuncId, Call))
+                       .GetAwaiter()
+                       .GetResult();
         }
         public override string GetToolJsonString()
         {
@@ -79,44 +107,120 @@ namespace ButlerSDK.Tools
             {
                 return null;
             }
-
-
-            var json = JsonDocument.Parse(FunctionCallArguments);
-            if (!ValidateToolArgs(Call, json))
-                return null;
-            else
+            HttpResponseMessage? ret = null;
+            string? results;
+            try
             {
-
-                var ret = await HttpClientStuff.ButlerToolHttpTransport.RequestPage(site_template);
-
-                var results = await ret.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(results))
+                for (int i = 0; i < AddressList.Length; i++)
                 {
-                    /* ok the call went thru*/
-                    results = results.Trim();
-                    for (int i = 0; i < results.Length; i++)
+                    try
                     {
-                        if (char.IsWhiteSpace(results[i]))
+                        if (Override != null)
                         {
-                            results = results.Substring(0, i);
-                            break;
+                            ret = await Override.GetAsync(AddressList[i]).WaitAsync(LagCounter);
+                        }
+                        else
+                        {
+                            ret = await HttpClientStuff.ButlerToolHttpTransport.RequestPage(AddressList[i]).WaitAsync(LagCounter);
+                        }
+                        results = await ret.Content.ReadAsStringAsync().WaitAsync(TimeSpan.FromMilliseconds(200));
+                        if (ret is not null)
+                        {
+                            if (ret.IsSuccessStatusCode)
+                            {
+                                if (!string.IsNullOrEmpty(results))
+                                {
+                                    /* ok the call went thru*/
+                                    results = results.Trim();
+                                    for (int j = 0; j < results.Length; j++)
+                                    {
+                                        if (char.IsWhiteSpace(results[j]))
+                                        {
+                                            results = results.Substring(0, j);
+                                            break;
+                                        }
+                                    }
+                                    if (IPAddress.TryParse(results, out var ActualIp))
+                                    {
+                                        return new ButlerChatToolResultMessage(FuncId, results);
+                                    }
+                                    else
+                                    {
+                                        return null;
+                                    }
+                                }
+                                else
+                                {
+                                    // this will properate in the defualt setting upstream to go *hey something happened*
+                                    return null;
+                                }
+                            }
                         }
                     }
-                    if (IPAddress.TryParse(results, out var ActualIp))
+                    catch (TimeoutException)
                     {
-                        return new ButlerChatToolResultMessage(FuncId, results);
+                        if (ret != null)
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
                     }
-                    else
+                    catch (InvalidOperationException)
                     {
-                        return null;
+                        if (ret != null)
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
                     }
-                }
-                else
-                {
-                    // this will properate in the defualt setting upstream to go *hey something happened*
-                    return null;
+                    catch (UriFormatException)
+                    {
+                        if (ret != null)
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
+                    }
+                    catch (HttpRequestException)
+                    {
+                        if (ret != null)
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
+                    }
+                    catch (HttpIOException)
+                    {
+                        if (ret != null)
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
+                    }
+                    if (ret is not null)
+                    {
+                        if (ret.IsSuccessStatusCode)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            ret.Dispose();
+                            ret = null;
+                        }
+                    }
                 }
             }
+            finally
+            {
+                if (ret is not null)
+                {
+
+                        ret.Dispose();
+
+                }
+            }
+            return new ButlerChatToolResultMessage(FuncId, $"Error: Unable to connect to needed Uri to get IP.");
         }
     }
 }

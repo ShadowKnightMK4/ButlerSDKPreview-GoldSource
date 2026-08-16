@@ -1,0 +1,6 @@
+Calavera is ment to be an ai assiested testing pattern to help me ensure ButlerSDK is ironclad.
+
+
+Rules:
+ButlerSDK.Calavera is the namespace for tests that are primary ai generated.
+MORE to come.

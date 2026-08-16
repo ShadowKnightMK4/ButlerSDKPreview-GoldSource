@@ -4,6 +4,10 @@ Gemini Provider will likly gain some extra constructors to let the dev just inje
 new interface in the gemini provider, an internal one.
 
 
+🚀 Release Notes: ButlerSDK v1.2.0-preview - hardening some of the tools in the core, adding 
+a new provider for the Vertext Gemini. 
+Also Hardening get public ip, get contry code (a small refactor)) are on the docks.
+
 
 🚀 Release Notes: ButlerSDK v1.2.0-preview (The Zero-Trust I/O Update )
 

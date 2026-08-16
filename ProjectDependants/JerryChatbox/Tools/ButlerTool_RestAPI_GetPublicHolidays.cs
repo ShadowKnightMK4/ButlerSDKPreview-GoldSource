@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ButlerToolContract;
+using ButlerSDK;
 
 namespace ButlerSDK.Tools
 {
@@ -18,9 +19,45 @@ namespace ButlerSDK.Tools
     /// ask https://date.nager.at/api/v2/publicholidays for info based on year and country code
     /// </summary>
     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
-    public class ButlerTool_RestAPI_GetPublicHolidays: ButlerToolBase, IButlerToolAsyncResolver
+    public abstract class ButlerTool_RestAPI_GetPublicHolidaysBase : ButlerToolBase, IButlerToolAsyncResolver
     {
-        const string site_template = @"https://date.nager.at/api/v2/publicholidays/{year}/{countrycode}";
+
+        const string SiteTemplateBase = @"https://date.nager.at/api/v4/publicholidays/{countrycode}/{year}/";
+        protected readonly List<string> SiteTemplateTryArray = new List<string>();
+
+        /// <summary>
+        /// called on spinup. Set as virtual to allow customization of the end point this tool loops thru.
+        /// </summary>
+        protected virtual void preflight_check()
+        {
+            if ((SiteTemplateBase.Length != 0) & (SiteTemplateTryArray.Count != 0))
+            {
+                SiteTemplateTryArray.Add(SiteTemplateBase);
+            }
+        }
+
+        /// <summary>
+        /// called to 
+        /// </summary>
+        /// <param name="year"></param>
+        /// <param name="month"></param>
+        /// <returns>returns null if there's no entry which the default does provide! </returns>
+        protected virtual string? flight_check(string year, string country)
+        {
+            if (SiteTemplateTryArray.Count == 0)
+            {
+                return null;
+            }
+            string final_url = SiteTemplateTryArray[0].Replace("{year}", year);
+            final_url = final_url.Replace("{countrycode}", country);
+            return final_url;
+        }
+        public override void Initialize()
+        {
+            base.Initialize();
+            preflight_check();
+        }
+        //      const string site_template = @"https://date.nager.at/api/v4/publicholidays/{countrycode}{year}/";
         const string json_template = @"{
     ""type"": ""object"",
     ""properties"": {
@@ -51,9 +88,9 @@ namespace ButlerSDK.Tools
         }
     ]*/
 
-        public ButlerTool_RestAPI_GetPublicHolidays(IButlerVaultKeyCollection key):base(key)
+        public ButlerTool_RestAPI_GetPublicHolidaysBase(IButlerVaultKeyCollection key) : base(key)
         {
-
+            SiteTemplateTryArray.Add(SiteTemplateBase);
         }
 
         public override string GetToolJsonString()
@@ -63,8 +100,9 @@ namespace ButlerSDK.Tools
 
         public override bool ValidateToolArgs(ButlerChatToolCallMessage? Call, JsonDocument? Doc)
         {
-            
-            JsonDocument? FunctionCheck=null;
+
+            JsonDocument? FunctionCheck = null;
+
             if (Doc is not null)
             {
                 FunctionCheck = Doc;
@@ -77,7 +115,19 @@ namespace ButlerSDK.Tools
                     {
                         return false;// already failed validation
                     }
-                    FunctionCheck = JsonDocument.Parse(Call.FunctionArguments);
+                    try
+                    {
+                        FunctionCheck = JsonDocument.Parse(Call.FunctionArguments);
+
+                        if (FunctionCheck.RootElement.ValueKind == JsonValueKind.String)
+                        {
+                            FunctionCheck = JsonDocument.Parse(FunctionCheck.RootElement.ToString());
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        return false;
+                    }
                 }
                 else
                 {
@@ -93,9 +143,8 @@ namespace ButlerSDK.Tools
                 FunctionCheck = JsonDocument.Parse(FunctionCheck.RootElement.ToString());
             }
 
-        // remove when done.
 
-            
+
             if (!FunctionCheck.RootElement.TryGetProperty("year", out JsonElement Year))
             {
                 return false;
@@ -104,20 +153,31 @@ namespace ButlerSDK.Tools
             {
                 return false;
             }
-          
-            if (Year.ValueKind == JsonValueKind.String)
+
+            /* we acceept and run the math if it's a string, do we parse it as int? otherwise if it's an int, we try to parse it ok */
+            if (Year.ValueKind != JsonValueKind.Number)
             {
-                if (!int.TryParse(Year.GetString(), out _))
+                if (Year.ValueKind != JsonValueKind.String)
                 {
                     return false;
                 }
+                else
+                {
+                    if (int.TryParse(Year.GetString(), out _))
+                    {
+                        return false;
+                    }
+                }
             }
-            else if (Year.ValueKind != JsonValueKind.Number)
+            else
             {
-                return false;
+                var year = Year.GetUInt32();
             }
 
-            
+
+
+
+
 
             if (string.IsNullOrEmpty(Year.ToString()))
             {
@@ -140,7 +200,7 @@ namespace ButlerSDK.Tools
 
         }
         public override ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
-         {
+        {
             return ResolveMyToolAsync(FunctionCallArguments, FuncId, Call).GetAwaiter().GetResult();
         }
 
@@ -219,12 +279,12 @@ namespace ButlerSDK.Tools
                 }
             }
 
-        
 
 
 
-            string final_url = site_template.Replace("{year}", year);
-            final_url = final_url.Replace("{countrycode}", country);
+            string? final_url = flight_check(year, country);
+            /*            string final_url = site_template.Replace("{year}", year);
+                        final_url = final_url.Replace("{countrycode}", country);*/
 
             {
                 var combined_calls = ButlerToolHttpTransport.CreateCombinedCall();
@@ -255,4 +315,22 @@ namespace ButlerSDK.Tools
         public override string ToolVersion => "YES";
 
     }
+
+
+
+    /// <summary>
+    /// ask https://date.nager.at/api/v2/publicholidays for info based on year and country code
+    /// </summary>
+    /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
+    public class ButlerTool_RestAPI_GetPublicHolidays : ButlerTool_RestAPI_GetPublicHolidaysBase, IButlerToolAsyncResolver
+    {
+        public ButlerTool_RestAPI_GetPublicHolidays(IButlerVaultKeyCollection key) : base(key)
+        {
+        }
+
+        public override string ToolDescription => @"This tool makes an HTTP call to https://date.nager.at/api/v2/publicholidays/<country>/<YEAR>/ to load json describing USA dates that year";
+        public override string ToolName => "GetUSAHolidayByYear";
+        public override string ToolVersion => "YES";
+    }
+
 }

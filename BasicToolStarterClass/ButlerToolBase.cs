@@ -129,8 +129,9 @@ namespace ButlerSDK
                     args = JsonDocument.Parse(NoArgJson);
                 }
                 else
+                {
                     args = JsonDocument.Parse(FunctionCallArguments);
-
+                }
                 if (that.ValidateToolArgs(null, args) == false)
                 {
                     return false;

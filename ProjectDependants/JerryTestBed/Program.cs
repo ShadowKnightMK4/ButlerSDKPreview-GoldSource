@@ -5,9 +5,11 @@ using ButlerSDK.ButlerPostProcessing;
 using ButlerSDK.Core;
 using ButlerSDK.Debugging;
 using ButlerSDK.Providers.Gemini;
+using ButlerSDK.Providers.Gemini.Vertex;
 using ButlerSDK.Providers.OpenAI;
 using ButlerSDK.Tools;
 using ButlerToolContract.DataTypes;
+using GenerativeAI;
 using SecureStringHelper;
 using System.Diagnostics;
 using System.Reflection;
@@ -114,6 +116,10 @@ namespace ButlerTestBed
         }
         static async Task Main(string[] args)
         {
+
+            {
+                VertexButlerGeminiProvider Testme = new VertexButlerGeminiProvider()
+            }
             if (args.Length == 0)
             {
                 Console.WriteLine("WARNING: No vault file passed. Unable to proceed");

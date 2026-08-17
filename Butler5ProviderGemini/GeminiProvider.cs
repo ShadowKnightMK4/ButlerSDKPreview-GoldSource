@@ -1,6 +1,5 @@
 ﻿using ButlerLLMProviderPlatform.DataTypes;
 using ButlerLLMProviderPlatform.Protocol;
-using ButlerSDK.Provider.Gemini;
 using ButlerSDK.Providers.Gemini;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
@@ -264,6 +263,7 @@ public static class DebugSettings
             {
 
                 var provider_client = api.CreateGenerativeModel(model);
+                /* dear future dev or me: because butler's chat client handles dispatching the calls, this AutoCall NEEDS to be false*/
                 provider_client.FunctionCallingBehaviour = new GenerativeAI.Core.FunctionCallingBehaviour()
                 {
                     AutoCallFunction = false

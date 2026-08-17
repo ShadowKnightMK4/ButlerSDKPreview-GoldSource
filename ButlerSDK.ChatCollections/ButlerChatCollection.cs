@@ -50,6 +50,10 @@ namespace ButlerToolContract.DataTypes
             {
                 get
                 {
+                    if (index < 0)
+                    {
+                        throw new IndexOutOfRangeException($"Index being {index} is out of range. expected at least 0");
+                    }
    
                     if (index < (SystemMessages.Count))
                     {
@@ -66,7 +70,7 @@ namespace ButlerToolContract.DataTypes
                         return RunningContextWindow[index];
                     }
 
-                    throw new IndexOutOfRangeException();
+                    throw new IndexOutOfRangeException($"Index being {index} is out of range.");
 
 
            

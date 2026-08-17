@@ -1,5 +1,4 @@
 ﻿using ButlerLLMProviderPlatform.Protocol;
-using ButlerSDK.Provider.Gemini;
 using ButlerSDK.Providers.Gemini;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
@@ -11,22 +10,31 @@ using System.Linq;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
-namespace ButlerSDK.Provider.Gemini.Vertex
+namespace ButlerSDK.Providers.Gemini.Vertex
 {
     
     public class VertexButlerGeminiProvider : IButlerLLMProvider, IButlerChatCreationProvider, IButlerLLMProviderToolRequests, IButlerLLMProvider_SpecificToolExecutionPostCall       
     {
         ButlerGeminiProvider local;
 
+        /// <summary>
+        /// Initalize for vertex class with an instance of your choice
+        /// </summary>
+        /// <param name="x"></param>
         public VertexButlerGeminiProvider(VertexAI x)
         {
+            ArgumentNullException.ThrowIfNull(x, nameof(x));
             local = new ButlerGeminiProvider(x);
         }
 
+        /// <summary>
+        /// initialize for the Vertex Cloud part with the default settings of the underling <see cref="VertexAI"/> handler.
+        /// </summary>
         public VertexButlerGeminiProvider()
         {
             local = new ButlerGeminiProvider(ButlerGeminiProvider.GoogleEndPointMode.VertexAi);
         }
+
 
         /// <summary>
         /// Get your interface that will feed butler a <see cref="IButlerChatCreationProvider"/>
@@ -80,7 +88,10 @@ namespace ButlerSDK.Provider.Gemini.Vertex
         /// <summary>
         /// This should return your default chat options object.
         /// </summary>
-        public IButlerChatCompletionOptions DefaultOptions { get; }
+        public IButlerChatCompletionOptions DefaultOptions
+        {
+            get { return local.DefaultOptions; }
+        }
 
         public IButlerLLMProvider.ToolProviderCallBehavior GetToolMode()
         {

@@ -11,6 +11,56 @@ namespace TrenchCoatTests.Calavera
     public class TrenchCoat_Calavera
     {
         [TestMethod]
+        public void TrenchCoat_DoesNotLikeNegativeIndex()
+        {
+            TrenchCoatChatCollection test = new TrenchCoatChatCollection();
+            test.AddUserMessage("hello");
+            Assert.Throws<IndexOutOfRangeException>(() => {
+                var neg_inf = test[-1];
+            });
+        }
+        [TestMethod]
+        public void TrenchCoat_DoesNotLikeNegativeIndexInfinite()
+        {
+            TrenchCoatChatCollection test = new TrenchCoatChatCollection();
+            test.AddUserMessage("hello");
+            Assert.Throws<IndexOutOfRangeException>(() => {
+                var neg_inf = test[int.MinValue];
+            });
+        }
+
+
+        [TestMethod]
+        public void TrenchCoat_ThrowsIndexOutOfRangePast_ArrayEnd()
+        {
+            TrenchCoatChatCollection test = new TrenchCoatChatCollection();
+            test.AddUserMessage("hello");
+            test.AddSystemMessage("hi");
+            test.AddPromptInjectionMessage(new ButlerChatMessage("Don't reply"), new MockPromptInjection());
+            Assert.AreEqual(3, test.Count);
+
+            Assert.Throws<IndexOutOfRangeException>(() =>
+            {
+                var neg_inf = test[int.MaxValue];
+            });
+        }
+
+        [TestMethod]
+        public void TrenchCoat_ThrowsIndexOutOfRangePast_ArrayEnd_OffBy1()
+        {
+            TrenchCoatChatCollection test = new TrenchCoatChatCollection();
+            test.AddUserMessage("hello");
+            test.AddSystemMessage("hi");
+            test.AddPromptInjectionMessage(new ButlerChatMessage("Don't reply"), new MockPromptInjection());
+            Assert.AreEqual(3, test.Count);
+
+            Assert.Throws<IndexOutOfRangeException>(() => {
+                var neg_inf = test[3];
+            });
+        }
+
+
+        [TestMethod]
         public void TrenchCoat_DoesNotTrim_At0()
         {
             // this tests that we don't have premature trimming

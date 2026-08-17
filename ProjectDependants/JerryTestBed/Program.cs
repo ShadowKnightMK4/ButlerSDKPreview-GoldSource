@@ -117,9 +117,7 @@ namespace ButlerTestBed
         static async Task Main(string[] args)
         {
 
-            {
-                VertexButlerGeminiProvider Testme = new VertexButlerGeminiProvider()
-            }
+    
             if (args.Length == 0)
             {
                 Console.WriteLine("WARNING: No vault file passed. Unable to proceed");

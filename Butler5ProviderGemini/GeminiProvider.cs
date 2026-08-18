@@ -120,7 +120,7 @@ public static class DebugSettings
 
         GenerativeAI.VertexAI? enterprise;
         GenerativeAI.GoogleAi? apiOLD;
-        SchrodingerCat? api; // unit initalized this could be other VertexAI or GoogleAI. The code does enforce the right open for level though.
+        ISchrodingerCat? api; // unit initalized this could be other VertexAI or GoogleAI. The code does enforce the right open for level though.
         /* has unit tests*/
 
         /// <summary>
@@ -157,7 +157,7 @@ public static class DebugSettings
         public ButlerGeminiProvider(VertexAI vertexAI)
         {
             this.EndPointMode = GoogleEndPointMode.VertexAi;
-            this.api = (SchrodingerCat) vertexAI;
+            this.api = (ISchrodingerCat) vertexAI;
             ArgumentNullException.ThrowIfNull(vertexAI);
         }
         public IButlerChatCreationProvider ChatCreationProvider
@@ -297,10 +297,10 @@ public static class DebugSettings
                 switch (this.EndPointMode)
                 {
                     case GoogleEndPointMode.AiStudio:
-                        api = (SchrodingerCat)new GoogleAi(x.DecryptString());
+                        api = (ISchrodingerCat)new SchrodingerCat(new GoogleAi(x.DecryptString()));
                         break;
                     case GoogleEndPointMode.VertexAi:
-                        api = (SchrodingerCat) new VertexAI();
+                        api = (ISchrodingerCat) new SchrodingerCat(new VertexAI());
                         break;
                 }
                 

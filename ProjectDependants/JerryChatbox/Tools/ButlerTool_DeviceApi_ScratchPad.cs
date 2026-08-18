@@ -37,7 +37,6 @@ namespace ButlerSDK.Tools
             return json_template;
         }
 
-        //public override string ToolDescription => "Get any combination of Date AND time with standard .NET DateTime reading";
         public override string ToolDescription => "Call this tool with your plan on solving the user's request. Your plan should be step by step and logical.";
         public override string ToolName => "TrainOfThought";
         public override string ToolVersion => "YES";
@@ -51,26 +50,37 @@ namespace ButlerSDK.Tools
         public override bool ValidateToolArgs(ButlerChatToolCallMessage? Call, JsonDocument? FunctionParse)
         {
             JsonDocument? doc = null;
-            if (FunctionParse != null)
-                doc = FunctionParse;
-            else
+            try
             {
-                if (Call is not null)
+                if (FunctionParse != null)
+                    doc = FunctionParse;
+                else
                 {
-                    if (Call.FunctionArguments is not null)
+                    if (Call is not null)
                     {
-                        doc = JsonDocument.Parse(Call.FunctionArguments);
+                        if (Call.FunctionArguments is not null)
+                        {
+                            doc = JsonDocument.Parse(Call.FunctionArguments);
+                        }
+                        else
+                        {
+                            return false; // if its null it don't have the property to check/don't bother
+                        }
                     }
-                    else
-                    {
-                        return false; // if its null it don't have the property to check/don't bother
-                    }
-                }
 
+                }
+                if ((doc!.RootElement.GetProperty("plan").ToString() != null))
+                {
+                    return true;
+                }
             }
-            if ((doc!.RootElement.GetProperty("plan").ToString() != null))
+            finally
             {
-                return true;
+                if ((doc != null) && (doc != FunctionParse))
+                {
+                    // we own - trigger gc.
+                    doc.Dispose();
+                }
             }
             return false;
         }
@@ -81,22 +91,32 @@ namespace ButlerSDK.Tools
 
         public override ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
         {
-            if (!BoilerPlateToolResolve(FunctionCallArguments, FuncId, Call, this, out JsonDocument? args))
+            JsonDocument? args = null;
+            try
             {
+                if (!BoilerPlateToolResolve(FunctionCallArguments, FuncId, Call, this, out args))
+                {
+                    return null;
+                }
+
+                if ((args!.RootElement.TryGetProperty("plan", out JsonElement Result)))
+                {
+                    return new ButlerChatToolResultMessage(FuncId, Result.ToString());
+                }
                 return null;
             }
-
-            if ((args!.RootElement.TryGetProperty("plan", out JsonElement Result)))
+            finally
             {
-                return new ButlerChatToolResultMessage(FuncId, Result.ToString());
+                if (args != null)
+                {
+                    args.Dispose();
+                }
             }
-            return null;
-
         }
 
         public string GetToolSystemDirectionText()
         {
-            return $"[DIRECTIVE] When calling {this.ToolName}, YOU MUST RIGHT A PLAN OF A VERY SHORT THOUGHT TO HELP YOU. MIN 3 WORDS. MAX 6 WORDS.";
+            return $"[DIRECTIVE] When calling {this.ToolName}, YOU MUST WRITE A REQUIREMENT YOU NEED TO FUFILL THE REQUEST.";
             /*
             return @$"You MUST BEFORE responding to the user write your plan on how to solve to the {ToolName} tool you got. NO EXCEPTIONS
                         Step 1: Answer to yourself what is the user requesting. Identify the goals.
@@ -112,7 +132,7 @@ namespace ButlerSDK.Tools
 
         public override string GetToolPostCallDirection()
         {
-            return $"[DIRECTIVE] Look at the return value of tool '{this.ToolName}', That is your next step. [DIRECTIVE: If your next step hasn't solved user request accurate. call '{this.ToolName}' again";
+            return $"[DIRECTIVE] LOOK AT YOUR {ToolName} writings. If you don't have everything needed, call the tool again with another requirement until you can safely conclude you have all needed data.";
         }
     }
 }

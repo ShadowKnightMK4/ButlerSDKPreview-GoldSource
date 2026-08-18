@@ -16,7 +16,7 @@ namespace TimePunchApp
     internal class Program
     {
         static int count = 25;
-        static string goldfish = "hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M"; // the model we'll be testing.
+        static string goldfish = "hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M"; // the model we'll be testing. Goldfish is an affectionate name.
         //static string gold2 = "sombra-mistal:latest";
         static string gold2 = goldfish; 
         static bool HandlerChatMessageStreamHandler(ButlerStreamingChatCompletionUpdate content, IList<ButlerChatMessage> msg)
@@ -59,7 +59,7 @@ namespace TimePunchApp
 
             var target = gold2; // MYTHBUSTERS!
 
-            var testMe = new Butler(DevBuild, Llama, null, target, "GEMINI.KEY");
+            var testMe = new Butler(DevBuild, Llama, null, target, string.Empty);
 
 
             testMe.DebugTap = new ButlerTap(File.OpenWrite(TargetOutput));
@@ -95,7 +95,7 @@ namespace TimePunchApp
 
             GeneralPrompt.Add(new ButlerSystemChatMessage("YOU BE AGGRESSIVE AND TRIGGER HAPPY WHEN NEEDING TO CALL TOOLs. Each reply must end in 'turning out the lights"));
 
-            ExoticPrompt.Add(new ButlerSystemChatMessage("You're roleplaying the chaotic prankster Jolly. Part Joker, Part Prankster. Chaos takes the reins"));
+            ExoticPrompt.Add(new ButlerSystemChatMessage("You're roleplaying the chaotic prankster 'Jolly'. Part Joker, Part Prankster. Chaos takes the reins"));
 
             string BaseTargetBath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Tests");
             if (BaseTargetBath is null)
@@ -138,7 +138,7 @@ namespace TimePunchApp
             for (int i = 0; i < count; i++)
             {
                 string target = CreateTargetLocation(BaseTargetBath, "General", false, i, ".log");
-                await RunInstance($"{target}", $"{Tools.GetType().Name}", GeneralPrompt, "What's today's date and time", i, PassThru);
+                await RunInstance($"{target}", $"{PassThru.GetType().Name}", GeneralPrompt, "What's today's date and time", i, PassThru);
             }
 
 
@@ -146,14 +146,14 @@ namespace TimePunchApp
             for (int i = 0; i < count; i++)
             {
                 string target = CreateTargetLocation(BaseTargetBath, "Exotic", true, i, ".log");
-                await RunInstance($"{target}", $"{Tools.GetType().Name}", GeneralPrompt, "What's today's date and time", i, Tools);
+                await RunInstance($"{target}", $"{Tools.GetType().Name}", ExoticPrompt, "What's today's date and time", i, Tools);
             }
 
             Console.WriteLine($"Beginning stress test 1 with the goldfish {gold2}. Count to run {count}. SystemPrompt Exotic Prompt, Countermeasure Status: OFF\r\n");
             for (int i = 0; i < count; i++)
             {
                 string target = CreateTargetLocation(BaseTargetBath, "Exotic", false, i, ".log"); 
-                await RunInstance($"{target}", $"{Tools.GetType().Name}", GeneralPrompt, "What's today's date and time", i, PassThru);
+                await RunInstance($"{target}", $"{PassThru.GetType().Name}", ExoticPrompt, "What's today's date and time", i, PassThru);
             }
 
 

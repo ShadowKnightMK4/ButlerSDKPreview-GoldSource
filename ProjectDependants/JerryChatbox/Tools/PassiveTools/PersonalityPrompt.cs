@@ -32,7 +32,7 @@ namespace ButlerSDK.Tools.NoCallTools
 
         public ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
         {
-            return null; // the tool resolver should not actually see tools of this type. It's caught at add tool level
+            return null; // the tool resolver should not actually see tools of this type. It's caught at add tool level ie Butler chat sesison and the translater to the provder should *drop* this tool
         }
 
         public bool ValidateToolArgs(ButlerChatToolCallMessage? Call, JsonDocument? FunctionParse)

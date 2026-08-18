@@ -175,13 +175,27 @@ namespace ButlerSDK
         bool IsCallAfforded(ApiEntry Service, int CallCount)
         {
             ArgumentNullException.ThrowIfNull(Service);
-            if (CallCount < 0)
+            if (CallCount < 1)
             {
-                throw new InventoryOrSeviceCostException($"{Service.ServiceName} IsCallAfforded check with negative call count is not supported");
+                if (CallCount != 0)
+                {
+                    throw new InventoryOrSeviceCostException($"{Service.ServiceName} IsCallAfforded check with call count less than 1 is not supported.");
+                }
+                else
+                {
+                    if (Service.Limit.HasFlag(ButlerApiLimitType.PerCall))
+                    {
+                        throw new InventoryOrSeviceCostException($"{Service.ServiceName} IsCallAfforded check with call count 0 is not supported UNLESS NOT INVENTORY Limit");
+                    }
+                    else
+                    {
+                       
+                    }
+                }
             }
             
             decimal CostCalculated;
-            if (CallCount == 0) return true;
+
 
             if (Service.Limit == ButlerApiLimitType.none)
                 return true;
@@ -559,29 +573,28 @@ namespace ButlerSDK
         /// This will see if the charge is valided and charge the service.  
         /// </summary>
         /// <param name="ServiceName"></param>
-        /// <param name="CallCount">int larger than 0</param>
-        /// <returns>true if charge went thru and false if non</returns>
+        /// <param name="CallCount">int larger than 0 to charge. Triggers exception if negative. If 0 is passed and service is NOT <see cref="ButlerApiLimitType.PerCall"/>, it'll work fine</param>
+        /// <returns>true if charge went thru and false if not. </returns>
         /// <exception cref="ServiceNonExistentException"></exception>
-        /// <exception cref="ApiKeyRateLimiter.InventoryOrSeviceCostException">If you try to charge call count less than 0</exception>
-        /// <remarks>Thank you for the idea win32 api routine FreeLibraryAndExitThread. </remarks>
+        /// <exception cref="ApiKeyRateLimiter.InventoryOrSeviceCostException">If you try to charge call count less than 1 in </exception>
+        /// <remarks> Assuming no exceptions, if the call is afforded (true), we update the inventory/shared budget  and then return true. Otherwise false is returned</remarks>
         public bool CheckForCallPermissionAndCharge(string ServiceName, int CallCount = 1)
         {
+            
             bool HasCharged = false;
-            if (!DoesServiceExist(ServiceName))
-            {
-                throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
-            }
+
             lock (SynchObject)
             {
                 ApiEntry? Service = this.LookUpService(ServiceName);
                 if (Service is null)
-                    return false;
+                {
+                    throw new ServiceNonExistentException($"Service {ServiceName} doesn't exist.");
+                }
 
                 try
                 {
                     if (IsCallAfforded(ServiceName, CallCount))
                     {
-
 
                         bool BudgetOk = false;
                         bool InventoryOk = false;
@@ -598,9 +611,15 @@ namespace ButlerSDK
                                 Service.Inventory -= Inv;
                             }
                         }
-                        HasCharged = true;
+
+                            HasCharged = true;
+
                     }
                 }
+                /*catch (InventoryOrSeviceCostException)
+                {
+                    HasCharged = false;
+                } */
                 catch (OverBudgetException)
                 {
                     HasCharged = false;

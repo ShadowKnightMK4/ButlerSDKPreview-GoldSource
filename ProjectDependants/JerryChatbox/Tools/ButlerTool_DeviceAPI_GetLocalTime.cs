@@ -15,11 +15,11 @@ using System.Threading.Tasks;
 namespace ButlerSDK.Tools
 
 {    /// <summary>
-     /// Politely ask the device running ButlerSDK what time and date settings are for a <see cref="DateTime.Now"/>
+     /// Politely ask the device running ButlerSDK what time and date settings are for a <see cref="DateTime.Now"/>. Default pattern is FullDateTimePattern but subclass this to customize. <see cref="ButlerTool_DeviceAPI_GetLocalDateTime"/>
      /// </summary>
-     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
+     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this. </remarks>
     [ToolSurfaceCapabilities(ToolSurfaceScope.NoPermissions)]
-    public class ButlerTool_DeviceAPI_GetLocalDateTime: ButlerToolBase, IButlerToolPostCallInjection
+    public abstract class ButlerTool_DeviceAPI_GetLocalDateTimeBase: ButlerToolBase, IButlerToolPostCallInjection
     {
         const string json_template = @"{
     ""type"": ""object"",
@@ -43,7 +43,7 @@ namespace ButlerSDK.Tools
     ""required"": [ ""format"" ]
 }";
 
-        public ButlerTool_DeviceAPI_GetLocalDateTime(IButlerVaultKeyCollection? key): base(key)
+        public ButlerTool_DeviceAPI_GetLocalDateTimeBase(IButlerVaultKeyCollection? key): base(key)
         {
       
         }
@@ -67,26 +67,43 @@ namespace ButlerSDK.Tools
         public override bool ValidateToolArgs(ButlerChatToolCallMessage? Call, JsonDocument? FunctionParse)
         {
             JsonDocument? doc=null;
-            if (FunctionParse != null)
-                doc = FunctionParse;
-            else
+            try
             {
-                if (Call is not null)
+                if (FunctionParse != null)
+                    doc = FunctionParse;
+                else
                 {
-                    if (Call.FunctionArguments is not null)
+                    if (Call is not null)
                     {
-                        doc = JsonDocument.Parse(Call.FunctionArguments);
+                        if (Call.FunctionArguments is not null)
+                        {
+                            doc = JsonDocument.Parse(Call.FunctionArguments);
+                        }
+                        else
+                        {
+                            return false; // if its null it don't have the property to check/don't bother
+                        }
                     }
-                    else
-                    {
-                        return false; // if its null it don't have the property to check/don't bother
-                    }
+
                 }
-                
+                return true;
             }
-            return true;
+            finally
+            {
+                if ((doc != null) && (doc != FunctionParse))
+                {
+                    // we own it- clean up.
+                    doc.Dispose();
+                }
+            }
         }
-        static readonly string DefaultPattern = "FullDateTimePattern";
+        
+        public override void Initialize()
+        {
+            base.Initialize();
+            AssignDefaultPattern();
+        }
+        protected static string DefaultPattern { get; set; } ="FullDateTimePattern";
         private static readonly Dictionary<string, string> SpecialCases = new(StringComparer.OrdinalIgnoreCase)
         {
             { "FullDateTimePattern", "dddd, MMMM dd, yyyy h:mm:ss tt" },
@@ -101,11 +118,25 @@ namespace ButlerSDK.Tools
             { "YearMonthPattern", "MMMM, yyyy" }
         };
 
+        /// <summary>
+        /// This routine
+        /// </summary>
+        protected abstract void AssignDefaultPattern();
+
         string SpecialCaseChecks(string format)
         {
             string? alt;
             string lformat = format.ToLower();
-            string[] spliter = format.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+            string[] spliter;
+            format = format.Trim();
+            if (format.Contains(' '))
+            {
+                spliter = format.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+            }
+            else
+            {
+                spliter = new [] {format};
+            }
             foreach (string s in spliter)
             {
                 
@@ -117,58 +148,76 @@ namespace ButlerSDK.Tools
                     }
                 }
             }
-            return SpecialCases["FullDateTimePattern"];
-            ;
-            
-            
-
-
+            return format;
             
         }
 
         
         public override ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
         {
-            
-            if (!BoilerPlateToolResolve(FunctionCallArguments, FuncId, Call, this, out JsonDocument? args))
+            JsonDocument? args = null;
+            try
             {
-                return null;
-            }
-
-            DateTime Today = DateTime.Now;
-            string? res = null;
-
-            if (args is null)
-            {
-                res = Today.ToString();
-            }
-            else
-            {
-                string format = DefaultPattern;
-
-                if (args.RootElement.TryGetProperty("format", out JsonElement data))
+                if (!BoilerPlateToolResolve(FunctionCallArguments, FuncId, Call, this, out args))
                 {
-                    format = data.ToString();
+                    return null;
+                }
+
+                DateTime Today = DateTime.Now;
+                string? res = null;
+
+                if (args is null)
+                {
+                    res = Today.ToString();
                 }
                 else
                 {
-                    format = DefaultPattern;
-                }
-                format = SpecialCaseChecks(format);
-                res = Today.ToString(format);
-                if (res == null)
-                {
-                   res = Today.ToString();
-                }
-                
-            }
-            if (Call is not null)
-                return new ButlerChatToolResultMessage(Call.Id, res);
-            else
-            {
-                return new ButlerChatToolResultMessage(FuncId, res);
-            }
+                    string format = DefaultPattern;
 
+                    if (args.RootElement.TryGetProperty("format", out JsonElement data))
+                    {
+                        format = data.ToString();
+                    }
+                    else
+                    {
+                        format = DefaultPattern;
+                    }
+                    format = SpecialCaseChecks(format);
+                    try
+                    {
+                        res = Today.ToString(format);
+                    }
+                    catch (Exception)
+                    {
+                        try
+                        {
+                            res = Today.ToString(SpecialCaseChecks(DefaultPattern));
+                        }
+                        catch (Exception)
+                        {
+                            res = Today.ToString(SpecialCaseChecks("FullDateTimePattern"));
+                        }
+                    }
+                    if (res == null)
+                    {
+                        res = Today.ToString();
+                    }
+
+                }
+                if (Call is not null)
+                    return new ButlerChatToolResultMessage(Call.Id, res);
+                else
+                {
+                    return new ButlerChatToolResultMessage(FuncId, res);
+                }
+            }
+            finally
+            {
+                if (args != null)
+                {
+                    args.Dispose();
+                }
+            }
 
         }
 
@@ -177,6 +226,23 @@ namespace ButlerSDK.Tools
             return $"{this.ToolName} returns date and time data, YOU MUST use that instead of guessing current date / time!";
         }
 
- 
+
+    }
+
+    
+   /// <summary>
+     /// Politely ask the device running ButlerSDK what time and date settings are for a <see cref="DateTime.Now"/>, uses default pattern of "FullDateTimePattern"
+     /// </summary>
+     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
+    public class ButlerTool_DeviceAPI_GetLocalDateTime : ButlerTool_DeviceAPI_GetLocalDateTimeBase
+    {
+        public ButlerTool_DeviceAPI_GetLocalDateTime(IButlerVaultKeyCollection? key) : base(key)
+        {
+        }
+
+        protected override void AssignDefaultPattern()
+        {
+            DefaultPattern = "FullDateTimePattern";
+        }
     }
 }

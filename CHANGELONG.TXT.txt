@@ -4,89 +4,95 @@ Gemini Provider will likly gain some extra constructors to let the dev just inje
 new interface in the gemini provider, an internal one.
 
 
-ButlerSDK — Unified Changelog & Release Notes
-🚀 v1.2.1-preview (Work in Progress)
-⚠️ Developer Note: This is a pre-release preview. Features, interfaces, and implementations are subject to change until the final release is tagged.
-📦 Affected Projects
-ButlerSDK.Core
-ButlerSDK.ChatCollections
-🌟 Planned & In-Progress Features
-Vertex AI Gemini Provider: Adding native Vertex AI support alongside a helper shim (similar to OllamaShim) for straightforward onboarding.
-Provider Extensibility: Introducing constructor overloads on the Gemini Provider to enable direct dependency and configuration injection.
-Internal Interfaces: Adding a new internal interface to standardize operations across Gemini provider variants.
-🐛 Bug Fixes & Core Improvements
-Trenchcoat Memory Management: Fixed an issue where configuring context window age-out to 0 or Unlimited caused all newly added messages to be immediately purged upon insertion. Message retention logic now correctly preserves history.
-🛠️ Tool Hardening & Updates
-ButlerTool_RestAPI_GetPublicIP (v1.1.0)
-Deadlock Prevention: Reworked synchronous execution paths to prevent deadlocks caused by captured synchronization contexts (validated with dedicated unit tests).
-Dual-Stack Support & Failover: The tool now queries https://api64.ipify.org/ (IPv4/IPv6 dual-stack) first, falling back to https://api.ipify.org (IPv4 only) for resilience on IPv6-only networks.
-Extensibility: Subclasses can now inject custom HttpRequestHandler instances and configure request timeouts.
-Default Timeout: Set to 300 ms.
-Payload Flexibility: Relaxed argument parsing for zero-parameter requests; the tool now safely accepts arbitrary JSON payloads (e.g., NoArgJson).
-Version Bump: Internal tool version constant updated to 1.1.0.
-ButlerTool_RestAPI_GetPublicHolidays
-Deadlock Prevention: Applied the safe async-over-sync execution pattern with comprehensive unit test coverage.
-Endpoint Migration: Migrated to the active endpoint:
-https://nagerholidays.com/api/v4/Holidays/{countrycode}/{year}/ with strict parameter validation.
-Input Validation & Parsing Fixes:
-Fixed a bug where valid calendar years were incorrectly flagged as invalid.
-Fixed an unhandled exception triggered when negative year values were parsed.
-Requests with a year < 1 are now short-circuited and rejected immediately before network dispatch.
-Error Reporting: Returns structured, descriptive error messages upon failure instead of silently returning null.
-Default Timeout: Set to 1 second.
-💡 Developer Impact
-Non-Breaking: Existing integrations remain compatible.
-Diagnostics: Improved visibility with actionable error feedback instead of silent null returns.
 
+🚀 Release Notes: ButlerSDK v1.2.1-preview - a bushel of bugs squashed.
 
-
-🚀 Release Notes: ButlerSDK v1.2.1-preview - hardening some of the tools in the core, adding 
-a new provider for the Vertext Gemini. 
+Note: these bug fixes origianted in the VertexAI branch. 
 
 This effects the projects in the SDK:
 ButlerSDK.Core
 ButlerSDK.ChatCollections
+ButlerSDK.Tools.DiscovererTool
+ButlerSDK.ApiRateLimiter
+ButlerSdk.Toos.Bench
 
-BUG FIX/Difference: Trenchcoat now acrually correctly skips aging out context window if set to zero or Unlimited. 
+ButlerToolBench in ButlerSDK.Tools.Bench
+* BUG FIX: Ensured the JsonDocument creation when running a tool should dispose now.
+
+ApiKeyRateLimiter in ButlerSDK.ApiRateLimiter
+* BUG FIX:Remote race condition chance plugged in CheckForCallPermissionAndCharge(). Sync object is now locked (because we're updating the in memory data) before testing for existance.
+* ADJUSTMENT: For the ButlerApiLimitType.PerCall (Inventory) limit, the system was changed to not allow attempting checking if 0 inventory is afforded. You must use a postiive number.
+* ADJUSTMENT: Due to the above, CheckForCallPermission() will return false if asking if a PerCall service will live thru charging 0 inventory.
+* ADJUSTMENT: Due to the above, CheckForCallPermissionAndCharge() is in a spot. It will charge the call if it's deamed allowed.
+* ADJUSTMENT: For **NON** ButlerApiLimitType.PerCall limites (currently SharedBuget or no limit) - you can still pass 0 uneffected.
+
+
+Dev note: If you wering postive numbers in inventory. This update shouldn't effect you. Negative inventory is blanket no already. 0 is out of bounds in ButlerApiLimitType.PerCall limit.
+
+
+TrenchCoatChatCollection in ButlerSDK.ChatCollections
+BUG FIX/Difference: Trenchcoat now acrually correctly skips aging out context window if set to zero or Unlimited.  Still only trims on adding a message to context.
 Originally: Trenchcoat set to age out to 0 woulld happily remove ALL messages added, when added.
+Dev note: It's commented and documented as 0 or special value Unlimited means NO trim. The code however was trim all the things that aren't tool prompts or system prompts. 
 
 
-Update:   ButlerTool_RestAPI_GetPublicIP tool
-The Get Public IP plays a little nicer with the sync path.
-Previousely the sync path had possiblity of deadlocking if context was captured. Some work in the lab
+ButlerTool_RestAPI_GetPublicIP in ButlerSDK.Core
+* Adjustment/Bug fix: ButlerTool_RestAPI_GetPublicIP should be less likely to lock up. It plays nicer in the sync bridge to it's async code if context gets captured. That sync async bridge code is likely standard for tools in the future.
+* Adjustment/Bug fix In the interst of minimal freezing ButlerTool_RestAPI_GetPublicIP has a default limit of 300ms for the Htpp request to the endpoint to go thru. Default is 300ms
+* New feature: For customization reasons you can set a specific HtppReqestHandler and set arbitrary timeout limit in an ButlerTool_RestAPI_GetPublicIP subclass.
+* Change: ButlerTool_RestAPI_GetPublicIP  first attempts to connect to "https://api64.ipify.org/" then "https://api.ipify.org".
+* Change:  In a first, this tool's version string is now "1.1.0" instead of "YES". System still doesn't worry about version info for tools.
+* Change: With the tool requiring zero arguments, The tool no longer cares or validates the JsonDocument arg - long as has it has one - such as NoJsonArg const.
+
+
+Dev notes for the tool changes/fix:
+
+I needed testing for the class without internet so that's why the injectable http handler came from. The custom timeout was free real estate and came too as a bonus.
+The https://api64.ipify.org/ first from my understanding works for *both* IPv4 and IPv6 networking situations. "https://api.ipify.org" works on IPv4 only. I'm figuring
+the request trying one that works for IPv4 & IPv6 reducines the likely hood of needing to make a 2nd request (such as in situations where IPV6 does not work?
+
+Originally the sync path had possiblity of deadlocking if context was captured. Some work in the lab
 and an AI helping me understand synchornization context - has yielded unit tests where the old code
 would dead lock and the replacement code didn't.
 
 
-Update: subclassing ButlerTool_RestAPI_GetPublicIP gives you option to inject an HttpRequestHandler and chance the 
-timeout if the network is laggy.
-
-Update: Default timeout if the HttpRequest takes too long is 300ms.
-
-Change: ButlerTool_RestAPI_GetPublicIP  first attempts to connect to "https://api64.ipify.org/" then "https://api.ipify.org".
-https://api64.ipify.org/ from what I understand works fine on ipv6 and ipv4 and the   "https://api.ipify.org" works on ipv4 only.
-
-Change: cHanged the tool version const to say "1.1.0" for the tool.
-
-Change: with the tool not needing any arguments, the tool does not care what kind of json is passed long has you give it shomething,
-such as NoArgJson.
-
-
 Development inpact: For the consumer side there shouldn't really be much if any difference. Tool gives the dev more
-goods to play with, and has a bit of redudency to ideally let IPV6 only networks work with the tool.
+customization to play with, and has a bit of redudency to ideally let IPV6 only networks work with the tool.
 
 
-updates on ButlerTool_RestAPI_GetPublicHolidays
+ButlerTool_RestAPI_GetPublicHolidays in ButlerSDK.Core
+* BUG FIX: The Holiday tool uses the same async over sync battern as the GetPubIP tool. Has a unit test too.
+* BUG FIX: Twas a case of a valid year having the validate logic go nope! Fix and unit test added.
+* BUG FIX: Twas a case of negative year triggering an unwanted exception in the parsing logic. Nope.
+* Adjustment: The tool will no longer return null if error but a error message.
+* Adjustment: The tool will not even send request if the year passed is less than 1
+Adjustment: Guessing the old URI was out of date. It now uses "https://nagerholidays.com/api/v4/Holidays/{countrycode}/{year}/" instead and plugs the arugments into that URI after strictly validating them
+Adjustment: The tool will timeout after a default of 1 second. To customize - subclass it and update the protected TimeSpan in the subclass.
 
-BUG FIX: The Holiday tool uses the same async over sync battern as the GetPubIP tool. Has a unit test too.
-BUG FIX: Twas a case of a valid year having the validate logic go nope! Fix and unit test added.
-BUG FIX: Twas a case of negative year triggering an unwanted exception in the parsing logic. Nope.
-Adjustment: The tool will no longer return null if error but a error message.
-Adjustment: The tool will not even send request if the year passed is less than 1
-Adjustment: Guessing the old URI was out of day. It now uses "https://nagerholidays.com/api/v4/Holidays/{countrycode}/{year}/" instead and plugs the arugments into that URI after strictly validating them
-Adjustment: The tool will timeout after a default of 1 second.
+Developer inpact: For the consumer. You should be getting more error messages if a problem happened. and the new uri should restore the tool to working order.
 
-Developer input: For the consumer. You should be getting more error messages if a problem happened. and the new uri should restore the tool to working order.
+
+PassThruPostProcessing  in ButlerSDK.Core
+* Adjustment: The remiedial turn function now actually is a stub rather than NotImplementedException(). In the normal chat flow, this routine should actually never be reached.
+* Dev Input: Seemed like a better idea at the time and logic suggestions a pass thru do nothing remedial shouldn't throw if it's caleld.
+
+
+ButlerTool_DeviceAPI_GetLocalDateTime in ButlerSDK.Core
+*BUG FIX. Fixed possible unhandled exception regarding weird formating .NET can't format. 
+*Adjustment: If the LLM passes an unknown/unexpected format that throws exception, it will first attempt to fall back to the set 'DefaultPattern' protected variable and if that ALSO throws an exception 'FullDateTimePattern' hard coded default.
+* Small performance adjustment. If the tool detects no spaces, it skips splitting an argument as it parses input.
+* Memory leak fix: JsonDocument is now disposed if owned in parsing and validating
+
+Dev Input: some bug fix and adjustments in what I thought was a finished class. You can customize it by subclassing *simmilar to the GetPublicIP one
+
+ButlerTool_DeviceApi_ScratchPad
+* Memory leak fix: JsonDocument is now disposed if owned in parsing and validating
+Dev Note: this tool is on the docs to get an adjustment aimed to encourage [local] models to write plans better. How - i dont know yet.
+
+
+Timepunch (Demo/test harness)
+ExoticPrompt is now actually used isntead of general when running it.
+Updated output to match what's under the hood slightly (passthru vs tool use)
 
 
 🚀 Release Notes: ButlerSDK v1.2.0-preview (The Zero-Trust I/O Update )

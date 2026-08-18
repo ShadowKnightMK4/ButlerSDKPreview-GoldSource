@@ -25,10 +25,12 @@ namespace ButlerSDK.ButlerPostProcessing
         public ButlerStreamingChatCompletionUpdate? DeQueueBuffer()
         {
             // nothing to remove from the queue
+            /* notice, the chat session object design when seeing  IButlerPostProcessorHandler.EndOfAiStreamAction.None IButlerPostProcessorHandler.PostProcessorAction.PassThru
+        * never actually calls this function*/
             throw new NotImplementedException();
         }
 
-        
+
         /// <summary>
         /// Do not trigger <see cref="Remedial(TrenchCoatChatCollection, ToolResolver, ButlerToolBench)"/>
         /// </summary>
@@ -73,7 +75,7 @@ namespace ButlerSDK.ButlerPostProcessing
         /// <param name="Toolset"></param>
         public void Remedial(IButlerChatCollection Msgs, IButlerToolResolver Resolver, IButlerToolBench Toolset)
         {
-            throw new NotImplementedException();
+            return;
         }
     }
 }

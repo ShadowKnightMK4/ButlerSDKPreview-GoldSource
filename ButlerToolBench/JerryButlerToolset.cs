@@ -553,96 +553,111 @@ namespace ButlerSDK.ToolSupport.Bench
                  * #2, if #1 passes, do we have permission to call?
                  * #3 if #2 passes,  update the call inventory (or service) and make the call, returning the result;
                  */
-                JsonDocument JsonArgs = JsonSerializer.SerializeToDocument(Arguments);
-                if (JsonArgs.RootElement.ValueKind == JsonValueKind.String)
+                JsonDocument? JsonArgs = null;
+                JsonDocument? shimdoc = null;
+                try
                 {
-                    string? TempHolding = JsonArgs.RootElement.GetString();
-                    if (TempHolding is not null)
+                    JsonArgs = JsonSerializer.SerializeToDocument(Arguments);
+                    if (JsonArgs.RootElement.ValueKind == JsonValueKind.String)
                     {
-                        JsonArgs = JsonDocument.Parse(TempHolding);
-                    }
-                    else
-                    {
-                        JsonArgs = JsonDocument.Parse("{}");
-                    }
-                }
-                if (Tool.ValidateToolArgs(null, JsonArgs))
-                {
-                    bool HasPermission = false;
-
-                    if (Tool is IButlerCritPriorityTool)
-                    {
-                        HasPermission = true;
-                    }
-                    if (Limiter is IApiKeyRateLimiterAtomicCharge atomicCharge)
-                    {
-                        if (!HasPermission) // crit priority tool check sets to true, triggering skip
+        
+                        string? TempHolding = JsonArgs.RootElement.GetString();
+                        if (TempHolding is not null)
                         {
-                            HasPermission = atomicCharge.CheckForCallPermissionAndCharge(FunctionName!);
-                        }
-                        // upper code already establishes the name of the function  is not null
-                        if (!HasPermission)
-                        {
-                            ErrorCode = new ButlerChatToolResultMessage(CallId, LimitExceeded);
-                            return false;
+                             shimdoc = JsonDocument.Parse(TempHolding);
                         }
                         else
                         {
-                            // the tole payed, go run it.
-                            /*
-                            if (Tool is IButlerToolAsyncResolver AsyncTool)
-                            {
-                                return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
-                            }
-                            else
-                            {
-                                return Tool.ResolveMyTool(Arguments, CallId, null);
-                            }*/
-                            return true;
+                            shimdoc = JsonDocument.Parse("{}");
                         }
+
+                        JsonArgs?.Dispose(); // gonna be not null here. Just on the paranoid chance it is, don't take the thing down
+                        JsonArgs = shimdoc;
+                        shimdoc = null;
                     }
-                    else
+                    if (Tool.ValidateToolArgs(null, JsonArgs))
                     {
-                        // legacy path. It's fine.
-                        if (Tool is IButlerCritPriorityTool) // crit priority tools can be called as much as the LLM or the thing scheduling tools wants. Treat with care.
+                        bool HasPermission = false;
+
+                        if (Tool is IButlerCritPriorityTool)
+                        {
                             HasPermission = true;
-                        else
-                        {
-                            HasPermission = Limiter.CheckForCallPermission(FunctionName!);
                         }
-                        // upper code already establishes the name of the function  is not null
-                        if (!HasPermission)
+                        if (Limiter is IApiKeyRateLimiterAtomicCharge atomicCharge)
                         {
-                            ErrorCode= new ButlerChatToolResultMessage(CallId, LimitExceeded);
-                            return false;
-                        }
-                        else
-                        {
-                            Limiter.ChargeService(FunctionName!, 1);
-
-                            // the tole payed, go run it.
-                            /*
-                            if (Tool is IButlerToolAsyncResolver AsyncTool)
+                            if (!HasPermission) // crit priority tool check sets to true, triggering skip
                             {
-                                return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                                HasPermission = atomicCharge.CheckForCallPermissionAndCharge(FunctionName!);
+                            }
+                            // upper code already establishes the name of the function  is not null
+                            if (!HasPermission)
+                            {
+                                ErrorCode = new ButlerChatToolResultMessage(CallId, LimitExceeded);
+                                return false;
                             }
                             else
                             {
-                                return Tool.ResolveMyTool(Arguments, CallId, null);
-                            }*/
-                            return true;
+                                // the tole payed, go run it.
+                                /*
+                                if (Tool is IButlerToolAsyncResolver AsyncTool)
+                                {
+                                    return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                                }
+                                else
+                                {
+                                    return Tool.ResolveMyTool(Arguments, CallId, null);
+                                }*/
+                                return true;
+                            }
                         }
+                        else
+                        {
+                            // legacy path. It's fine.
+                            if (Tool is IButlerCritPriorityTool) // crit priority tools can be called as much as the LLM or the thing scheduling tools wants. Treat with care.
+                                HasPermission = true;
+                            else
+                            {
+                                HasPermission = Limiter.CheckForCallPermission(FunctionName!);
+                            }
+                            // upper code already establishes the name of the function  is not null
+                            if (!HasPermission)
+                            {
+                                ErrorCode = new ButlerChatToolResultMessage(CallId, LimitExceeded);
+                                return false;
+                            }
+                            else
+                            {
+                                Limiter.ChargeService(FunctionName!, 1);
+
+                                // the tole payed, go run it.
+                                /*
+                                if (Tool is IButlerToolAsyncResolver AsyncTool)
+                                {
+                                    return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                                }
+                                else
+                                {
+                                    return Tool.ResolveMyTool(Arguments, CallId, null);
+                                }*/
+                                return true;
+                            }
+                        }
+
+
                     }
+                    else
+                    {
 
-
+                        var ret = new ButlerChatToolResultMessage(CallId, ToolValidateFailureArg, Arguments);
+                        ret.ToolName = Tool.ToolName;
+                        ErrorCode = ret;
+                        return false;
+                    }
                 }
-                else
+                finally
                 {
-
-                    var ret = new ButlerChatToolResultMessage(CallId, ToolValidateFailureArg, Arguments);
-                    ret.ToolName = Tool.ToolName;
-                    ErrorCode = ret;
-                    return false;
+                    if (JsonArgs != null)  JsonArgs.Dispose();
+                    if (shimdoc != null) shimdoc.Dispose();
                 }
             }
         }

@@ -3,7 +3,7 @@
 # ButlerSDK.SecureStringHelper (Preview 1)
 *A lightweight helper library for working with .NET SecureString.*
 
-`ButlerSDK.SecureStringHelper` provides extension methods that simplify constructing and extracting values from `SecureString` instances. It is designed primarily for **secret lifecycle management**, such as API keys or credentials retrieved from files, environment variables, or other runtime sources.
+`ButlerSDK.SecureStringHelper` provides extension methods that simplify constructing and extracting values from `SecureString` instances. It is designed primarily for **secret lifecycle management**, such as API keys or credentials retrieved from files, environment variables, or other runtime sources used in ButlerSDK.
 
 * **GitHub Repository:**[ShadowKnightMK4/ButlerSDKPreview-GoldSource](https://github.com/ShadowKnightMK4/ButlerSDKPreview-GoldSource)
 * **Recommendation:** Consider grabbing `ButlerSDK.Core` and its variants as needed for your project.

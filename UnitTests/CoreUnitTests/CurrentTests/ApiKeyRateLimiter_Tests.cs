@@ -1,5 +1,6 @@
 using ButlerSDK;
 using NuGet.Frameworks;
+using static ButlerSDK.ApiKeyRateLimiter;
 
 
 namespace UnitTests.CurrentTests
@@ -7,6 +8,7 @@ namespace UnitTests.CurrentTests
     [TestClass]
     public class ApiKeyExceptionTests
     {
+  
         [TestMethod]
         public void CreateServiceNonExistant_ByString()
         {
@@ -114,6 +116,55 @@ namespace UnitTests.CurrentTests
             });
         }
 
+        [TestMethod] 
+        public void InventoryTest_CheckIfZeroCall_InventoryLimit_Charge0ShouldThrow()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 1, 10, 1000, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.PerCall);
+            Assert.ThrowsException<ApiKeyRateLimiter.InventoryOrSeviceCostException>(() => {
+                testme.ChargeService("TEST", 0);
+            });
+
+        }
+
+        [TestMethod]
+        public void InventoryTest_CheckIfZeroCall_NONInventoryLimit_Charges0ShouldGoThru_NoThrow()
+        {
+            ulong cap_inv = 1000;
+            ulong starting_inventory = 10;
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 1, starting_inventory, cap_inv, ButlerApiLimitType.SharedBudget);
+
+            testme.ChargeService("TEST", 0);
+            var post_check = testme.GetServiceInventory("TEST");
+            Assert.AreEqual(post_check, starting_inventory);
+            Assert.AreEqual(cap_inv, testme.GetServiceLimit("TEST"));
+
+        }
+        [TestMethod]
+        public void InventoryTest_CheckIfZeroCallIsAfforedReturnsFalse_ChargingZeroCallWhenInventoryMode_DoesNotWork()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 1, 10, 1000, ButlerApiLimitType.SharedBudget | ButlerApiLimitType.PerCall);
+            //Assert.IsTrue(testme.CheckForCallPermission("TEST", 0));
+            Assert.ThrowsException<ApiKeyRateLimiter.InventoryOrSeviceCostException>(() =>
+            {
+                Assert.IsFalse(testme.CheckForCallPermissionAndCharge("TEST", 0));
+            });
+
+        }
+
+        [TestMethod]
+        public void InventoryTest_CheckIfZeroCallIsAfforedReturnsFalse_ChargingZeroCallWhenNOTInventoryMode_IsAllowed()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 1, 10, 1000, ButlerApiLimitType.SharedBudget);
+            //Assert.IsTrue(testme.CheckForCallPermission("TEST", 0));
+
+                Assert.IsFalse(testme.CheckForCallPermissionAndCharge("TEST", 0));
+        }
+
+
         [TestMethod]
         public void InventoryTest_Rejects_NegativeInventory_DedectingZero()
         {
@@ -150,7 +201,7 @@ namespace UnitTests.CurrentTests
 
             Assert.ThrowsException<ApiKeyRateLimiter.InventoryOrSeviceCostException>(() =>
             {
-                /* stricly speaking, this assert.isfalse() should not actually be triggerd. The xception that happens when negative inventory charge is what we're testing for. This is here incase the standard changes"*/
+                /* strickly speaking -20 should trigger the exception here but if it gets rewritten to where it don't, reporting NOT charged is fine. */
                 Assert.IsFalse(testme.CheckForCallPermissionAndCharge("TEST", -20));
             });
  

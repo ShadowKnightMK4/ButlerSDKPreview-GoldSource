@@ -305,7 +305,10 @@ namespace UnitTests.CurrentTests
         {
             ApiKeyRateLimiter Test = new();
             Test.AddService("TEST", 2000, 100, 100, ButlerApiLimitType.PerCall, false);
-            Assert.IsTrue(Test.CheckForCallPermission("TEST", 0));
+            Assert.ThrowsException<ApiKeyRateLimiter.InventoryOrSeviceCostException>(() =>
+            {
+                Assert.IsFalse(Test.CheckForCallPermission("TEST", 0));
+            });
         }
 
         [TestMethod]

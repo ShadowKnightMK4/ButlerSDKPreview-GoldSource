@@ -24,6 +24,9 @@ namespace ButlerSDK.Providers.Gemini
         public Task<ListModelsResponse> ListModelsAsync(int? pageSize = null, string? pageToken = null, CancellationToken cancellationToken = default(CancellationToken));
     }
 
+    /// <summary>
+    /// What this class does is take a (api google object) or b (vertex google object), store it and then present a common front end for the Gemini Provider.
+    /// </summary>
     internal class SchrodingerCat: ISchrodingerCat
     {
         readonly VertexAI? _VertexMode;
@@ -68,12 +71,14 @@ namespace ButlerSDK.Providers.Gemini
 
         public SchrodingerCat(GoogleAi ApikeyMode)
         {
+            ArgumentNullException.ThrowIfNull(ApikeyMode, nameof(ApikeyMode));
             this._ApiKeyMode = ApikeyMode;
             this._VertexMode = null;
         }
 
         public SchrodingerCat(VertexAI Vertex)
         {
+            ArgumentNullException.ThrowIfNull(Vertex, nameof(Vertex));
             this._ApiKeyMode = null;
             this._VertexMode = Vertex;
         }

@@ -14,7 +14,18 @@ ButlerSDK.Core
 ButlerSDK.ChatCollections
 ButlerSDK.Tools.DiscovererTool
 ButlerSDK.ApiRateLimiter
-ButlerSdk.Toos.Bench
+ButlerSdk.Tools.Bench
+
+ButlerTool_LocalFile_Load in ButlerSDK.Core
+* BUG FIX: Ensured the JsonDocument creation in validate tool is disposed of now if not owned. 
+* BUG FIX: ButlerTool_LocalFile_Load  should now support ANSI format as it sugggests to the LLM.
+
+
+ButlerTool_DiscoverTools in ButlerSDK.Tools.DiscovererTool
+* BUG FIX: In the original version Remove was known as winddown. I had updated the json to use 'Remove' BUT forgot to update the check which used 'winddown'. Results are once you load a tool, you're stuck.  This should fix that issue.
+* ADJUGMENT/BUG FIX: In the validate function, adjusted to ensure any jsondocument it allocates is disposed properly. Unit tests exist now to help keep this proven
+
+dev note: Been holding off on changing discover cause quite frankly i accidently nuget published as non preview.  However finding a bug in here makes updating worth it.
 
 ButlerToolBench in ButlerSDK.Tools.Bench
 * BUG FIX: Ensured the JsonDocument creation when running a tool should dispose now.
@@ -31,9 +42,9 @@ Dev note: If you wering postive numbers in inventory. This update shouldn't effe
 
 
 TrenchCoatChatCollection in ButlerSDK.ChatCollections
-BUG FIX/Difference: Trenchcoat now acrually correctly skips aging out context window if set to zero or Unlimited.  Still only trims on adding a message to context.
+BUG FIX/Difference: Trenchcoat now acrually does what it's documented as - 0 or special Unlimited Const now skips aging out context window correctly.  Still only trims on adding a message to context.
 Originally: Trenchcoat set to age out to 0 woulld happily remove ALL messages added, when added.
-Dev note: It's commented and documented as 0 or special value Unlimited means NO trim. The code however was trim all the things that aren't tool prompts or system prompts. 
+Dev note: It's commented and documented as 0 or special value Unlimited means NO trim. The code however was trim all the things that aren't tool prompts or system prompt if 0.
 
 
 ButlerTool_RestAPI_GetPublicIP in ButlerSDK.Core

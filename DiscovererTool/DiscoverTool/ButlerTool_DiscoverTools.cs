@@ -340,7 +340,7 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
                                 }
                                 break;
                             }
-                        case "winddown":
+                        case "Remove":
                             {
                                 DiscMode = DiscoverModes.RemoveMode;
                                 if (args.RootElement.TryGetProperty("RemoveList", out outdoc))
@@ -472,102 +472,125 @@ namespace ButlerSDK.ToolSupport.DiscoverTool
             bool IsJson = false;
             JsonDocument? doc=null;
             JsonElement OutputDocument;
-
-            if (FunctionParse is not null)
+            try
             {
-                doc = FunctionParse;
-            }
-            else
-            {
-                if (Call is not null)
+                if (FunctionParse is not null)
                 {
-                    if (Call.FunctionArguments is null)
-                    {
-                        IsJson = false;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            doc = JsonDocument.Parse(Call.FunctionArguments);
-                            IsJson = true;
-                        }
-                        catch (JsonException)
-                        {
-                            IsJson = false;
-                        }
-                    }
+                    doc = FunctionParse;
+                    IsJson = true;
                 }
                 else
                 {
+                    if (Call is not null)
+                    {
+                        if (Call.FunctionArguments is null)
+                        {
+                            IsJson = false;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                doc = JsonDocument.Parse(Call.FunctionArguments);
+                                IsJson = true;
+                            }
+                            catch (JsonException)
+                            {
+                                IsJson = false;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                if ((!IsJson) || (doc == null))
+                {/* [ 'Search', 'Activate', Remove].*/
                     return false;
                 }
-            }
-  
-            if ( (!IsJson) || (doc == null))
-            {/* [ 'Search', 'Activate', Remove].*/
-                return false;
-            }
-            switch ((doc.RootElement.GetProperty("action").ToString()))
-            {
-                case "Search": DiscMode = DiscoverModes.SearchMode; break;
-                case "Activate": DiscMode = DiscoverModes.ActivateMode;  break;
-                case "Remove": DiscMode = DiscoverModes.RemoveMode; break;
-                default: return false;
-            }
-            /* 
-    ""SearchTerm"": {
-      ""type"": ""array"",
-      ""items"": { ""type"": ""string"" },
-      ""description"": ""General format: [ 'term1', 'term2' ]. Only used in 'Search' mode.""
-    },
-    ""ActivateList"": {
-      ""type"": ""array"",
-      ""items"": { ""type"": ""string"" },
-      ""description"": ""List of tool names to make available for you. Only used in 'Activate' mode.""
-    },
-    ""RemoveList"": {
-      ""type"": ""array"",
-      ""items"": { ""type"": ""string"" },
-      ""description"": ""Tools to take offline for you. call Activate to use them again. Only used in 'Remove' mode""
-    }*/
-            switch (DiscMode)
-            {
-                case  DiscoverModes.SearchMode:
-                    {
-                        string query = string.Empty;
-                        if (doc.RootElement.TryGetProperty("SearchTerm", out OutputDocument))
-                        {
-                            query = OutputDocument.ToString();
-                        }
-                        
-                        if (!validate_tool_name_list(query)) return false;
-
-                    }
-                    break;
-                case DiscoverModes.ActivateMode:
-                    {
-                        string tool_engage = string.Empty;
-                        if (doc.RootElement.TryGetProperty("ActivateList", out OutputDocument))
-                        {
-                            tool_engage = OutputDocument.ToString();
-                        }
-                        if (!validate_tool_name_list(tool_engage)) return false;
-                    }
-                    break;
-                case DiscoverModes.RemoveMode:
-                    {
-                        string tool_disposal = string.Empty;
-                        if (doc.RootElement.TryGetProperty("RemoveList", out OutputDocument))
-                        {
-                            tool_disposal = OutputDocument.ToString();
-                        }
-                        if (!validate_tool_name_list(tool_disposal)) return false;
-                    }
-                    break;
+                switch ((doc.RootElement.GetProperty("action").ToString()))
+                {
+                    case "Search": DiscMode = DiscoverModes.SearchMode; break;
+                    case "Activate": DiscMode = DiscoverModes.ActivateMode; break;
+                    case "Remove": DiscMode = DiscoverModes.RemoveMode; break;
                     default: return false;
+                }
+                /* 
+        ""SearchTerm"": {
+          ""type"": ""array"",
+          ""items"": { ""type"": ""string"" },
+          ""description"": ""General format: [ 'term1', 'term2' ]. Only used in 'Search' mode.""
+        },
+        ""ActivateList"": {
+          ""type"": ""array"",
+          ""items"": { ""type"": ""string"" },
+          ""description"": ""List of tool names to make available for you. Only used in 'Activate' mode.""
+        },
+        ""RemoveList"": {
+          ""type"": ""array"",
+          ""items"": { ""type"": ""string"" },
+          ""description"": ""Tools to take offline for you. call Activate to use them again. Only used in 'Remove' mode""
+        }*/
+                switch (DiscMode)
+                {
+                    case DiscoverModes.SearchMode:
+                        {
+                            string query = string.Empty;
+                            if (doc.RootElement.TryGetProperty("SearchTerm", out OutputDocument))
+                            {
+                                query = OutputDocument.ToString();
+                            }
+
+                            if (!validate_tool_name_list(query)) return false;
+
+                        }
+                        break;
+                    case DiscoverModes.ActivateMode:
+                        {
+                            string tool_engage = string.Empty;
+                            if (doc.RootElement.TryGetProperty("ActivateList", out OutputDocument))
+                            {
+                                tool_engage = OutputDocument.ToString();
+                            }
+                            if (!validate_tool_name_list(tool_engage)) return false;
+                        }
+                        break;
+                    case DiscoverModes.RemoveMode:
+                        {
+                            string tool_disposal = string.Empty;
+                            if (doc.RootElement.TryGetProperty("RemoveList", out OutputDocument))
+                            {
+                                tool_disposal = OutputDocument.ToString();
+                            }
+                            if (!validate_tool_name_list(tool_disposal)) return false;
+                        }
+                        break;
+                    default: return false;
+                }
+                return true;
             }
-            return true;
+            finally
+            {
+                if (doc != null) // was document alocated
+                {
+                     if (FunctionParse != null) // non owned jsondoc?
+                    {
+                        if (FunctionParse != doc) // and it's not the same as our allocated document?
+                        {
+                            doc.Dispose();
+                            doc = null;
+                        }
+                    }
+                    else
+                    {
+                        // a bit clunky but if FunctionParse is null, it should be garunteed that this is alloocated
+                        doc?.Dispose();
+                        doc = null;
+                    }
+                }
+            }
         }
 
         public override string GetToolJsonString()

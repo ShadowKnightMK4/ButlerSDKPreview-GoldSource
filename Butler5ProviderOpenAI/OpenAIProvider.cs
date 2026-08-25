@@ -768,7 +768,7 @@ namespace ButlerSDK.Providers.OpenAI
       
         public ButlerOpenAiProvider(ILogger<ButlerOpenAiProvider>? Logging=null,ILoggerFactory? LogFactory=null): this(null, Logging, LogFactory)
         {
-           
+         
         }
 
         public ButlerOpenAiProvider(Uri? EndPoint, ILogger<IButlerLLMProvider>? Logging = null, ILoggerFactory? LogFactory = null)

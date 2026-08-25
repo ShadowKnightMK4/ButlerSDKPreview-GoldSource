@@ -23,11 +23,17 @@ namespace ButlerSDK.Tools
     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
     public class ButlerTool_LocalFile_Load : ButlerToolBase
     {
+        /// <summary>
+        /// file to be read is bigger than the limit
+        /// </summary>
         class FileIsGiganteException : Exception
         {
             public FileIsGiganteException(string message) : base(message) { }   
         }
 
+        /// <summary>
+        /// sandbox escape
+        /// </summary>
         class SandBoxException: IOException
         {
             public SandBoxException(string message): base(message)
@@ -655,6 +661,42 @@ namespace ButlerSDK.Tools
                 return new ButlerChatToolResultMessage(id, $"Requested path {target} is outside the sanbox. Unable to load data with this tool.");
             }
             ButlerChatToolResultMessage ret;
+            bool error = false;
+            byte[] data_as_byte;
+            string data;
+            try
+            {
+                data_as_byte = that.TOC_TOU_ReadText(sani_target);
+                switch (format)
+                {
+                    case format_ansi_text:
+                        data = Encoding.ASCII.GetString(data_as_byte);
+                        break;
+                    case format_unicode_text:
+                        data = Encoding.UTF8.GetString(data_as_byte);
+                        break;
+                    default:
+                        data = $"Error: This mode is not supported: \"{format}\"";
+                        break;
+                }
+            }
+            catch (FileIsGiganteException)
+            {
+                data = $"Error: The file is larger than the enviromental limit to load with this tool";
+                error = true;
+            }
+            catch (SandBoxException)
+            {
+                data = $"Error attempt to load form a path that's not allowed!";
+                error = true;
+            }
+            catch (IOException e)
+            {
+                data = $"Error: This call failed. Exception data \"{e.Message}\".";
+                error = true;
+            }
+            return new ButlerChatToolResultMessage(id, data);
+            /*
             switch (format)
             {
                 case format_ansi_text:
@@ -679,7 +721,7 @@ namespace ButlerSDK.Tools
                         return ret;
                     }
                 default: return new ButlerChatToolResultMessage(id, $"Error: This mode is not supported: \"{format}\"");
-            }
+            }*/
         }
 
         static ButlerChatToolResultMessage? SaveMode(string target, string format, string data, string? id, ButlerTool_LocalFile_Load that)
@@ -769,7 +811,7 @@ namespace ButlerSDK.Tools
             }
         }
 
-        string[] ValidFormat = { "utf8-txt" };
+        string[] ValidFormat = { "utf8-txt" , "format_ansi_text" };
         string[] ValidBaseAction = { "load", "save" };
         bool ValidateBaseActionWord(string action)
         {
@@ -783,44 +825,66 @@ namespace ButlerSDK.Tools
         public override bool ValidateToolArgs(ButlerChatToolCallMessage? Call, JsonDocument? Doc)
         {
             JsonDocument FunctionCheck=null!;
-            if (Doc != null)
+            try
             {
-                FunctionCheck = Doc;
-            }
-            else
-            {
-                if (Call is not null)
+                if (Doc != null)
                 {
-                    if (Call.FunctionArguments is not null)
+                    FunctionCheck = Doc;
+                }
+                else
+                {
+                    if (Call is not null)
                     {
-                        FunctionCheck = JsonDocument.Parse(Call.FunctionArguments);
+                        if (Call.FunctionArguments is not null)
+                        {
+                            FunctionCheck = JsonDocument.Parse(Call.FunctionArguments);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+
+                }
+
+                string baseaction = FunctionCheck.RootElement.GetProperty("baseaction").ToString();
+                string targetfile = FunctionCheck.RootElement.GetProperty("target").ToString();
+                string formatdiff = FunctionCheck.RootElement.GetProperty("formatdiff").ToString();
+
+                if (string.IsNullOrEmpty(baseaction))
+                    return false;
+                else
+                {
+                    if (!ValidateBaseActionWord(baseaction)) return false;
+                }
+
+                if (string.IsNullOrEmpty(targetfile)) return false;
+
+                if (string.IsNullOrEmpty(formatdiff)) return false;
+                if (!ValidateFormat(formatdiff)) return false;
+
+                return true;
+            }
+            finally
+            {
+                if (Doc != null) // was document alocated
+                {
+                    if (FunctionCheck != null) // non owned jsondoc?
+                    {
+                        if (FunctionCheck != Doc) // and it's not the same as our allocated document?
+                        {
+                            Doc.Dispose();
+                            Doc = null;
+                        }
                     }
                     else
                     {
-                        return false;
+                        // a bit clunky but if FunctionParse is null, it should be garunteed that this is alloocated
+                        Doc.Dispose();
+                        Doc = null;
                     }
                 }
-                
             }
-
-            string baseaction = FunctionCheck.RootElement.GetProperty("baseaction").ToString();
-            string targetfile = FunctionCheck.RootElement.GetProperty("target").ToString();
-            string formatdiff = FunctionCheck.RootElement.GetProperty("formatdiff").ToString();
-
-            if (string.IsNullOrEmpty(baseaction))
-                return false;
-            else
-            {
-                if (!ValidateBaseActionWord(baseaction)) return false;
-            }
-
-            if (string.IsNullOrEmpty(targetfile)) return false;
-
-            if (string.IsNullOrEmpty(formatdiff)) return false;
-            if (!ValidateFormat(formatdiff)) return false;
-
-            return true;
-            
         }
     }
 }

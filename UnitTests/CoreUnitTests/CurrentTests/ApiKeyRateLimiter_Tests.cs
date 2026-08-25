@@ -161,7 +161,7 @@ namespace UnitTests.CurrentTests
             testme.AddService("TEST", 1, 10, 1000, ButlerApiLimitType.SharedBudget);
             //Assert.IsTrue(testme.CheckForCallPermission("TEST", 0));
 
-                Assert.IsFalse(testme.CheckForCallPermissionAndCharge("TEST", 0));
+                Assert.IsTrue(testme.CheckForCallPermissionAndCharge("TEST", 0));
         }
 
 

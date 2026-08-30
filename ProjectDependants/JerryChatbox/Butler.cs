@@ -426,9 +426,22 @@ namespace ButlerSDK.Core
         /// <remarks>THIS CLASS will use that passed in the constructor earlier for post processing </remarks>
         public override ButlerChatFinishReason? StreamResponse(ChatMessageStreamHandler Handler, bool SkipAddingLLMResponse = false)
         {
-            var task = StreamResponseAsync(Handler, this.PostProcessing, SkipAddingLLMResponse, default).ConfigureAwait(false).GetAwaiter().GetResult();
 
-            return task;
+
+            var task = StreamResponseAsync(Handler, this.PostProcessing, SkipAddingLLMResponse, default);
+
+            task.Wait();
+            if (task.Result is null)
+                return null;
+            else
+            {
+                return task.Result;
+            }
+              
+             
+
+
+            
         }
 
 

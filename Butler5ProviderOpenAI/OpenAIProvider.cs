@@ -878,6 +878,10 @@ namespace ButlerSDK.Providers.OpenAI
                 this._factory?.LogError("{Provider} could not find model {model} to create chat client.",  nameof(ButlerOpenAiProvider), model );
                 throw new ModuleNotFoundException(model);
             }
+            if (PPR is null)
+            {
+                PPR = DefaultOpenAiProvider.Instance;
+            }
             return new ButlerOpenAiChatClient(client,this, PPR);
         }
 
@@ -977,6 +981,59 @@ namespace ButlerSDK.Providers.OpenAI
 
     }
 
+    
+    /// <summary>
+    /// Looks like a backend change or (Ollama got more strict) requires smooshing providers. If you don't specifiy
+    /// </summary>
+    internal class DefaultOpenAiProvider : IButlerChatPreprocessor
+    {
+        public static readonly DefaultOpenAiProvider Instance = new DefaultOpenAiProvider();
+        public IList<ButlerChatMessage> PreprocessMessages(IList<ButlerChatMessage> messages)
+        {
+            /* so i think i'm gonna take the list at face value 
+             * a backend of ollama says you, sys prompts must be message 0.
+             * BTw while this is in the openai project, when it works, it's gonna be 
+             * MOVED TO OLLAMA
+             */
+            var ret = new List<ButlerChatMessage>();
+            var sys_ret = new List<ButlerChatMessage>();
+            for (int i = 0; i < messages.Count;i++)
+            {
+                if  ( (messages[i] is ButlerSystemChatMessage) || (messages[i].Role == ButlerChatMessageRole.System))
+                {
+                    sys_ret.Add(messages[i]); 
+                }
+                else
+                {
+                    ret.Add(messages[i]);
+                }
+            }
+            if (sys_ret.Count == 0)
+            {
+                return ret;
+            }
+            else
+            {
+                if (sys_ret.Count == 1)
+                {
+                    ret.Insert(0, sys_ret[0]);
+                }
+                else
+                {
+                    string contents = string.Empty;
+                    for (int i = 0; i < sys_ret.Count; i++)
+                    {
+                        contents += sys_ret[i].GetCombinedText();
+                    }
+                    ButlerSystemChatMessage x = new ButlerSystemChatMessage(contents);
+                    x.Role = ButlerChatMessageRole.System;
+                    ret.Insert(0, x);
+                }
+                return ret;
+            }
+        }
+    }
+
 
     public class ButlerOpenAiCollectionResult<T> : IButlerCollectionResult<ButlerStreamingChatCompletionUpdate>
     {
@@ -1038,6 +1095,7 @@ namespace ButlerSDK.Providers.OpenAI
             ArgumentNullException.ThrowIfNull(x);
             MyClient = x.GetChatClient(Model);
             this.ProviderSource = Source;
+            this.PPR = DefaultOpenAiProvider.Instance;
         }
 
         internal ButlerOpenAiChatClient(ChatClient myClient, IButlerLLMProvider Source, IButlerChatPreprocessor? PPR)

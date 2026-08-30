@@ -10,33 +10,48 @@ using ButlerSDK.Providers.OpenAI.Ollama;
 using ButlerToolContract.DataTypes;
 using SecureStringHelper;
 
-namespace TheWorks
+namespace TheWorks.GladosTest
 {
     internal static class OllamaTest
     {
+        public static void GladDosMode(InMemoryApiKey? Handler)
+        {
+            var common = CommonGroundGladosTest.CreateOllamaProvider();
+
+            CommonGroundGladosTest.GladosMode(common, "Ollama Provider", "GEMINI", CommonGroundGladosTest.OLLAMA_MODEL_TEST, Handler);
+        }
         const string llama_drama = "NO_LLAMA_KEY";
         /// <summary>
         /// Run the test here
         /// </summary>
-        public static void GladosMode()
+        public static void GladosModeOld(InMemoryApiKey? Handler)
         {
-            Console.WriteLine("Starting Ollama test mode");
+            GUI.WriteGeneralLine("\r\n\r\nStarting Ollama test mode");
 
-            var keys = new InMemoryApiKey();
-            keys.AddKey(llama_drama, llama_drama);
-
-            var try_crypt= keys.ResolveKey(llama_drama);
-            if (try_crypt is null)
+            InMemoryApiKey keys;
+            if (Handler is null)
             {
-                UnhappyPath.Fail($"Stored fake api key {llama_drama} in {keys.GetType().Name} did not succeed. Resolve Key Returned null", new InvalidDataException());
-            }
-            var detry = try_crypt!.DecryptString();
-            if (detry != llama_drama)
-            {
-                UnhappyPath.Fail($"Stored fake api key {llama_drama} in {keys.GetType().Name} did not succeed. Resolve value Returned didn't match stored  value", new InvalidDataException());
-            }
-            Console.WriteLine($"Success in storing ${llama_drama} in {keys.GetType().Name} and later getting it back!");
+                keys = new InMemoryApiKey();
+                keys.AddKey(llama_drama, llama_drama);
 
+
+                var try_crypt = keys.ResolveKey(llama_drama);
+                if (try_crypt is null)
+                {
+                    UnhappyPath.Fail($"Stored fake api key {llama_drama} in {keys.GetType().Name} did not succeed. Resolve Key Returned null", new InvalidDataException());
+                }
+                var detry = try_crypt!.DecryptString();
+                if (detry != llama_drama)
+                {
+                    UnhappyPath.Fail($"Stored fake api key {llama_drama} in {keys.GetType().Name} did not succeed. Resolve value Returned didn't match stored  value", new InvalidDataException());
+                }
+                Console.WriteLine($"Success in storing ${llama_drama} in {keys.GetType().Name} and later getting it back!");
+            }
+            else
+            {
+                Console.WriteLine("Reusing existing handler");
+                keys = Handler;
+            }
 
 
             var Prov = new OllamaOpenAiProvider(null); // use defaultl local hard coded path

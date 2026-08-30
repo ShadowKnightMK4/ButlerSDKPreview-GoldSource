@@ -15,6 +15,11 @@ ButlerSDK.ChatCollections
 ButlerSDK.Tools.DiscovererTool
 ButlerSDK.ApiRateLimiter
 ButlerSdk.Tools.Bench
+ButlerSdk.Providers.Openai
+
+
+Butler Openai provider
+TODO: * system prompts get filtered to top now instead of say as need
 
 ButlerTool_LocalFile_Load in ButlerSDK.Core
 * BUG FIX: Ensured the JsonDocument creation in validate tool is disposed of now if not owned. 

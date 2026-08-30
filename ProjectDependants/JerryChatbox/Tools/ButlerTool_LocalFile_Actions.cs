@@ -660,7 +660,6 @@ namespace ButlerSDK.Tools
             {
                 return new ButlerChatToolResultMessage(id, $"Requested path {target} is outside the sanbox. Unable to load data with this tool.");
             }
-            ButlerChatToolResultMessage ret;
             bool error = false;
             byte[] data_as_byte;
             string data;
@@ -682,20 +681,27 @@ namespace ButlerSDK.Tools
             }
             catch (FileIsGiganteException)
             {
-                data = $"Error: The file is larger than the enviromental limit to load with this tool";
+                data = $"The file is larger than the enviromental limit to load with this tool";
                 error = true;
             }
             catch (SandBoxException)
             {
-                data = $"Error attempt to load form a path that's not allowed!";
+                data = $"attempt to load form a path that's not allowed!";
                 error = true;
             }
             catch (IOException e)
             {
-                data = $"Error: This call failed. Exception data \"{e.Message}\".";
+                data = $"This call failed. Exception data \"{e.Message}\".";
                 error = true;
             }
-            return new ButlerChatToolResultMessage(id, data);
+            if (!error)
+            {
+                return new ButlerChatToolResultMessage(id, data);
+            }
+            else
+            {
+                return new ButlerChatToolResultMessage(id, $"Error: {data}");
+            }
             /*
             switch (format)
             {

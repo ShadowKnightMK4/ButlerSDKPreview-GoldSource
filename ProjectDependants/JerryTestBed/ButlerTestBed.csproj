@@ -11,7 +11,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
-    <ProjectReference Include="..\..\Butler5GeminiVerfixProvider\ButlerSDK.Provider.Gemini.Vertex.csproj" />
     <ProjectReference Include="..\..\Butler5ProviderGemini\ButlerSDK.Provider.Gemini.csproj" />
     <ProjectReference Include="..\..\Butler5ProviderOllama\ButlerSDK.Provider.OpenAI.Ollama.csproj" />
     <ProjectReference Include="..\..\Butler5ProviderOpenAI\ButlerSDK.Provider.OpenAI.csproj" />

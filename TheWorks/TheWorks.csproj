@@ -12,7 +12,6 @@
     <ProjectReference Include="..\ApiKeyVaultCreation\ApiKeyVaultCreation.csproj" />
     <ProjectReference Include="..\ApiRateLimiter\ButlerSDK.ApiRateLimiter.csproj" />
     <ProjectReference Include="..\BasicToolStarterClass\ButlerSDK.Tools.ButlerToolBase.csproj" />
-    <ProjectReference Include="..\Butler5GeminiVerfixProvider\ButlerSDK.Provider.Gemini.Vertex.csproj" />
     <ProjectReference Include="..\Butler5ProviderGemini\ButlerSDK.Provider.Gemini.csproj" />
     <ProjectReference Include="..\Butler5ProviderOllama\ButlerSDK.Provider.OpenAI.Ollama.csproj" />
     <ProjectReference Include="..\Butler5ProviderOpenAI\ButlerSDK.Provider.OpenAI.csproj" />

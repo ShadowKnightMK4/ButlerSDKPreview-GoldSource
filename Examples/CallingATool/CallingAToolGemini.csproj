@@ -10,8 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Butler5ProviderGemini\ButlerSDK.Provider.Gemini.csproj" />
-    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\ProviderWrappers\ButlerSDK.Provider.Gemini\ButlerSDK.Provider.Gemini.csproj" />
   </ItemGroup>
 
 </Project>

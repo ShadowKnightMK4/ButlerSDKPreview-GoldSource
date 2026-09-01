@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <IsPackable>true</IsPackable>
+	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\ApiKeyHandling\ButlerSDK.ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+		<ProjectReference Include="..\ButlerSDK.ChatCollections\ButlerSDK.ChatCollections.csproj" />
+		<ProjectReference Include="..\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
+		<ProjectReference Include="..\Tools\ButlerSDK.Tools.Bench\ButlerSDK.Tools.Bench.csproj" />
+		<ProjectReference Include="..\Tools\ButlerSDK.Tools.ToolSurface\ButlerSDK.Tools.ToolSurface.csproj" />
+	</ItemGroup>
+
+</Project>

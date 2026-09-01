@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MSTest" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.DiscovererTool\ButlerSDK.Tools.DiscovererTool.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.ToolSurface\ButlerSDK.Tools.ToolSurface.csproj" />
+    <ProjectReference Include="..\UnitTestDataTypes\UnitTestDataTypes.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+  </ItemGroup>
+
+</Project>

@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\CommonProtocol\ButlerSDK.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

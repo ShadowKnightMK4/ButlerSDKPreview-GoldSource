@@ -9,10 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
-    <ProjectReference Include="..\..\ButlerBaseInternal\ButlerSDK.ChatController.csproj" />
-    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" />
-    <ProjectReference Include="..\..\VirtualTool\ButlerSDK.Tools.VirtualTool.csproj" />
+    <ProjectReference Include="..\..\Components\ApiKeyHandling\ButlerSDK.ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.ChatController\ButlerSDK.ChatController.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.VirtualTool\ButlerSDK.Tools.VirtualTool.csproj" />
   </ItemGroup>
 
 </Project>

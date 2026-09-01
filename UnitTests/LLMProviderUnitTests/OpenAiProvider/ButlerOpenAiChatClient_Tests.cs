@@ -20,7 +20,7 @@ namespace UnitTests.Provider.OpenAI
             Console.WriteLine("This test uses a dummy key. It only tests that the provider can return a chat client instance sucessfully");
             SecureString Dummy = new();
             Dummy.AssignStringThenReadOnly("THIS API KEY DOES NOT MATTER") ;
-            var Provider = new ButlerSDK.Providers.OpenAI.ButlerOpenAiProvider();
+            var Provider = new ButlerOpenAiProvider();
             Provider.Initialize(Dummy);
             Assert.IsNotNull(Provider);
             var Client = Provider.GetChatClient("DOESNOTMATTER", Provider.DefaultOptions, null);

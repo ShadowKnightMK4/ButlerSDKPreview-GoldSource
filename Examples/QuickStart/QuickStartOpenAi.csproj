@@ -10,7 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Butler5ProviderOpenAI\ButlerSDK.Provider.OpenAI.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\ProviderWrappers\ButlerSDK.Provider.OpenAI\ButlerSDK.Provider.OpenAI.csproj" />
   </ItemGroup>
 
 </Project>

@@ -26,9 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
-    <ProjectReference Include="..\..\ButlerToolBench\ButlerSDK.Tools.Bench.csproj" />
-    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\ApiKeyHandling\ButlerSDK.ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.Bench\ButlerSDK.Tools.Bench.csproj" />
     <ProjectReference Include="..\Butler5ProviderMock\Butler5ProviderMock.csproj" />
     <ProjectReference Include="..\UnitTestDataTypes\UnitTestDataTypes.csproj" />
   </ItemGroup>

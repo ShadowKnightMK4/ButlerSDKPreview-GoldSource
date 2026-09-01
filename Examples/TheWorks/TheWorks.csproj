@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Components\ApiKeyHandling\ButlerSDK.ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.ChatCollections\ButlerSDK.ChatCollections.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\ProviderWrappers\ButlerSDK.Provider.Gemini\ButlerSDK.Provider.Gemini.csproj" />
+    <ProjectReference Include="..\..\Components\ProviderWrappers\ButlerSDK.Provider.OpenAI.Ollama\ButlerSDK.Provider.OpenAI.Ollama.csproj" />
+    <ProjectReference Include="..\..\Components\ProviderWrappers\ButlerSDK.Provider.OpenAI\ButlerSDK.Provider.OpenAI.csproj" />
+  </ItemGroup>
+
+</Project>

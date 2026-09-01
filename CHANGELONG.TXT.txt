@@ -1,15 +1,14 @@
-🚀 DEVNOTE for pending update. Until released as tagged release these changes are not final:
-Planning to add VertexAI support for the Gemini Provider and a new provider (ala the OllamaShim) to let devs use it easy.
-Gemini Provider will likly gain some extra constructors to let the dev just inject the code
-new interface in the gemini provider, an internal one.
+
+🚀 Release Notes: ButlerSDK v1.2.5-preview - A Bushel of Bugs Squashed and more
+
+This release contains roughly 30 bug fixes and needed changed uncovered while developing and testing the Vertex AI provider.
+Note The Vertex AI (Gemini) provider is NOT in this release. I want to confirm working before its in main branch.
+The normal Gemini provider however IS, with some adjustments to prep for it's use in VertexAI variant.
+Also the folder structure of the source code has been adjusted to hopefully make it easier for others and myself to nagivate.
 
 
 
-🚀 Release Notes: ButlerSDK v1.2.1-preview - a bushel of bugs squashed.
-
-Note: these bug fixes origianted in the VertexAI branch. 
-
-This effects the projects in the SDK:
+This affects the projects in the SDK:
 ButlerSDK.Core
 ButlerSDK.ChatCollections
 ButlerSDK.Tools.DiscovererTool
@@ -18,97 +17,105 @@ ButlerSdk.Tools.Bench
 ButlerSdk.Providers.Openai
 
 
-Butler Openai provider
-TODO: * system prompts get filtered to top now instead of say as need
+ButlerOpenAiProvider in ButlerSdk.Providers.Openai
+* ADJUSTMENT: If the OpenAI provider does not get a PPR (chat preprocessor passed on Provider creation, it supplies a required internal one that filters system prompts to always be message 0 by combining them. This is directly because of BUG FIX below.
+* BUG FIX: It seems like system prompts at different spots other than 0 (for example my TheWorks program), will now cause exceptions in OpenAI provider/Ollama one. Also, I give a positive shoutout for Ollama team providing a good error message showing the actual problem when the exception triggered!
+
+Dev Note: There's probably a small penalty for the internal default PPR, if you don't want that, please supply a pass through PPR in your code.  
+It is recommended to *not* disable sorting system prompts to message 0. But if you want to go on that route.
+1. Be advised TrenchCoat (default chat handler) and some of the injected messages by tool specific messages in Butler's chat session object are placed in System Prompt role - you'll need to bring your own chat handler.
+2. After you solve 1., The underlying NuGets that the OpenAI / Ollama provider uses forwards in OpenAI protocol. If OpenAI protocol says no system prompts anywhere other than message 0, you'll likely have a bad time if you don't follow that.
+
+
 
 ButlerTool_LocalFile_Load in ButlerSDK.Core
-* BUG FIX: Ensured the JsonDocument creation in validate tool is disposed of now if not owned. 
-* BUG FIX: ButlerTool_LocalFile_Load  should now support ANSI format as it sugggests to the LLM.
+* BUG FIX: Ensured the JsonDocument creation in ValidateToolArgs() is disposed of now if not owned. 
+* BUG FIX: ButlerTool_LocalFile_Load  should now support ANSI format as it sugggests to the LLM. Part of the mode select forgot to include it.
 
 
 ButlerTool_DiscoverTools in ButlerSDK.Tools.DiscovererTool
-* BUG FIX: In the original version Remove was known as winddown. I had updated the json to use 'Remove' BUT forgot to update the check which used 'winddown'. Results are once you load a tool, you're stuck.  This should fix that issue.
-* ADJUGMENT/BUG FIX: In the validate function, adjusted to ensure any jsondocument it allocates is disposed properly. Unit tests exist now to help keep this proven
+* BUG FIX: In the original version Remove was known as 'winddown'. I had updated the tool’s Json description that the LLM is sent to use 'Remove' BUT forgot to update the check which *still* used 'winddown'.  The result of this bug is in older versions once you load a tool it’s not going to be unloaded by the discoverer when the LLM requests. This should fix that issue.
+* ADJUGMENT/BUG FIX: In the validate function, adjusted to ensure any JsonDocument it allocates is disposed properly. Unit tests exist now to help keep this proven
 
-dev note: Been holding off on changing discover cause quite frankly i accidently nuget published as non preview.  However finding a bug in here makes updating worth it.
+dev note: Been holding off on changing discover cause quite frankly I accidently marked the NuGet published as non-preview.  However, finding a bug in here makes updating worth it.
 
 ButlerToolBench in ButlerSDK.Tools.Bench
-* BUG FIX: Ensured the JsonDocument creation when running a tool should dispose now.
+* BUG FIX: Ensured the JsonDocument creation when running a tool should dispose of now.
 
 ApiKeyRateLimiter in ButlerSDK.ApiRateLimiter
-* BUG FIX:Remote race condition chance plugged in CheckForCallPermissionAndCharge(). Sync object is now locked (because we're updating the in memory data) before testing for existance.
-* ADJUSTMENT: For the ButlerApiLimitType.PerCall (Inventory) limit, the system was changed to not allow attempting checking if 0 inventory is afforded. You must use a postiive number.
-* ADJUSTMENT: Due to the above, CheckForCallPermission() will return false if asking if a PerCall service will live thru charging 0 inventory.
-* ADJUSTMENT: Due to the above, CheckForCallPermissionAndCharge() is in a spot. It will charge the call if it's deamed allowed.
-* ADJUSTMENT: For **NON** ButlerApiLimitType.PerCall limites (currently SharedBuget or no limit) - you can still pass 0 uneffected.
+* BUG FIX: A remotely possible race condition chance plugged in CheckForCallPermissionAndCharge(). Sync object is now locked (because we're updating the in-memory data) before testing for existence of the service in the code.
+* BREAKING ADJUSTMENT: For the ButlerApiLimitType.PerCall (Inventory) limit, the system was changed TO NOT ALLOW attempting to check if 0 inventory is afforded. You must use a positive number.
+* BREAKING ADJUSTMENT: Due to the above, CheckForCallPermission() will return false if asking if a PerCall service will live through charging 0 inventory.
+* BREAKING ADJUSTMENT: Due to the above, CheckForCallPermissionAndCharge() is in a weird by predictable spot. It will charge the call if it's deemed allowed by the code that checks if a call is allowed.
+* BREAKING ADJUSTMENT: For **NON** ButlerApiLimitType.PerCall limits (currently SharedBuget or no limit) - you can still pass 0 unaffected.
 
 
-Dev note: If you wering postive numbers in inventory. This update shouldn't effect you. Negative inventory is blanket no already. 0 is out of bounds in ButlerApiLimitType.PerCall limit.
+Dev note: If you were using normal positive numbers in inventory. This update shouldn't affect you. Negative inventory is already NOT allowed. 0 is out of bounds in ButlerApiLimitType.PerCall limit.
 
 
 TrenchCoatChatCollection in ButlerSDK.ChatCollections
-BUG FIX/Difference: Trenchcoat now acrually does what it's documented as - 0 or special Unlimited Const now skips aging out context window correctly.  Still only trims on adding a message to context.
-Originally: Trenchcoat set to age out to 0 woulld happily remove ALL messages added, when added.
-Dev note: It's commented and documented as 0 or special value Unlimited means NO trim. The code however was trim all the things that aren't tool prompts or system prompt if 0.
+* BUG FIX: Trenchcoat now actually does what it's documented as - 0 or special Unlimited Const now skips aging out context window correctly.  Still only trims on adding a message to context.
+* ORIGINALLY: Trenchcoat set to age out to 0 would happily remove ALL messages added, when added. The result is you're not keeping any messages, never in the sliding context window. This 
+
+dev note: It's commented and documented as 0 or special value Unlimited (TrenchCoatChatCollection.UnlimitedContextWindow) means NO trim. The code however was trim all the things that aren't tool prompts or system prompt if 0.
 
 
 ButlerTool_RestAPI_GetPublicIP in ButlerSDK.Core
-* Adjustment/Bug fix: ButlerTool_RestAPI_GetPublicIP should be less likely to lock up. It plays nicer in the sync bridge to it's async code if context gets captured. That sync async bridge code is likely standard for tools in the future.
-* Adjustment/Bug fix In the interst of minimal freezing ButlerTool_RestAPI_GetPublicIP has a default limit of 300ms for the Htpp request to the endpoint to go thru. Default is 300ms
-* New feature: For customization reasons you can set a specific HtppReqestHandler and set arbitrary timeout limit in an ButlerTool_RestAPI_GetPublicIP subclass.
-* Change: ButlerTool_RestAPI_GetPublicIP  first attempts to connect to "https://api64.ipify.org/" then "https://api.ipify.org".
-* Change:  In a first, this tool's version string is now "1.1.0" instead of "YES". System still doesn't worry about version info for tools.
-* Change: With the tool requiring zero arguments, The tool no longer cares or validates the JsonDocument arg - long as has it has one - such as NoJsonArg const.
+* ADJUSTMENT/BUG FIX: ButlerTool_RestAPI_GetPublicIP should be less likely to lock up. It plays nicer in the sync bridge to its async code if context gets captured. That sync async bridge code is likely standard for my tools in the future.
+* ADJUSTMENT/BUG FIX In the interest of minimal freezing ButlerTool_RestAPI_GetPublicIP has a default limit of 300ms for the HTTP requests to the endpoint to go thru and back before it’s treated as a problem. 
+* NEW FEATURE: For customization reasons you can set a specific HttpReqestHandler and set arbitrary timeout limit in a ButlerTool_RestAPI_GetPublicIP subclass.
+* CHANGE: ButlerTool_RestAPI_GetPublicIP  first attempts to connect to "https://api64.ipify.org/" then "https://api.ipify.org".
+* CHANGE:  In a first, this tool's version string is now "1.1.0" instead of "YES". System still doesn't worry about the info version for tools.
+* CHANGE: With the tool requiring zero arguments, it no longer cares or validates the JsonDocument arg - long as has it has one - such as NoJsonArg const.
+
 
 
 Dev notes for the tool changes/fix:
-
 I needed testing for the class without internet so that's why the injectable http handler came from. The custom timeout was free real estate and came too as a bonus.
-The https://api64.ipify.org/ first from my understanding works for *both* IPv4 and IPv6 networking situations. "https://api.ipify.org" works on IPv4 only. I'm figuring
-the request trying one that works for IPv4 & IPv6 reducines the likely hood of needing to make a 2nd request (such as in situations where IPV6 does not work?
+The “https://api64.ipify.org/” first from my understanding works for *both* IPv4 and IPv6 networking situations. "https://api.ipify.org" works on IPv4 only. I'm figuring the request trying one that works for IPv4 & IPv6 reduces the likelihood of needing to make a 2nd request (such as in situations where IPV6 does not work).
 
-Originally the sync path had possiblity of deadlocking if context was captured. Some work in the lab
-and an AI helping me understand synchornization context - has yielded unit tests where the old code
-would dead lock and the replacement code didn't.
+Originally the sync path had possibility of deadlocking if context was captured. Some work in the lab and an AI helping me understand sync context was useful. This has yielded unit tests where the old code would dead lock and the replacement code didn't.
 
 
-Development inpact: For the consumer side there shouldn't really be much if any difference. Tool gives the dev more
-customization to play with, and has a bit of redudency to ideally let IPV6 only networks work with the tool.
+Developer Impact: For the consumer side there shouldn't really be much if any difference. Tool gives the dev more customization to play with, and has a bit of redundancy to ideally let IPV6 only networks work with the tool.
 
 
 ButlerTool_RestAPI_GetPublicHolidays in ButlerSDK.Core
-* BUG FIX: The Holiday tool uses the same async over sync battern as the GetPubIP tool. Has a unit test too.
+* BUG FIX: The Holiday tool uses the same async over sync pattern as the GetPubIP tool. Has a unit test too.
 * BUG FIX: Twas a case of a valid year having the validate logic go nope! Fix and unit test added.
 * BUG FIX: Twas a case of negative year triggering an unwanted exception in the parsing logic. Nope.
-* Adjustment: The tool will no longer return null if error but a error message.
-* Adjustment: The tool will not even send request if the year passed is less than 1
-Adjustment: Guessing the old URI was out of date. It now uses "https://nagerholidays.com/api/v4/Holidays/{countrycode}/{year}/" instead and plugs the arugments into that URI after strictly validating them
-Adjustment: The tool will timeout after a default of 1 second. To customize - subclass it and update the protected TimeSpan in the subclass.
+* BUG FIX/ADUSTMENT: Guessing the old URI was out of date. It now uses "https://nagerholidays.com/api/v4/Holidays/{countrycode}/{year}/" instead and plugs the arguments into that URI after strictly validating them
+* ADJUSTMENT: The tool will no longer return null if error but an error message.
+* ADJUSTMENT: The tool will not even send requests if the year passed is less than 1
+* ADJUSTMENT: The tool will time out after a default of 1 second. To customize - subclass it and update the protected TimeSpan in the subclass.
 
-Developer inpact: For the consumer. You should be getting more error messages if a problem happened. and the new uri should restore the tool to working order.
+Developer impact: For the consumer. You should be getting more error messages if a problem happens. and the new Uri should restore the tool to working order.
 
 
 PassThruPostProcessing  in ButlerSDK.Core
-* Adjustment: The remiedial turn function now actually is a stub rather than NotImplementedException(). In the normal chat flow, this routine should actually never be reached.
-* Dev Input: Seemed like a better idea at the time and logic suggestions a pass thru do nothing remedial shouldn't throw if it's caleld.
+* ADJUSTMENT: The remedial turn function now actually is a stub rather than NotImplementedException(). In the normal chat flow, this routine should never be reached. If you happen to run a custom chat session object -this should act to prevent an unexpected exception if calling the remedial turn,
+
+Dev note: Seemed like a better idea at the time and logic suggestions a pass through do nothing remedial shouldn't throw if it's called.
 
 
 ButlerTool_DeviceAPI_GetLocalDateTime in ButlerSDK.Core
-*BUG FIX. Fixed possible unhandled exception regarding weird formating .NET can't format. 
-*Adjustment: If the LLM passes an unknown/unexpected format that throws exception, it will first attempt to fall back to the set 'DefaultPattern' protected variable and if that ALSO throws an exception 'FullDateTimePattern' hard coded default.
-* Small performance adjustment. If the tool detects no spaces, it skips splitting an argument as it parses input.
-* Memory leak fix: JsonDocument is now disposed if owned in parsing and validating
+* BUG FIX. Fixed possible unhandled exception regarding weird formatting .NET can't format. 
+* BUG FIX: JsonDocument is now disposed of if owned in parsing and validating
+* ADJUSTMENT: If the LLM passes an unknown/unexpected format that throws exception, it will first attempt to fall back to the set 'DefaultPattern' protected variable and if that ALSO throws an exception 'FullDateTimePattern' hard coded default.
+* Small performance adjustment. If the tool detects no space, it skips splitting an argument as it parses input.
 
-Dev Input: some bug fix and adjustments in what I thought was a finished class. You can customize it by subclassing *simmilar to the GetPublicIP one
+
+Dev Input: some bug fix and adjustments in what I thought was a finished class. You can customize it by subclassing it - like the GetPublicIP one
 
 ButlerTool_DeviceApi_ScratchPad
-* Memory leak fix: JsonDocument is now disposed if owned in parsing and validating
-Dev Note: this tool is on the docs to get an adjustment aimed to encourage [local] models to write plans better. How - i dont know yet.
+* BUG FIX: JsonDocument is now disposed of if owned in parsing and validating
+Dev Note: this tool is on the board to get an adjustment aimed at encouraging [local] models to write plans better. How to do this, is currently unknown to me.
 
 
-Timepunch (Demo/test harness)
-ExoticPrompt is now actually used isntead of general when running it.
+TimePunch (Demo/test harness)
+ExoticPrompt is now actually used instead of general when running it.
 Updated output to match what's under the hood slightly (passthru vs tool use)
+
 
 
 🚀 Release Notes: ButlerSDK v1.2.0-preview (The Zero-Trust I/O Update )

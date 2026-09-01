@@ -1,12 +1,11 @@
-﻿using ButlerSDK.Tools;
-using ButlerSDK.Providers.OpenAI.Ollama;
-
-using ButlerToolContract.DataTypes;
-using ButlerSDK.Debugging;
+﻿using ButlerSDK.ApiKeyMgr;
 using ButlerSDK.ButlerPostProcessing;
 using ButlerSDK.Core;
+using ButlerSDK.Debugging;
+using ButlerSDK.Providers.OpenAI.Ollama;
+using ButlerSDK.Tools;
+using ButlerToolContract.DataTypes;
 using System.Reflection;
-using ButlerSDK.ApiKeyMgr;
 
 
 //[assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]

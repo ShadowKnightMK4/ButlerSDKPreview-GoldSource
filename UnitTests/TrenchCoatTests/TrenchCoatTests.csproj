@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core\ButlerSDK.Core.csproj" />
   </ItemGroup>
 
 </Project>

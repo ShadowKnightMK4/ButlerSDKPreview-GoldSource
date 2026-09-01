@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.17.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Components\ApiKeyHandling\ButlerSDK.ApiKeyMgr.WindowsKeyMgr\ButlerSDK.ApiKeyMgr.WindowsKeyMgr.csproj" />
+    <ProjectReference Include="..\..\Components\ApiKeyHandling\ButlerSDK.ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\Components\ApiKeyHandling\ButlerSDK.ApiRateLimiter\ButlerSDK.ApiRateLimiter.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.ChatCollections\ButlerSDK.ChatCollections.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.ChatController\ButlerSDK.ChatController.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Tools.ButlerToolBase\ButlerSDK.Tools.ButlerToolBase.csproj" />
+    <ProjectReference Include="..\..\Components\ProviderWrappers\ButlerSDK.Provider.Gemini\ButlerSDK.Provider.Gemini.csproj" />
+    <ProjectReference Include="..\..\Components\ProviderWrappers\ButlerSDK.Provider.OpenAI.Ollama\ButlerSDK.Provider.OpenAI.Ollama.csproj" />
+    <ProjectReference Include="..\..\Components\ProviderWrappers\ButlerSDK.Provider.OpenAI\ButlerSDK.Provider.OpenAI.csproj" />
+    <ProjectReference Include="..\..\Components\Support\ButlerSDK.SecureStringHelper\ButlerSDK.SecureStringHelper.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.Bench\ButlerSDK.Tools.Bench.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.ButlerSystemToolBase\ButlerSDK.Tools.ButlerSystemToolBase.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.DiscovererTool\ButlerSDK.Tools.DiscovererTool.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.ExternProcessLauncher.Network.Windows\ButlerSDK.Tools.ExternProcessLauncher.Network.Windows.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.ExternProcessLauncher\ButlerSDK.Tools.ExternProcessLauncher.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.Network\ButlerSDK.Tools.Network.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.Resolver\ButlerSDK.Tools.Resolver.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.ToolSurface\ButlerSDK.Tools.ToolSurface.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\ButlerSDK.Tools.VirtualTool\ButlerSDK.Tools.VirtualTool.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\HeavyTools\ButlerSDK.Tools.AzureMaps\ButlerSDK.Tools.AzureMaps.csproj" />
+    <ProjectReference Include="..\..\Components\Tools\HeavyTools\ButlerSDK.Tools.WebBrowserTool\ButlerSDK.Tools.WebBrowserTool.csproj" />
+  </ItemGroup>
+
+
+</Project>

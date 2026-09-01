@@ -1,0 +1,7 @@
+UnitTests     ===> go here for the Unit Test Projects and Data types for ButlerSDK
+TestResults   ===> go here for Test results from runs
+NugetProjects ===> the projects that build to nugets get said nuget dropped here.
+Examples      ===> See code on Using ButlerSDK
+doc	      ===> documentation and supporting reading for this project.
+Components    ===> Projects that get built into the library itself.
+CLITools      ===> Projects that are Windows EXE build (currently just the DPAPI vault creator thing)

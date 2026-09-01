@@ -11,9 +11,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
-    <ProjectReference Include="..\..\ApiKeys\ApiKeys.csproj" />
-    <ProjectReference Include="..\..\Butler5ProviderOllama\ButlerSDK.Provider.OpenAI.Ollama.csproj" />
-    <ProjectReference Include="..\..\ProjectDependants\JerryChatbox\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\ApiKeyHandling\ApiKeys\ApiKeys.csproj" />
+    <ProjectReference Include="..\..\Components\ApiKeyHandling\ButlerSDK.ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Components\ButlerSDK.Core\ButlerSDK.Core.csproj" />
+    <ProjectReference Include="..\..\Components\ProviderWrappers\ButlerSDK.Provider.OpenAI.Ollama\ButlerSDK.Provider.OpenAI.Ollama.csproj" />
   </ItemGroup>
 
 </Project>

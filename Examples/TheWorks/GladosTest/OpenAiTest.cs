@@ -26,7 +26,7 @@ namespace TheWorks.GladosTest
         {
             public static void GladDosMode(InMemoryApiKey? Handler)
             {
-                var common = CommonGroundGladosTest.CreateGeminiProvider(CommonGroundGladosTest.LoadKey("OPENAI"));
+                var common = CommonGroundGladosTest.CreateOpenAIProvider(CommonGroundGladosTest.LoadKey("OPENAI"));
 
                 CommonGroundGladosTest.GladosMode(common, "OpenAI Provider", "OPENAI", CommonGroundGladosTest.OPENAI_MODEL_TEST, Handler);
             }

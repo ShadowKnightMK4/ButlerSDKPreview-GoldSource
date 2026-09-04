@@ -2,7 +2,7 @@
   "profiles": {
     "TheWorks": {
       "commandName": "Project",
-      "commandLineArgs": "-crossref_tests -filesource_openai T:\\OPENAI.key.txt -filesource_gemini T:\\GEMINI.key.txt"
+      "commandLineArgs": "-crossref_tests -filesource_openai T:\\openai.key.txt -filesource_gemini T:\\GEMINI.key.txt"
     }
   }
 }

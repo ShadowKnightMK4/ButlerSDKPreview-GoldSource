@@ -49,7 +49,7 @@ namespace TheWorks
 
         static void test_dispatch()
         {
-            /*
+            
             if (FinalMode.HasFlag(TestingMode.OllamaConnect) || FinalMode.HasFlag(TestingMode.All))
             {
                 OllamaTest.GladDosMode(Database.KeyCollection);
@@ -63,7 +63,7 @@ namespace TheWorks
             if (FinalMode.HasFlag(TestingMode.OpenaiConntext) || FinalMode.HasFlag(TestingMode.All))
             {
                 OpenAiTest.GladDosMode(Database.KeyCollection);
-            }*/
+            }
             if (FinalMode.HasFlag(TestingMode.CrossRefTest) || (FinalMode.HasFlag(TestingMode.All)))
             {
                 CommonGroundGladosTest.Gladdos_CrossLLMTest(Database.KeyCollection);

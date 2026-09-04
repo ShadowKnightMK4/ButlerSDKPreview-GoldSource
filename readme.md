@@ -10,9 +10,10 @@ ButlerSDK aims to transform Large Language Models (LLMs) from unpredictable chat
 
 
 --- What's new from v1.2.5 preview?
-Mostly bug fixes and adjustments for various needs.
+Mostly bug fixes and adjustments for various needs including some resource update. You'll see the folders in the source a little more
+easy to navigate (ideally). 
 
-The change log goes over a lot of things. It's recommanded to keep version nugets matched.
+The change log goes over 20-30 Fixes and Adjustments. It's recommended to keep version NuGets matched.
 
 
 -- IMPORTANT Note:

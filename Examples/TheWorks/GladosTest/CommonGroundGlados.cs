@@ -125,7 +125,7 @@ namespace TheWorks.GladosTest
 
             GUI.WriteGeneralLine("BEGINING CROSS PLATFORM TEST!");
             GUI.WriteGeneralLine("This is testing how trench coat chat collection works thru a single instance between\r\n Three seperate instances of providers. ");
-            GUI.WriteGeneralLine("It does do individual butler (chat sesion) instances. They happen to share a common chat collection (the trench coat)");
+            GUI.WriteGeneralLine("It does do individual butler (chat session) instances. They happen to share a common chat collection (the trench coat)");
 
 
             CommonGroundGladosTest.OLLAMA_MODEL_TEST = "qwen:0.5b";// just what i happen to installed

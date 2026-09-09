@@ -26,7 +26,7 @@ namespace ButlerSDK.Debugging
 
         }
 
-        public void WriteString(string Value, bool AtEnd=true)
+        public virtual void WriteString(string Value, bool AtEnd=true)
         {
 
         }
@@ -41,7 +41,7 @@ namespace ButlerSDK.Debugging
             Target.Write(data);
             Target.Flush();
         }
-        public void BeginLog()
+        public virtual void BeginLog()
         {
    
              WriteString(this.Target, @$"---  Beginning Tap ----  {DateTimeOffset.Now.ToString("o")} \r\n");
@@ -57,11 +57,11 @@ namespace ButlerSDK.Debugging
             }
         }*/
 
-        public void LogString(string msg)
+        public virtual void LogString(string msg)
         {
             WriteString(this.Target, msg);
         }
-        public void LogStreamingUpdate( ButlerStreamingChatCompletionUpdate Update)
+        public virtual void LogStreamingUpdate( ButlerStreamingChatCompletionUpdate Update)
         {
             string? str;
             if (Update.IsEmpty())
@@ -71,7 +71,7 @@ namespace ButlerSDK.Debugging
             str = JsonSerializer.Serialize<ButlerStreamingChatCompletionUpdate>(Update, new JsonSerializerOptions() { WriteIndented = true });
             WriteString(this.Target, str);
         }
-        public void LogStreamingPart(ButlerChatStreamingPart Part)
+        public virtual void LogStreamingPart(ButlerChatStreamingPart Part)
         {
             string? str;
             str = JsonSerializer.Serialize<ButlerChatStreamingPart>(Part, new JsonSerializerOptions() { WriteIndented = true });
@@ -79,7 +79,7 @@ namespace ButlerSDK.Debugging
             WriteString(this.Target, str);
 
         }
-        public void Dump(IList<ButlerChatMessage> list)
+        public virtual void Dump(IList<ButlerChatMessage> list)
         {
          
             

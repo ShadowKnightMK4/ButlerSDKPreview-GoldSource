@@ -12,10 +12,35 @@ using System.Reflection;
 
 namespace TimePunchApp
 {
+
+    /// <summary>
+    /// I just want the messages.
+    /// </summary>
+    class MessageStringTap : ButlerTap
+    {
+        public MessageStringTap(Stream Target) : base(Target)
+        {
+        }
+
+        public override void LogStreamingPart(ButlerChatStreamingPart Part)
+        {
+            return;
+            base.LogStreamingPart(Part);
+        }
+
+        public override void LogStreamingUpdate(ButlerStreamingChatCompletionUpdate Update)
+        {
+            return;
+            base.LogStreamingUpdate(Update);
+        }
+
+        
+    }
     internal class Program
     {
         static int count = 25;
-        static string goldfish = "hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M"; // the model we'll be testing. Goldfish is an affectionate name.
+        //static string goldfish = "hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M"; // the model we'll be testing. Goldfish is an affectionate name.
+        static string goldfish = "hf.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q2_K";
         //static string gold2 = "sombra-mistal:latest";
         static string gold2 = goldfish; 
         static bool HandlerChatMessageStreamHandler(ButlerStreamingChatCompletionUpdate content, IList<ButlerChatMessage> msg)
@@ -61,7 +86,8 @@ namespace TimePunchApp
             var testMe = new Butler(DevBuild, Llama, null, target, string.Empty);
 
 
-            testMe.DebugTap = new ButlerTap(File.OpenWrite(TargetOutput));
+            //testMe.DebugTap = new ButlerTap(File.OpenWrite(TargetOutput));
+            testMe.DebugTap = new MessageStringTap(File.OpenWrite(TargetOutput));
             testMe.DebugTap.LogString($"TEST TYPE::: {IdentifierLogType} \r\n");
             testMe.SetLogger(testMe.DebugTap);
             var time = new ButlerTool_DeviceAPI_GetLocalDateTime(DevBuild);

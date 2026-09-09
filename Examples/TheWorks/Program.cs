@@ -74,7 +74,7 @@ namespace TheWorks
         {
             preinit();
             Console.WriteLine("BEGINING BUTLERSDK the works test");
-            Console.WriteLine("The works is ment to test DOES THE CHAT THING WORK");
+            Console.WriteLine("The works is meant to test DOES THE CHAT THING WORK");
             
             for (int i = 0; i < args.Length; i++)
             {
@@ -92,7 +92,7 @@ namespace TheWorks
                             case KEY_SOURCE_GEMINI_ENV:
                                 {
                                     i++;
-                                    Console.WriteLine($"Sourcing GEMINI KEY From Enviroment variable: {args[i].ToLowerInvariant()}");
+                                    Console.WriteLine($"Sourcing GEMINI KEY From Environment variable: {args[i].ToLowerInvariant()}");
                                     try
                                     {
                                         Database.AddGeminiFromEnd(args[i].ToLowerInvariant());
@@ -100,7 +100,7 @@ namespace TheWorks
                                     catch (TheWorks.EmptyEnvKeyException e)
                                     {
                                         Console.WriteLine(e.Message);
-                                        Console.WriteLine("Errror: Unable to run Gemini Test");
+                                        Console.WriteLine("Error: Unable to run Gemini Test");
                                         Program.FinalMode = (TestingMode)(Program.FinalMode - TestingMode.GeminiConntext);
                                     }
                                     break;
@@ -108,7 +108,7 @@ namespace TheWorks
                             case KEY_SOURCE_OPENAI_ENV:
                                 {
                                     i++;
-                                    Console.WriteLine($"Sourcing OPENAI KEY From Enviroment variable: {args[i].ToLowerInvariant()}");
+                                    Console.WriteLine($"Sourcing OPENAI KEY From Environment variable: {args[i].ToLowerInvariant()}");
                                     Database.AddOpenAiFromEnv(args[i].ToLowerInvariant());
                                     break;
                                 }

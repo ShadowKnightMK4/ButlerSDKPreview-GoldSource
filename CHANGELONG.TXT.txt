@@ -1,4 +1,10 @@
 
+Change log post last release:
+The ButlerTap object is now virtual for most of the routines, making customization a bit easier.
+Spelling errors in the source code STRINGS (any spelling errors (if existant)) gonna be likely left alone OR documented here if breaking.
+Another way to put it, internal objects with spelling errors are up for fix, private objects too, no plans unless signifant justified of fixing any spell errors (if any) in public objects.
+
+
 🚀 Release Notes: ButlerSDK v1.2.5-preview - A Bushel of Bugs Squashed and more
 
 This release contains roughly 30 bug fixes and needed changed uncovered while developing and testing the Vertex AI provider.

@@ -9,7 +9,6 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using UnitTests.UnitTestingTools;
-using ButlerSDK.Tools;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CoreUnitTests.Calavera.ToolGenTests.ButlerTool_LocalFile_LoadTests

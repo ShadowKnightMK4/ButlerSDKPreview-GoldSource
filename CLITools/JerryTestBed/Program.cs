@@ -1,5 +1,7 @@
-﻿using ApiKeys;
+﻿using ApiKeyMgr;
+using ApiKeys;
 using Azure.Identity;
+using ButlerLLMProviderPlatform.Protocol;
 using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK.ButlerPostProcessing;
 using ButlerSDK.Core;
@@ -8,6 +10,7 @@ using ButlerSDK.Providers.Gemini;
 
 using ButlerSDK.Providers.OpenAI;
 using ButlerSDK.Tools;
+using ButlerSDK.ToolSupport;
 using ButlerToolContract.DataTypes;
 using GenerativeAI;
 using SecureStringHelper;
@@ -116,7 +119,6 @@ namespace ButlerTestBed
         }
         static async Task Main(string[] args)
         {
-
     
             if (args.Length == 0)
             {
@@ -190,6 +192,7 @@ that the tools may change depending on the chat as needed.
             //var testme = new ButlerSDK.ButlerPostProcessing(DevBuild, Llama, null, target, "GEMINI.KEY", null, null); 
 
             var testme = new Butler(DevBuild, OpenAi, null, target, "OPENAI.KEY", null, null);
+            
             // testme.
             //var testme = new ButlerSDK.ButlerPostProcessing(DevBuild, OpenAi, null, target, "OPENAI.KEY");
 

@@ -2,8 +2,28 @@
 Change log post last release:
 The ButlerTap object is now virtual for most of the routines, making customization a bit easier.
 Spelling errors in the source code STRINGS (any spelling errors (if existant)) gonna be likely left alone OR documented here if breaking.
-Another way to put it, internal objects with spelling errors are up for fix, private objects too, no plans unless signifant justified of fixing any spell errors (if any) in public objects.
+Another way to put it, internal objects with spelling errors are up for fix, private/internal objects too, no plans unless signifant justified of fixing any spell errors (if any) in public objects.
 
+Potential new Providers:
+
+VertexAI,   use the Google VertexAI for your enterpise control needs.
+Deep Seek,  users the OpenAI provider pointed to Deek Seek's mode.
+*Trenchcoat*,  a divient from the other providers and name not finalized.  Goal is let *this* one end up beeing a roater
+between select chat logs for other providers.
+
+On the dockets is IButlerChatCreationSupportedModels requiring IDisposable
+
+
+public class ToolResolverTelemetryStats
+{
+    public uint InPassingCount;
+    public uint CritPriorityCount;
+    public Dictionary<string, List<Exception>> ExceptionsCaught; <- the default resolver now locks an object when trying to use this to prevent TPL threading collections.
+    [TupleElementNames(new[] { "CallID", "Tool" })]
+    public IReadOnlyList<(string CallID, IButlerToolBaseInterface Tool)>? ToolsUsed;
+
+    public ToolResolverTelemetryStats();
+}
 
 🚀 Release Notes: ButlerSDK v1.2.5-preview - A Bushel of Bugs Squashed and more
 

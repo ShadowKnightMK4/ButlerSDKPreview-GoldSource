@@ -17,12 +17,41 @@ using ButlerSDK.Core;
 using ButlerLLMProviderPlatform.Protocol;
 using System.Security;
 using ButlerProtocolBase.ToolSecurity;
+using System.Collections;
+using System.Net.Http.Headers;
 
 
 namespace ButlerSDK.ToolSupport
 {
 
 
+    class BagTheList : IReadOnlyList<(string callID, ButlerToolContract.IButlerToolBaseInterface)>
+    {
+        ConcurrentBag<(string callID, ButlerToolContract.IButlerToolBaseInterface)> Walkme;
+        public BagTheList(ConcurrentBag<(string callID, ButlerToolContract.IButlerToolBaseInterface)> x)
+        {
+            Walkme = x;
+        }
+        public (string callID, IButlerToolBaseInterface) this[int index]
+        {
+            get
+            {
+                return Walkme.ElementAt(index);
+            }
+        }
+
+        public int Count => Walkme.Count;
+
+        public IEnumerator<(string callID, IButlerToolBaseInterface)> GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
 
     /*
      * The plan of the schedule is, any tools 
@@ -66,7 +95,7 @@ namespace ButlerSDK.ToolSupport
             /// <summary>
             /// Collection of any exceptions triggered by the tool while it ran.
             /// </summary>
-            public List<Exception> Failures = new();
+            public ConcurrentBag<Exception> Failures = new();
             public Thread? Self=null; // if we're running different thread ie spawned diff thread, this is us
             public ButlerChatToolCallMessage? Results;
             /// <summary>
@@ -78,6 +107,11 @@ namespace ButlerSDK.ToolSupport
             /// rider alone for specific providers
             /// </summary>
             public Dictionary<string, string> ProviderSpecific = new();
+
+            /// <summary>
+            /// Resolver locks() then when moving Exceptions and Provider specific
+            /// </summary>
+            public object SyncDataObject = new();
         }
         private ToolResolver() { }
         /// <summary>
@@ -287,11 +321,11 @@ namespace ButlerSDK.ToolSupport
             ArgumentNullException.ThrowIfNull(QueryToolKit, "The passed tool collection MUST Implement IButlerToolKitQueryAndGet interface in full");
             ArgumentNullException.ThrowIfNull(CallableToolKit, "The passed tool collection MUST Implement IButlerToolKitCallable interface in full");
 
-            List<(string CallID, IButlerToolBaseInterface ToolUsed)>? UsedTools=null;
+            ConcurrentBag<(string CallID, IButlerToolBaseInterface ToolUsed)>? UsedTools=null;
             if (Stats is not null)
             {
                 UsedTools = new();
-                Stats.ToolsUsed = UsedTools;
+                Stats.ToolsUsed = new BagTheList(UsedTools);
             }
             if ((Que.IsEmpty) && (!EmptyScheduleRunFine))
             {
@@ -389,7 +423,10 @@ namespace ButlerSDK.ToolSupport
                                 {
                                     Stats.CritPriorityCount++;
                                 }
-                                Stats.ExceptionsCaught[Entry.ID.ToString()] = new List<Exception>();
+                                lock (Stats)
+                                {
+                                    Stats.ExceptionsCaught[Entry.ID.ToString()] = new List<Exception>();
+                                }
                             }
 
 
@@ -407,13 +444,22 @@ namespace ButlerSDK.ToolSupport
                             {
                                 if (Stats is not null)
                                 {
-                                    Stats.ExceptionsCaught[Entry.ID.ToString()].AddRange(Entry.Failures);
+                                    lock (Stats)
+                                    {
+                                        Stats.ExceptionsCaught[Entry.ID.ToString()].AddRange(Entry.Failures);
+                                    }
                                 }
                                 // capture an exception> report
                                 if (Entry.Failures.Count > 0)
-                                    Entry.Results = new ButlerChatToolResultMessage(Entry.ID.ToString(), $"Tool Error: {Entry.Failures[Entry.Failures.Count - 1].Message}");
+                                {
+                                    // if sticking with list<> uncomment this 
+                                    //Entry.Results = new ButlerChatToolResultMessage(Entry.ID.ToString(), $"Tool Error: {Entry.Failures[Entry.Failures.Count - 1].Message}");
+                                    Entry.Results = new ButlerChatToolResultMessage(Entry.ID.ToString(), $"Tool Error: {Entry.Failures.Last().Message}");
+                                }
                                 else
+                                {
                                     Entry.Results = new ButlerChatToolResultMessage(Entry.ID.ToString(), $"Tool Error: {"The tool reported it did not have sucess."}");
+                                }
                             }
                         }
                         return Entry;

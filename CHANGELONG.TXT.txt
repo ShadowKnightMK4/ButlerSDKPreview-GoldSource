@@ -29,6 +29,13 @@ ButlerSdk.Tools.Bench
 When a tool said the json for the call (submitted by the bench runner) was invalid, the runner was forgetting to set message string in the butlerchatmessage,
 which was propergating to the openai provider to go exceptionally bad (triggered exception).
 
+ButlerSDK.Tools.Resolver
+The default result is hopefully more TPL friendly - had more than afew tool calls trigger in parell on openai provider side and the .net was complaining of
+sync errors. 
+
+The ToolUsed readonly list is now a ConcurrentBag in disuigse.
+
+
 Now adds a sync 
 
 🚀 Release Notes: ButlerSDK v1.2.5-preview - A Bushel of Bugs Squashed and more

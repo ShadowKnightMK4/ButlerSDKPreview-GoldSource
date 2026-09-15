@@ -19,6 +19,8 @@ using System.Security;
 using ButlerProtocolBase.ToolSecurity;
 using System.Collections;
 using System.Net.Http.Headers;
+using System.Diagnostics;
+using System.Linq.Expressions;
 
 
 namespace ButlerSDK.ToolSupport
@@ -44,7 +46,7 @@ namespace ButlerSDK.ToolSupport
 
         public IEnumerator<(string callID, IButlerToolBaseInterface)> GetEnumerator()
         {
-            throw new NotImplementedException();
+            return Walkme.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -58,6 +60,7 @@ namespace ButlerSDK.ToolSupport
      */
     public class ToolResolver: IButlerToolResolver
     {
+        
         /// <summary>
         /// This exception triggers by <see cref="ToolResolver"/> attempt to run schedule with no tools to run
         /// </summary>
@@ -104,7 +107,7 @@ namespace ButlerSDK.ToolSupport
             public bool IsEnPassant;
 
             /// <summary>
-            /// rider alone for specific providers
+            /// rider alone for specific providers. Ensure we lock (SyncDataObject) on touch.
             /// </summary>
             public Dictionary<string, string> ProviderSpecific = new();
 
@@ -383,6 +386,17 @@ namespace ButlerSDK.ToolSupport
                                     if (TargetTool is IButlerToolAsyncResolver TT)
                                     {
                                         result = await CallableToolKit.CallToolFunctionAsync(TargetTool, Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString());
+                                        if (result is null)
+                                        {
+                                            Debugger.Break();
+                                        }
+                                        else
+                                        {
+                                            if (result.Message is null)
+                                            {
+                                                Debugger.Break();
+                                            }
+                                        }
                                         if (result is not null)
                                         {
                                             ok = true;
@@ -395,6 +409,17 @@ namespace ButlerSDK.ToolSupport
                                     else
                                     {
                                         result = CallableToolKit.CallToolFunction(TargetTool, Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString(), out ok);
+                                        if (result is null)
+                                        {
+                                            Debugger.Break();
+                                        }
+                                        else
+                                        {
+                                            if (result.Message is null)
+                                            {
+                                                Debugger.Break();
+                                            }
+                                        }
                                     }
                                     if (Stats is not null)
                                     {
@@ -430,8 +455,17 @@ namespace ButlerSDK.ToolSupport
                             }
 
 
-
-
+                            if (result is null)
+                            {
+                                Debugger.Break();
+                            }
+                            else
+                            {
+                                if (result.Message is null)
+                                {
+                                    Debugger.Break();
+                                }
+                            }
 
 
 
@@ -439,6 +473,17 @@ namespace ButlerSDK.ToolSupport
                             if (ok)
                             {
                                 Entry.Results = result;
+                                if (result is null)
+                                {
+                                    Debugger.Break();
+                                }
+                                else
+                                {
+                                    if (result.Message is null)
+                                    {
+                                        Debugger.Break();
+                                    }
+                                }
                             }
                             else
                             {
@@ -460,6 +505,37 @@ namespace ButlerSDK.ToolSupport
                                 {
                                     Entry.Results = new ButlerChatToolResultMessage(Entry.ID.ToString(), $"Tool Error: {"The tool reported it did not have sucess."}");
                                 }
+
+                                if (result is null)
+                                {
+                                    Debugger.Break();
+                                }
+                                else
+                                {
+                                    if (result.Message is null)
+                                    {
+                                        Debugger.Break();
+                                    }
+                                }
+                            }
+                        }
+                        if (result is null)
+                        {
+                            Debugger.Break();
+                        }
+                        if (Entry.Results is null)
+                        {
+                            Debugger.Break();
+                        }
+                        if (result is null)
+                        {
+                            Debugger.Break();
+                        }
+                        else
+                        {
+                            if (result.Message is null)
+                            {
+                                Debugger.Break();
                             }
                         }
                         return Entry;
@@ -469,19 +545,28 @@ namespace ButlerSDK.ToolSupport
                 }
             }
 
-            // do the ye old await all. Is it perfect? Nope.
-            await Task.WhenAll(RunningRoles);
-  
-      
-
-
-            // move our resolved tools to the current pool.
-
-            for (int i = 0; i < RunningRoles.Count; i++)
+            if (RunningRoles is not null)
             {
+
+                // do the ye old await all. Is it perfect? Nope.
+                await Task.WhenAll(RunningRoles);
+
+
+
+
+                // move our resolved tools to the current pool.
+
+                for (int i = 0; i < RunningRoles.Count; i++)
                 {
-                    ResolvedTool.Add(RunningRoles[i].Result);
+                    {
+                        ToolTimeSlot x = RunningRoles[i].Result;
+                        ResolvedTool.Add(x);
+                    }
                 }
+            }
+            else
+            {
+                Console.WriteLine("RUNNING ROLE WAS NULL!");
             }
             
         
@@ -593,43 +678,84 @@ namespace ButlerSDK.ToolSupport
         public void PlaceInChatLog(IList<ButlerChatMessage> Messages, bool MarkAsTemp)
         {
             IButlerLLMProvider_SpecificToolExecutionPostCall? PostCall = Provider as IButlerLLMProvider_SpecificToolExecutionPostCall;
-
+            int i = -1;
             // our general plan matches OpenAI because of familiarity. This routine grabs the tool call and results from our ToolTime class and puts out a Tool Call and Tool Result message in the passed list
-            foreach (ToolTimeSlot tool in this.ResolvedTool)
+            //foreach (ToolTimeSlot tool in this.ResolvedTool)
+            for (i = 0; i < this.ResolvedTool.Count; i++)
             {
-                
-                
-                ButlerChatToolResultMessage? Result = (ButlerChatToolResultMessage?)tool.Results;
-                if (Result is not null)
-                {
-                    
-                    var callData = ButlerChatToolCallMessage.CreateFunctionToolCall(tool.ID.ToString(), tool.ToolName.ToString(), tool.ToolArgumentsPart.ToString());
-                    Messages.Add(callData);
-                    Result.Id = tool.ID.ToString();
-                    Messages.Add(Result);
-                    Result.Role = ButlerChatMessageRole.ToolResult;
-                    Result.ToolName = tool.ToolName.ToString();
-                    if (MarkAsTemp)
+                try {
+                    ToolTimeSlot tool = this.ResolvedTool.ElementAt(i);
+                    if (tool.Results is null)
                     {
-                        callData.IsTemporary = true;
-                        Result.IsTemporary = true;
+                        Debugger.Break();
                     }
-                    if (PostCall is not null)
+                    else
                     {
-                        PostCall.HandlerToolExecuteMarkup(tool.ProviderSpecific, Result);
-                        PostCall.HandlerToolExecuteRequestMarkup(tool.ProviderSpecific, callData);
+                        goto s;
+                        if (tool.Results.FunctionArguments is null)
+                        {
+                            Debugger.Break();
+                        }
+                        if (tool.Results.GetCombinedText() == null)
+                            Debugger.Break();
+                        if (tool.Results.Message is null)
+                            Debugger.Break();
+                    s:;
+                    }
+                    ButlerChatToolResultMessage? Result = (ButlerChatToolResultMessage?)tool.Results;
+                    if (Result is not null)
+                    {
+                        if (tool.ToolArgumentsPart is null)
+                        {
+                            Debugger.Break();
+                        }
+
+
+                        Console.WriteLine($"$CANARAY: {i}");
+                        Console.WriteLine("TOOL CALL DUMP STRING: CRASH HERE");
+                        Console.WriteLine($"tool.id = {tool.ID.ToString()}");
+                        Console.WriteLine($"tool.name = {tool.ToolName.ToString()}");
+                        Console.WriteLine($"too.toolargs = {tool.ToolArgumentsPart.ToString()}\r\n\r\n");
+
+                        var callData = ButlerChatToolCallMessage.CreateFunctionToolCall(tool.ID.ToString(), tool.ToolName.ToString(), tool.ToolArgumentsPart.ToString());
+                        Messages.Add(callData);
+                        Result.Id = tool.ID.ToString();
+                        Messages.Add(Result);
+                        Result.Role = ButlerChatMessageRole.ToolResult;
+                        Result.ToolName = tool.ToolName.ToString();
+                        if (MarkAsTemp)
+                        {
+                            callData.IsTemporary = true;
+                            Result.IsTemporary = true;
+                        }
+                        if (PostCall is not null)
+                        {
+                            PostCall.HandlerToolExecuteMarkup(tool.ProviderSpecific, Result);
+                            PostCall.HandlerToolExecuteRequestMarkup(tool.ProviderSpecific, callData);
+                        }
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Casting error.  PlaceInChatLog was not able to convert ButlerChatToolCallMessage to a ButlerChatToolReplyMessage");
                     }
                 }
-                else
+                catch (Exception x)
                 {
-                    throw new InvalidOperationException("Casting error.  PlaceInChatLog was not able to convert ButlerChatToolCallMessage to a ButlerChatToolReplyMessage");
+                    Console.WriteLine($"Canary value {i}. Exception is {x.ToString()}");
+                    Debugger.Break();
                 }
+
             }
-            this.ResolvedTool.Clear();
+
+            if (i != -1)
+            {
+                Console.WriteLine("TOOL CALL DUMP DONE");
+                this.ResolvedTool.Clear();
+            }
             return;
         }
 
-
+        
 
 
         public int ScheduledToolCount

@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Security;
 using ButlerProtocolBase.ToolSecurity;
 using System.Data.SqlTypes;
+using System.Diagnostics;
 
 
 namespace ButlerSDK.ToolSupport.Bench
@@ -509,7 +510,7 @@ namespace ButlerSDK.ToolSupport.Bench
 
         internal bool CallToolFunctionInternalPREPWORK(string? FunctionName, string? CallId, string? Arguments, IButlerToolBaseInterface? ForceUser, ref ButlerChatToolResultMessage? ErrorCode, ref IButlerToolBaseInterface? ToolRef)
         {
-
+            
             IButlerToolBaseInterface? Tool = null;
             if (string.IsNullOrEmpty(FunctionName) && (ForceUser is null))
             {
@@ -520,11 +521,12 @@ namespace ButlerSDK.ToolSupport.Bench
             {
                 ErrorCode = null;
                 // first check if we got an entry for the function we are calling
-
+                Console.Write(" TRY RESOLVING ToolName .....");
                 if (FunctionName is not null)
                 {
                     Tool = ChatToTool(FunctionName);
                 }
+                Console.WriteLine("....done!");
 
                 // nope, try subbing the one indicated with ForceUser
                 if (Tool is null)
@@ -532,10 +534,12 @@ namespace ButlerSDK.ToolSupport.Bench
                     if (ForceUser is not null)
                     {
                         Tool = ForceUser;
+                        Console.WriteLine("Tool name resolve failed. Fixed tool was passed!");
                         FunctionName = ForceUser.ToolName; // don't forget this, the code below assumes FunctionName is NOT NULL
                     }
                     else
                     {
+                        Console.WriteLine("Tool call not known. Exception incoming");
 
                         throw new ToolNotFoundException("Attempt to call unknown tool");
                     }
@@ -544,6 +548,7 @@ namespace ButlerSDK.ToolSupport.Bench
                 // still nope? Give up
                 if (Tool is null)
                 {
+                    Console.WriteLine("Tool blank. Exception incoming");
                     throw new ToolNotFoundException("Someone added a blank tool to the tool list.");
                 }
 
@@ -557,7 +562,9 @@ namespace ButlerSDK.ToolSupport.Bench
                 JsonDocument? shimdoc = null;
                 try
                 {
+                    Console.Write("JSON CONVERT....");
                     JsonArgs = JsonSerializer.SerializeToDocument(Arguments);
+                    Console.WriteLine("....done!");
                     if (JsonArgs.RootElement.ValueKind == JsonValueKind.String)
                     {
         
@@ -575,23 +582,29 @@ namespace ButlerSDK.ToolSupport.Bench
                         JsonArgs = shimdoc;
                         shimdoc = null;
                     }
+                    Console.Write("BEGIN Validate tool...");
                     if (Tool.ValidateToolArgs(null, JsonArgs))
                     {
+                        Console.WriteLine("....done!");
                         bool HasPermission = false;
 
                         if (Tool is IButlerCritPriorityTool)
                         {
+                            Console.WriteLine("Is crit tool.");
                             HasPermission = true;
                         }
                         if (Limiter is IApiKeyRateLimiterAtomicCharge atomicCharge)
                         {
+                            Console.Write("Checking if inventory ok....");
                             if (!HasPermission) // crit priority tool check sets to true, triggering skip
                             {
                                 HasPermission = atomicCharge.CheckForCallPermissionAndCharge(FunctionName!);
+                                Console.WriteLine("....done!");
                             }
                             // upper code already establishes the name of the function  is not null
                             if (!HasPermission)
                             {
+                                Console.WriteLine("Error. out of calls!");
                                 ErrorCode = new ButlerChatToolResultMessage(CallId, LimitExceeded);
                                 return false;
                             }
@@ -607,16 +620,23 @@ namespace ButlerSDK.ToolSupport.Bench
                                 {
                                     return Tool.ResolveMyTool(Arguments, CallId, null);
                                 }*/
+                                Console.WriteLine("Sucess call is supported (ApiRateLimiter)");
                                 return true;
                             }
                         }
                         else
                         {
+                            Console.Write("Checking if inventory ok....");
+
                             // legacy path. It's fine.
                             if (Tool is IButlerCritPriorityTool) // crit priority tools can be called as much as the LLM or the thing scheduling tools wants. Treat with care.
+                            {
                                 HasPermission = true;
+                                Console.WriteLine("....ool is crit tool. Always allowed");
+                            }
                             else
                             {
+                                Console.WriteLine("....done!");
                                 HasPermission = Limiter.CheckForCallPermission(FunctionName!);
                             }
                             // upper code already establishes the name of the function  is not null
@@ -627,6 +647,7 @@ namespace ButlerSDK.ToolSupport.Bench
                             }
                             else
                             {
+                                Console.WriteLine("Issuing charge (legacy)");
                                 Limiter.ChargeService(FunctionName!, 1);
 
                                 // the tole payed, go run it.
@@ -647,15 +668,20 @@ namespace ButlerSDK.ToolSupport.Bench
                     }
                     else
                     {
-
+                        Console.WriteLine("Tool call validation failure per tool");
                         var ret = new ButlerChatToolResultMessage(CallId, ToolValidateFailureArg, Arguments);
                         ret.ToolName = Tool.ToolName;
                         ErrorCode = ret;
+
+                        // load bearing assingment. Either ensure the constructor we use actually sets a message OR we assign.
+                        // Dear future reader *musical number* don't relete this until ensuring in abstractions, the code assigns a result message!
+                        ret.Message = ToolValidateFailureArg;
                         return false;
                     }
                 }
                 finally
                 {
+                  
                     if (JsonArgs != null)  JsonArgs.Dispose();
                     if (shimdoc != null) shimdoc.Dispose();
                 }
@@ -663,23 +689,64 @@ namespace ButlerSDK.ToolSupport.Bench
         }
         internal async Task<ButlerChatToolResultMessage?> CallToolFunctionInternalAsync(string? FunctionName, string? CallId, string Arguments, IButlerToolBaseInterface? ForceUser)
         {
-            ButlerChatToolResultMessage? err_reply = null;
-            IButlerToolBaseInterface? Tool = null;
-            if (CallToolFunctionInternalPREPWORK(FunctionName, CallId, Arguments, ForceUser,  ref err_reply, ref Tool))
+            ButlerChatToolResultMessage? ret = null;
+            try
             {
-                // the tole payed, go run it.
-                
-                if (Tool is IButlerToolAsyncResolver AsyncTool)
+                IButlerToolBaseInterface? Tool = null;
+                if (CallToolFunctionInternalPREPWORK(FunctionName, CallId, Arguments, ForceUser, ref ret, ref Tool))
                 {
-                    return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                    // the tole payed, go run it.
+
+                    if (Tool is IButlerToolAsyncResolver AsyncTool)
+                    {
+                        ret = await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                        if (ret is null)
+                        {
+                            Console.WriteLine("POST CALL ASYNC CALL WAS NULL");
+                            Debugger.Break();
+                        }
+                        else
+                            if (ret.Message is null)
+                            {
+                                Console.WriteLine("POST CALL ASYNC.Message was null");
+                                Debugger.Break();
+                            }
+                    }
+                    else
+                    {
+                        // the prepwork should return false, triggering this to never actually work.
+                        ret = Tool!.ResolveMyTool(Arguments, CallId, null);
+                        if (ret is null)
+                        {
+                            Console.WriteLine("POST CALL SYNC      CALL WAS NULL");
+                            Debugger.Break();
+                        }
+                        else
+                            if (ret.Message is null)
+                            {
+                                Console.WriteLine("POST CALL SYNC      CALL.Message was null");
+                                Debugger.Break();
+                            }
+                    }
                 }
                 else
                 {
-                    // the prepwork should return false, triggering this to never actually work.
-                    return Tool!.ResolveMyTool(Arguments, CallId, null);
+                    Console.WriteLine("TOOL CALL PREP WORK FAIL!");
                 }
             }
-            return err_reply;
+            finally
+            {
+                if (ret is null)
+                {
+                    Debugger.Break();
+                }
+                else
+                if (ret.Message is null)
+                {
+                    Debugger.Break();
+                }
+            }
+            return ret;
 
 
 
@@ -730,10 +797,17 @@ namespace ButlerSDK.ToolSupport.Bench
             var ret = await CallToolFunctionInternalAsync(null, CallID, Arguments, targetTool);
             if (ret is null)
             {
+                if (ret is null)
+                {
+                    Debugger.Break();
+                }
+                
                 return null;
             }
             else
             {
+                if (ret.Message is null)
+                    Debugger.Break();
                 return ret;
             }
         }

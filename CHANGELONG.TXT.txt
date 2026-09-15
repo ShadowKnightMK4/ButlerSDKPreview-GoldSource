@@ -1,5 +1,5 @@
 
-Change log post last release:
+Change log post last release. May be missing, inprogress or inaccurate:
 The ButlerTap object is now virtual for most of the routines, making customization a bit easier.
 Spelling errors in the source code STRINGS (any spelling errors (if existant)) gonna be likely left alone OR documented here if breaking.
 Another way to put it, internal objects with spelling errors are up for fix, private/internal objects too, no plans unless signifant justified of fixing any spell errors (if any) in public objects.
@@ -24,6 +24,12 @@ public class ToolResolverTelemetryStats
 
     public ToolResolverTelemetryStats();
 }
+
+ButlerSdk.Tools.Bench
+When a tool said the json for the call (submitted by the bench runner) was invalid, the runner was forgetting to set message string in the butlerchatmessage,
+which was propergating to the openai provider to go exceptionally bad (triggered exception).
+
+Now adds a sync 
 
 🚀 Release Notes: ButlerSDK v1.2.5-preview - A Bushel of Bugs Squashed and more
 

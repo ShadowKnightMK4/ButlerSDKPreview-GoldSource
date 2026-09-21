@@ -25,18 +25,40 @@ public class ToolResolverTelemetryStats
     public ToolResolverTelemetryStats();
 }
 
+Posible breaking change in 1.2.6.
+both providers (gemini tdb) , openai now translate reasoning effort.
+The abstraction now requires a reasoning effort in the interface
+
+
 ButlerSdk.Tools.Bench
-When a tool said the json for the call (submitted by the bench runner) was invalid, the runner was forgetting to set message string in the butlerchatmessage,
+BUG FIX: When a tool reported that passed json (ie validateTool()) was not infact an allowed called, error code forgot to set a non null return message,
+which which was triggering errors downstream. Hurray for stress test! Still needs a unit test to go *no more* in case someone removes the fix.
+
+
+dev note: When a tool said the json for the call (submitted by the bench runner) was invalid, the runner was forgetting to set message string in the butlerchatmessage,
 which was propergating to the openai provider to go exceptionally bad (triggered exception).
+
+change: Attempt to addding a tool into the tool bench that is a null instance will throw an argumentnullexception on add instead of later.
+
+new:  Default bench now has ILogger stuff. Yay!
+
+
 
 ButlerSDK.Tools.Resolver
 The default result is hopefully more TPL friendly - had more than afew tool calls trigger in parell on openai provider side and the .net was complaining of
 sync errors. 
 
-The ToolUsed readonly list is now a ConcurrentBag in disuigse.
+CHANGE: The ToolUsed (ToolResolverTelemetryStats) readonly list is now a ConcurrentBag in disuigse in the default runner.
+CHANGE: Default runner now actually locks {} when interacting with ExceptionsCaught in (ToolResolverTelemetryStats).
+NEW FEATURE: Default runner now has an adjustable upper limit of max tasks when executing parrel tool calls. Default is 6. You can adjust it in ToolResolver.MaxToolThreads.
+Note: the interface implementation does *not* require this feature. It's specific to the default used if a dev doesn't do their own.
 
 
-Now adds a sync 
+
+Dev note: Now adds a SephmoreSlim to limit spawned tasks. Default resolver is 6 tasks at a time to solve an LLM's parrell tools. Note while this is specific to  default
+resolver, you need not actually impement in your custom one (ie i'ts not part of the standard.
+
+
 
 🚀 Release Notes: ButlerSDK v1.2.5-preview - A Bushel of Bugs Squashed and more
 

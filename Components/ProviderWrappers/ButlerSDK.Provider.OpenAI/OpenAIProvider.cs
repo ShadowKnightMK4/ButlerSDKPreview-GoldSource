@@ -6,9 +6,11 @@ using Microsoft.Extensions.Logging;
 using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Models;
+using OpenAI.Responses;
 using SecureStringHelper;
 using System.ClientModel;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Security;
@@ -87,6 +89,31 @@ namespace ButlerSDK.Providers.OpenAI
             //ret.StoredOutputEnabled = X.StoredOutputEnabled;
             ret.Temperature = X.Temperature;
 
+#pragma warning disable OPENAI001
+            if (X.ReasoningEffortLevel == ChatReasoningEffortLevel.High)
+            {
+                ret.ReasoningEffort = ButlerThinkingEffortChoice.Max;
+            } else if (X.ReasoningEffortLevel ==  ChatReasoningEffortLevel.Medium)
+            {
+                ret.ReasoningEffort = ButlerThinkingEffortChoice.Medium;
+            } else if (X.ReasoningEffortLevel == ChatReasoningEffortLevel.Low)
+            {
+                ret.ReasoningEffort = ButlerThinkingEffortChoice.Low;
+            } else if (X.ReasoningEffortLevel ==  ChatReasoningEffortLevel.None)
+            {
+                ret.ReasoningEffort = ButlerThinkingEffortChoice.None;
+            } else if (X.ReasoningEffortLevel == null)
+            {
+                ret.ReasoningEffort = null;
+            }
+            else
+            {
+                throw new InvalidDataException("Unknown reasoning effort. Accepted values are {High, medium, low, none} if openai has added more, this provider for butler needs update");
+            }
+
+  
+
+#pragma warning enable OPENAI001
             var Nonce = ChatToolChoice.CreateNoneChoice();
             var Auto = ChatToolChoice.CreateAutoChoice();
             var Required = ChatToolChoice.CreateRequiredChoice();
@@ -109,6 +136,8 @@ namespace ButlerSDK.Providers.OpenAI
                 throw new InvalidOperationException("Unexpected tool choice in the filter between Butler's tool collection and OpeAI's once. Check TranslatorChatOption.  public static ButlerChatCompletionOptions TranslateFromProvider(ChatCompletionOptions X)");
             }
    
+
+
 
             //SeedToolConversion(X.Tools, ret.Tools);
             // the code works BUT the comment is here to warn future me/users
@@ -163,6 +192,34 @@ namespace ButlerSDK.Providers.OpenAI
                 case ButlerChatToolChoice.Auto: ret.ToolChoice = ChatToolChoice.CreateAutoChoice(); break;
                 case ButlerChatToolChoice.Required: ret.ToolChoice = ChatToolChoice.CreateRequiredChoice(); break;
             }
+
+#pragma warning disable OPENAI001
+            switch (Opts.ReasoningEffort)
+            {
+                case ButlerThinkingEffortChoice.Max:
+                case ButlerThinkingEffortChoice.High:
+                    ret.ReasoningEffortLevel = ChatReasoningEffortLevel.High;
+                    break;
+                case ButlerThinkingEffortChoice.Medium:
+                    ret.ReasoningEffortLevel = ChatReasoningEffortLevel.Medium;
+                    break;
+                case ButlerThinkingEffortChoice.Low:
+                    ret.ReasoningEffortLevel = ChatReasoningEffortLevel.Low;
+                    break;
+                case ButlerThinkingEffortChoice.None:
+                    ret.ReasoningEffortLevel = ChatReasoningEffortLevel.None;
+                    break;
+                default:
+                    throw new InvalidDataException("Unknown reasoning effort. Accepted values are {High, medium, low, none} if openai has added more, this provider for butler needs update");
+                    break;
+
+            }
+#pragma warning enable OPENAI001
+
+
+
+
+
 
             SeedToolConversionToProvider(Opts.Tools, ret.Tools);
             //ret.Tools.Clear();
@@ -346,6 +403,103 @@ namespace ButlerSDK.Providers.OpenAI
             return ret;
         }
     }
+
+    public static class TranslatorStreamingResponseUpdate
+    {
+        public static ButlerChatStreamingPart TranslatorFromProvider(ChatMessageContentPart part)
+        {
+            var ret = new ButlerChatStreamingPart();
+            ret.Text = part.Text;
+
+            switch (part.Kind)
+            {
+                case ChatMessageContentPartKind.Text: ret.Kind = ButlerChatMessagePartKind.Text; break;
+                case ChatMessageContentPartKind.Refusal: ret.Kind = ButlerChatMessagePartKind.Refusal; break;
+                case ChatMessageContentPartKind.Image: ret.Kind = ButlerChatMessagePartKind.Image; break;
+                default: Debugger.Break(); break;
+
+            }
+
+            /*
+             * DEAR FUTURE SELF. expand butler's chat stream part to support this part.
+             * currently butler does text only.
+            part.FileBytes;
+            part.FileBytesMediaType;
+            part.FileId;
+            part.Filename;
+            part.ImageBytes;
+            part.ImageBytesMediaType;
+            part.ImageDetailLevel;
+            part.InputAudioBytes;
+            part.InputAudioFormat;
+            part.Kind;
+            part.Refusal;
+            part.Text;
+            */
+            return ret;
+        }
+
+
+
+
+        public static ButlerStreamingChatCompletionUpdate TranslateFromProvider(StreamingResponseUpdate Part, bool DiscardNulLContentParts = true)
+        {
+            ButlerStreamingChatCompletionUpdate ret = new();
+            //ret.FunctionArgumentsUpdate = Part.FunctionCallUpdate;
+            //ret.ContentUpdate;
+
+
+            ret.CompletionId = Part.SequenceNumber.ToString();
+
+            switch (Part)
+            {
+                case StreamingResponseFunctionCallArgumentsDeltaUpdate ToolUpdate:
+                    {
+                        ret.Index = ToolUpdate.OutputIndex;
+                        ret.ToolCallUpdates.  ToolUpdate.Delta
+                    }
+            }
+
+            //Part.ContentTokenLogProbabilities;
+            foreach (ChatMessageContentPart P in Part.)
+            {
+                if (P.Kind == ChatMessageContentPartKind.Text)
+                {
+                    if (!string.IsNullOrEmpty(P.Text))
+                    {
+                        ret.EditorableContentUpdate.Add(TranslatorFromProvider(P));
+                    }
+                }
+                else
+                {
+                    ret.EditorableContentUpdate.Add(TranslatorFromProvider(P));
+                }
+
+            }
+
+            foreach (StreamingChatToolCallUpdate P in Part.ToolCallUpdates)
+            {
+                ret.EditableToolCallUpdates.Add(TranslatorStreamingChatToolCalls.TranslateFromProvider(P));
+            }
+            ret.CreatedAt = Part.CreatedAt;
+            ret.FinishReason = TranslatorFinishReason.TranslateFromProvider(Part.FinishReason);
+            ret.Model = Part.Model;
+            //Part.OutputAudioUpdate;
+            //Part.RefusalTokenLogProbabilities;
+            ret.RefusalUpdate = Part.RefusalUpdate;
+            ret.Role = TranslatorRole.TranslateFromProvider(Part.Role);
+            //Part.ServiceTier;
+            ret.SystemFingerprint = Part.SystemFingerprint;
+
+            //Part.ToolCallUpdates;
+            //Part.Usage;
+            return ret;
+
+        }
+    }
+
+
+
     public static class TranslatorStreamingChatUpdate
     {
         public static ButlerChatStreamingPart TranslatorFromProvider(ChatMessageContentPart part)
@@ -583,6 +737,10 @@ namespace ButlerSDK.Providers.OpenAI
                             throw new InvalidCastException("Attempt to change a non tool call message into tool call one");
                         }
 
+                        if (message.Message is null)
+                        {
+                            throw new InvalidDataException($"Error: Attempting to translate a {typeof(ButlerChatToolCallMessage).Name} to OpenAI with a null message.  Be sure to set the message to a string containing the results.");
+                        }
                         
                         if (kind.Count != 0)
                         {
@@ -650,11 +808,101 @@ namespace ButlerSDK.Providers.OpenAI
 
     }
 
+    public static class TranslatorResponseEntry
+    {
+        static string fetch_text(ButlerChatMessage msg_data)
+        {
+            string? ret = null;
+
+            ret = msg_data.GetCombinedText();
+            if (ret is null)
+            {
+                ret = msg_data.Message;
+            }
+            if (ret == null)
+                throw new InvalidDataException("Null message in response mode translation!");
+            return ret;
+        }
+        public static ResponseItem TranslateToProvider(ButlerChatMessage Message)
+        {
+            ResponseItem ret;
+            var msg_data = fetch_text(Message);
+            switch (Message.Role)
+            {
+                case ButlerChatMessageRole.System:
+                    {
+                        ret = ResponseItem.CreateSystemMessageItem(msg_data);
+                        break;
+                    }
+                case ButlerChatMessageRole.User:
+                    {
+                        ret = ResponseItem.CreateUserMessageItem(msg_data);
+                        break;
+                    }
+                case ButlerChatMessageRole.Assistant:
+                    {
+                        ret = ResponseItem.CreateAssistantMessageItem(msg_data);
+                        break;
+                    }
+                case ButlerChatMessageRole.ToolCall:
+                    {
+                        if (Message is ButlerChatToolCallMessage ToolTimeTry)
+                        {
+                            if (ToolTimeTry.FunctionArguments == null)
+                            {
+                                throw new InvalidDataException("Attempt to convert null arguments in response mode. Check for data curropt!");
+                            }
+                            ret = ResponseItem.CreateFunctionCallItem(ToolTimeTry.Id, ToolTimeTry.ToolName, BinaryData.FromString(ToolTimeTry.FunctionArguments));
+                        }
+                        else
+                        {
+                            throw new InvalidDataException("Atetmpt to convert a message to a response tool call... but it's not a tool (ButlerChatToolCallMessage)!");
+                        }
+                        break;
+                    }
+                case ButlerChatMessageRole.ToolResult:
+                    {
+                        if (Message is ButlerChatToolResultMessage ToolOver)
+                        {
+                            ret = ResponseItem.CreateFunctionCallOutputItem(ToolOver.Id, msg_data);
+                        }
+                        else
+                        {
+                            throw new InvalidDataException("Atetmpt to convert a message to a response tool call result but it's not a tool (ButlerChatToolResultMessage)!");
+                        }
+                        break;
+                    }
+                case ButlerChatMessageRole.None:
+                {
+                   throw new InvalidDataException("Error: Attempt to convert a butler message that does *not* have a role!");
+                }
+                default:
+                {
+                        throw new InvalidOperationException("Error: unknown enum for the butler chat message role. Ensure matching verions of provider to butler caller");
+                }
+            }
+            return ret;
+        }
+    }
+    public static class TranslatorChatLogResponse
+    {
+        public static IList<ResponseItem> TranslateToProvider(IList<ButlerChatMessage> ChatLog)
+        {
+            ArgumentNullException.ThrowIfNull(ChatLog, nameof(ChatLog));
+            List<ResponseItem> ret = new List<ResponseItem>();
+            for (int i = 0; i < ChatLog.Count; i++)
+            {
+                var message = TranslatorResponseEntry.TranslateToProvider(ChatLog[i]); 
+            }
+            return ret;
+        }
+    }
     /// <summary>
     /// Convert a list of <see cref="ButlerChatMessage"/> to <see cref="ChatMessage"/> and back
     /// </summary>
     public static class TranslatorChatLog
     {
+
 
         public static IList<ChatMessage> TranslateToProvider(IList<ButlerChatMessage> ChatLog)
         {
@@ -712,41 +960,98 @@ namespace ButlerSDK.Providers.OpenAI
 
     
 
-    class LoggerClass : ILoggerFactory
-            {
-        public void AddProvider(ILoggerProvider provider)
-        {
-            throw new NotImplementedException();
-        }
-        public ILogger CreateLogger(string categoryName)
-        {
-            throw new NotImplementedException();
-        }
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    class ProviderLogger : ILogger<ButlerOpenAiProvider>
-    {
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool IsEnabled(LogLevel logLevel)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-        {
-            throw new NotImplementedException();
-        }
-    }
     public class ButlerOpenAiProvider : IButlerLLMProvider, IButlerChatCreationProvider, IButlerLLMProvider_RecoverOptions
     {
+        public enum ModelConfig_Type
+        {
+            /// <summary>
+            /// Not set or not existing in the data
+            /// </summary>
+            Undefined,
+            /// <summary>
+            /// Use chat completion mode
+            /// </summary>
+            ChatCompletion = 1,
+            /// <summary>
+            /// Use reasoning mode
+            /// </summary>
+            Response = 2
+            
+        }
+        internal static class ForwardBranchDB
+        {
+            public static ConcurrentDictionary<string, ModelConfig_Type> Data = new();
+            public static ModelConfig_Type DefaultType = ModelConfig_Type.ChatCompletion;
+        }
+
+
+
+        #region Reasoning Vs ChatCompletion Config
+
+
+        /// <summary>
+        /// clear the diff data that branches to chat completion or reasoning
+        /// </summary>
+        public void ClearConfig_Data()
+        {
+            ForwardBranchDB.Data.Clear();
+        }
+
+        /// <summary>
+        /// Add the passed model name to use that mode instead of <see cref="DefaultConfig"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="Kind"></param>
+        /// <returns></returns>
+        public bool AddModelConfig(string name, ModelConfig_Type Kind )
+        {
+            if (ForwardBranchDB.Data.TryAdd(name, Kind))
+            {
+                return true;
+            }
+            return false;
+        }
+
+
+        public ModelConfig_Type LookupModelConfig(string name)
+        {
+            if (ForwardBranchDB.Data.TryGetValue(name, out var result))
+            {
+                return result;
+            }
+            return ForwardBranchDB.DefaultType;
+        }
+        /// <summary>
+        /// Remoe the passed model name if existant, will use <see cref="DefaultConfig"/>
+        /// </summary>
+        /// <param name="name"></param>
+        public void RemoveModelConfig(string name)
+        {
+            if (ForwardBranchDB.Data.ContainsKey(name))
+            {
+                ForwardBranchDB.Data.TryRemove(name, out _);
+            }
+        }
+
+        
+        /// <summary>
+        /// this by default initals per openai stats essential. if using this provider as shim (ollama, deep, ect...) call <see cref="ClearConfig_Data"/> after <see cref="Initialize(SecureString)"/>
+        /// </summary>
+        internal void SetupModelConfigDefaults()
+        {
+            /* the mean diff is that we ant to data sense ssentially
+             * astra to go to response instead of the other
+             */
+            AddModelConfig("gpt-6-astra", ModelConfig_Type.Response);
+
+
+
+           
+            AddModelConfig("gpt-4o", ModelConfig_Type.ChatCompletion);
+        }
+        public ModelConfig_Type DefaultConfig => ForwardBranchDB.DefaultType;
+
+        #endregion
         const string notInitializedYet = "Not initialized yet with APIKEY. Please call Initialize() or go here for model list. The strings to pick into what model to pick from are there too. https://platform.openai.com/docs/models";
         /// <summary>
         /// our personal log stream
@@ -872,17 +1177,46 @@ namespace ButlerSDK.Providers.OpenAI
                 this._factory?.LogError(notInitializedYet, Array.Empty<object>());
                 throw new InvalidOperationException(notInitializedYet);
             }
-            ChatClient? client = OpenAIHandler.GetChatClient(model);
-            if (client is null)
+
+
+            ModelConfig_Type ConnectorMode = LookupModelConfig(model);
+
+            switch (ConnectorMode)
             {
-                this._factory?.LogError("{Provider} could not find model {model} to create chat client.",  nameof(ButlerOpenAiProvider), model );
-                throw new ModuleNotFoundException(model);
+                case ModelConfig_Type.ChatCompletion:
+                    {
+                        ChatClient? client = OpenAIHandler.GetChatClient(model);
+                        if (client is null)
+                        {
+                            this._factory?.LogError("{Provider} could not find model {model} to create chat client.", nameof(ButlerOpenAiProvider), model);
+                            throw new ModuleNotFoundException(model);
+                        }
+                        if (PPR is null)
+                        {
+                            PPR = DefaultOpenAiProvider.Instance;
+                        }
+                        return new ButlerOpenAiChatClient(client, this, PPR);
+                    }
+                case ModelConfig_Type.Response:
+                    {
+                        ResponsesClient client = OpenAIHandler.GetResponsesClient();
+                        if (client is null)
+                        {
+                            this._factory?.LogError("{Provider} could not find model {model} to create chat client.", nameof(ButlerOpenAiProvider), model);
+                            throw new ModuleNotFoundException(model);
+                        }
+                        if (PPR is null)
+                        {
+                            PPR = DefaultOpenAiProvider.Instance;
+                        }
+                        return new ButlerOpenAiResponseClient(client, this, PPR, model);
+                    }
+                case ModelConfig_Type.Undefined:
+                default:
+                    this._factory?.LogInformation("ERROR: UNKNOWN MODEL CONFIG MODE. Check Your OPenai Provider build mode (see the interal class)");
+                    throw new InvalidDataException("Error invalid model config");
             }
-            if (PPR is null)
-            {
-                PPR = DefaultOpenAiProvider.Instance;
-            }
-            return new ButlerOpenAiChatClient(client,this, PPR);
+
         }
 
         public void Initialize(SecureString key)
@@ -931,18 +1265,28 @@ namespace ButlerSDK.Providers.OpenAI
     /// </summary>
     public class ButlerOpenAiClientResult : IButlerClientResult
     {
-        ClientResult<ChatCompletion> ClientResult;
+        ResponseResult? Response;
+        ClientResult<ChatCompletion>? ClientResult;
         public ButlerOpenAiClientResult(ClientResult<ChatCompletion> ClientResult)
         {
             ArgumentNullException.ThrowIfNull(nameof(ClientResult));
             this.ClientResult = ClientResult;
         }
-        /// <summary>
+        public ButlerOpenAiClientResult(ResponseResult ResponseResult)
+        {
+            ArgumentNullException.ThrowIfNull(nameof(ResponseResult));
+        }
+        
+        // <summary>
         /// Gets the contents of the client result as an array of bytes
         /// </summary>
         /// <returns></returns>
         public byte[]? GetBytes()
         {
+            if (Response is not null)
+            {
+                throw new NotImplementedException();
+            }
             return ClientResult.GetRawResponse().Content.ToArray();
         }
 
@@ -952,8 +1296,17 @@ namespace ButlerSDK.Providers.OpenAI
         /// <returns></returns>
         public string? GetResult()
         {
-            
-            return ClientResult.ToString();
+            if (ClientResult is not null)
+                return ClientResult.ToString();
+            else
+                if (Response is not null)
+                {
+                    return Response.GetOutputText();
+                }
+            else
+                {
+                    throw new InvalidOperationException("Both Client and repsonse are null. This is not normal");
+                }
         }
 
         public ButlerClientResultType GetResultType()
@@ -1084,6 +1437,123 @@ namespace ButlerSDK.Providers.OpenAI
         }
     }
 
+
+    public class ButlerOpenAiResponseClient : IButlerChatClient
+    {
+        ResponsesClient MyClient;
+        string model;
+        IButlerLLMProvider ProviderSource;
+        IButlerChatPreprocessor? PPR = null;
+        
+        internal ButlerOpenAiResponseClient(OpenAIClient x, string Model, IButlerLLMProvider Source)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(Model);
+            ArgumentNullException.ThrowIfNull(x);
+            MyClient = x.GetResponsesClient();
+            this.ProviderSource = Source;
+            this.PPR = DefaultOpenAiProvider.Instance;
+            this.model = Model;
+        }
+
+        internal ButlerOpenAiResponseClient(ResponsesClient myClient, IButlerLLMProvider Source, IButlerChatPreprocessor? PPR, string Model)
+        {
+
+            ArgumentNullException.ThrowIfNull(Source);
+            ArgumentNullException.ThrowIfNull(myClient);
+            MyClient = myClient;
+            this.ProviderSource = Source;
+            this.PPR = PPR;
+            this.model = Model;
+        }
+
+
+
+        public IButlerClientResult CompleteChat(IList<ButlerChatMessage> msg)
+        {
+            IList<ButlerChatMessage> PPRMSG;
+            if (PPR is not null)
+            {
+                PPRMSG = PPR.PreprocessMessages(msg);
+            }
+            else
+            {
+                PPRMSG = msg;
+            }
+            var tmplog = TranslatorChatLog.TranslateToProvider(PPRMSG);
+            if (tmplog is null)
+            {
+                throw new ArgumentException("Translation layer between OpenAI provider and butler failed");
+            }
+
+            IList<ResponseItem> 
+            NewProtocol = TranslatorChatLogResponse.TranslateToProvider(PPRMSG);
+
+
+            CreateResponseOptions Opts = new CreateResponseOptions(model, NewProtocol);
+            var result = MyClient.CreateResponse(Opts); 
+
+            return new ButlerOpenAiClientResult(result);
+        }
+
+        public async IAsyncEnumerable<ButlerStreamingChatCompletionUpdate> CompleteChatStreamingAsync(IList<ButlerChatMessage> msg, IButlerChatCompletionOptions options, [EnumeratorCancellation] CancellationToken cancelMe = default)
+        {
+            IList<ButlerChatMessage> PPRMSG;
+            if (PPR is not null)
+            {
+                PPRMSG = PPR.PreprocessMessages(msg);
+            }
+            else
+            {
+                PPRMSG = msg;
+            }
+
+            //List<ChatMessage> ProviderFormat = (List<ChatMessage>)TranslatorChatLog.TranslateToProvider(PPRMSG);
+            IList<ResponseItem>
+NewProtocol = TranslatorChatLogResponse.TranslateToProvider(PPRMSG);
+
+
+            ChatCompletionOptions ProviderOptions = TranslatorChatOptions.TranslateToProvider(options, ProviderSource);
+            
+            CreateResponseOptions Opts = new CreateResponseOptions(model, NewProtocol);
+
+            var Response = this.MyClient.CreateResponseStreamingAsync(Opts);
+
+
+            //await foreach (var part in Result.WithCancellation(cancelMe))
+            await foreach (var part in Response.WithCancellation(cancelMe))
+            {
+                if (part is not null)
+                {
+                    var butlerpart = TranslatorStreamingResponseUpdate.TranslateFromProvider(part);
+                    yield return butlerpart;
+                }
+                continue;
+            }
+        }
+
+        public IAsyncEnumerable<ButlerStreamingChatCompletionUpdate> CompleteChatStreamingAsync(IList<ButlerChatMessage> msg, IButlerChatCompletionOptions options)
+        {
+            return CompleteChatStreamingAsync(msg, options, default);
+        }
+
+        IButlerCollectionResult<ButlerStreamingChatCompletionUpdate> IButlerChatClient.CompleteChatStreaming(IList<ButlerChatMessage> msg, IButlerChatCompletionOptions options)
+        {
+            IList<ButlerChatMessage> PPRMSG;
+            if (PPR is not null)
+            {
+                PPRMSG = PPR.PreprocessMessages(msg);
+            }
+            else
+            {
+                PPRMSG = msg;
+            }
+
+            List<ChatMessage> ProviderFormat = (List<ChatMessage>)TranslatorChatLog.TranslateToProvider(PPRMSG);
+            ChatCompletionOptions ProviderOptions = TranslatorChatOptions.TranslateToProvider(options, ProviderSource);
+            var Result = MyClient.CompleteChatStreaming(ProviderFormat, ProviderOptions);
+            return new ButlerOpenAiCollectionResult<ButlerStreamingChatCompletionUpdate>(Result);
+        }
+    }
     public class ButlerOpenAiChatClient : IButlerChatClient
     {
         ChatClient MyClient;

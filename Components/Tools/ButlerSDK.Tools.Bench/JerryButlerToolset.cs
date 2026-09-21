@@ -6,6 +6,9 @@ using System.Security;
 using ButlerProtocolBase.ToolSecurity;
 using System.Data.SqlTypes;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using System.Runtime.CompilerServices;
 
 
 namespace ButlerSDK.ToolSupport.Bench
@@ -17,15 +20,25 @@ namespace ButlerSDK.ToolSupport.Bench
     /// </summary>
     public class ButlerToolBench: IButlerToolBench
     {
+        ILogger<ButlerToolBench>? Telemetry = null;
         public ButlerToolBench()
         {
             Limiter = new ApiKeyRateLimiter();
+            Telemetry = null;
         }
 
         public ButlerToolBench(IApiKeyRateLimiter CustomLimiter)
         {
             ArgumentNullException.ThrowIfNull(CustomLimiter, nameof(CustomLimiter));    
             Limiter = CustomLimiter;
+        }
+
+        public ButlerToolBench(IApiKeyRateLimiter CustomLimiter, ILogger<ButlerToolBench>? TelemetryOutput=default): this(CustomLimiter)
+        {
+            if (TelemetryOutput is not null)
+            {
+                Telemetry = TelemetryOutput;
+            }
         }
         /// <summary>
         /// When a tool does not have the attribute set, treat it as this attribute.
@@ -45,6 +58,9 @@ namespace ButlerSDK.ToolSupport.Bench
         /// How many tools does this instance have
         /// </summary>
         public int ToolCount => Tools.Count;
+
+
+        private int maxToolThreads = 6;
 
         [Obsolete("MultiThread Guard is always active in this version. This property is a no-op and will be removed in a future version.")]
         /// <summary>
@@ -79,12 +95,24 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <remarks>While this routine exposes a way to ensure you don't give your LLM a bad tool name. The <see cref="AddTool(string, ButlerToolBase, bool)"/> API will reject null or empty names as a sanity check regardless</remarks>
         public virtual bool ValidateToolName(IButlerToolBaseInterface Tool, bool ThrowFailure=true)
         {
+            if (Tool is null)
+            {
+                Telemetry?.LogWarning("Attempt to validate a tool name of a null reference. Warning");
+            }
+            
+            
             ArgumentNullException.ThrowIfNull(Tool, nameof(Tool));
+
+            
+
             if (!Regex.IsMatch(Tool.ToolName, ToolNameRegex))
             {
-                if (ThrowFailure) { throw new InvalidToolNameException($"{Tool.GetType().Name} does not define a valid tool name. It should match '^[a-zA-Z0-9_-]+$  or in general terms strictly A-z, 0-0 in any combination and the _ symbol. Nothing beyond that."); }
+                var err_msg = "Tool {ToolName} does not define a valid tool name. It should match RegEx '^[a-zA-Z0-9_-]+$  or in general terms strictly A-z, 0-0 in any combination and the _ symbol. Nothing beyond that.";
+                Telemetry?.LogWarning(err_msg, Tool.ToolName);
+                if (ThrowFailure) { throw new InvalidToolNameException(err_msg.Replace("{ToolName}", Tool.ToolName)); }
                 return false;
             }
+            Telemetry?.LogTrace("Validating the tool name {name} passed!", Tool.ToolName);
             return true;
         }
         #endregion
@@ -99,7 +127,7 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <param name="tool">tool to add. An exception will be thrown if null</param>
         /// <param name="ValidateNames">if set, the <see cref="ValidateToolName(IButlerToolBaseInterface, bool)"/> routine will be called and the correct exception thrown if validation failed</param>
         /// <param name="PreserveLimits">Mainly for <see cref="UpdateTool(string, IButlerToolBaseInterface)"/> This let's that routine swap the call out while preserving <see cref="Limiter"/> stats</param>
-        /// <exception cref="ArgumentNullException">If the name argument or tool argument is null</exception>
+        /// <exception cref="ArgumentNullException">If the name argument or tool argument is null *new* - or if the tool instance passed is null</exception>
         /// <exception cref="ToolAlreadyExistsException">Will be thrown if tool with same name exists</exception>
         /// <exception cref="InvalidOperationException">Will be thrown if the tool's name <see cref="IButlerToolBaseInterface.ToolName"/> is null or empty</exception>
         /// <remarks>This is the common code for the public API. The public API respect <see cref="MultiThreadGuard"/>. This DOES NOT</remarks>
@@ -108,88 +136,160 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <exception cref="SecurityException">Can be triggered if the tool requests more access than allowed by <see cref="ToolSurfaceFlagChecking.CheckMinRequirements(IButlerToolBaseInterface, ToolSurfaceScope)"/></exception>"
         internal void AddToolCommon(string name, IButlerToolBaseInterface tool, ToolSurfaceScope ScopeFlags, bool ValidateNames=true, bool PreserveLimits=true )
         {
+
+            IDisposable? tscope =null;
             // first check if it's all valid
-            ArgumentNullException.ThrowIfNull(name, nameof(name));
-            ArgumentNullException.ThrowIfNull(tool, nameof(tool));
-            
-            if (ValidateNames)
-    
-                if(!ValidateToolName(tool, true))
-                {
-                    // strictly speaking, this will never be hit, assuming validate tool name throws exception (as it should) on failure
-                    throw new InvalidToolNameException("Validation failed for a tool name");
-                }
-                
-            if (string.IsNullOrEmpty(tool.ToolName))
+
+            try
             {
-                throw new InvalidOperationException($"The name of the tool passed in with {nameof(tool)} is actually null or an empty. That doesn't work with the protocol");
-            }
-            // does the tool exist?
-            if (ExistsTool(name))
-                throw new ToolAlreadyExistsException(name);
-            else
-            {
-                // first check if tool opted into a platform check
-                if (tool is IButlerToolPlatformPass PlatformChecker)
+                if (Telemetry is not null)
                 {
-                    string msg = string.Empty;
+                    string safe_name;
+                    string safe_tool_name;
+                    string safe_version;
+                    string? safe_enum;
 
-
-                    if (PlatformChecker.CheckPlatformNeed(out msg) == false)
+                    if (string.IsNullOrEmpty(name))
                     {
-                        // tool rejected platform check(returned false) throw exception
-                        throw PlatformPassFailureException.DefaultBuilder(msg, tool.ToolName);
-                    }
-                }
-
-                if (ToolSurfaceFlagChecking.HasToolSurfaceFlags(tool))
-                {
-                    if (ToolSurfaceFlagChecking.CheckMinRequirements(tool, ScopeFlags))
-                    {
-                        // add it with the default limits and call Initialize() if defined
-                        Tools.Add(name, tool);
+                        safe_name = "Un-named tool";
                     }
                     else
                     {
-
-                            throw new SecurityException($"Tool {tool.ToolName} attempt to add but requests more access than allowed. Rejecting it.");
-                    
+                        safe_name = name;
                     }
-                }
-                else
-                {
-                    // no flags treat as max permission
-                    if (ScopeFlags != ToolSurfaceScope.MaxAvailablePermissions)
-                    {
-                        throw new SecurityException($"Tool {tool.ToolName} has no attributes set. ScopeSurface passed not max requested. Rejecting it");
-                    }
-                    else
-                    {
-                        Tools.Add(name, tool);
-                    }
-                }
 
-
-                // pretty much atm UpdateTool() uses this. If set, PreserveLimits means while we
-                // be swapping this class object out, the service limit class tracking thing
-                // is not changed.
-                if (tool is not IButlerPassiveTool)
-                {
-                    if (PreserveLimits)
+                    if (tool is not null)
                     {
-                        if (Limiter.DoesServiceExist(name) == false)
+                        if (string.IsNullOrEmpty(tool.ToolName))
                         {
-                            Limiter.AddService(name, 0, 200, 200, ButlerApiLimitType.PerCall);
+                            safe_tool_name = "No Set tool name in instance.";
+                        }
+                        else
+                        {
+                            safe_tool_name = tool.ToolName;
+                        }
+
+                        if (string.IsNullOrEmpty(tool.ToolVersion))
+                        {
+                            safe_version = "Unknown Versioning info";
+                        }
+                        else
+                        {
+                            safe_version = tool.ToolVersion;
                         }
                     }
                     else
                     {
-                        Limiter.RemoveService(name);
-                        Limiter.AddService(name, 0, 200, 200, ButlerApiLimitType.PerCall);
+                        safe_tool_name = "ERROR: NULL TOOL";
+                        safe_version = "ERROR: NULL TOOL";
                     }
-                    if (tool is IButlerToolSpinup spin)
-                        spin.Initialize();
+
+                    safe_enum = Enum.GetName(ScopeFlags);
+
+                    if (safe_enum is null)
+                    {
+                        safe_enum = "UNKNOWN TOOL SURFACE OR INVALID ONE";
+                    }
+                    IDisposable? tele =
+
+                   tscope =  Telemetry?.BeginScope("Starting attempt to add tool: {name} using tool instance {tinstance} version {verison} using SurfaceScope of {Scope}",
+                        safe_name,
+                        safe_tool_name,
+                        safe_version,
+                        safe_enum);
                 }
+
+                ArgumentNullException.ThrowIfNull(name, nameof(name));
+                ArgumentNullException.ThrowIfNull(tool, nameof(tool));
+                if (tool is null)
+                {
+                    Telemetry?.LogCritical("Attempt to add a tool instance under name {name} that's actually null!", name);
+                    throw new ArgumentNullException("Tool instance passed is null.");
+                }
+
+                if (ValidateNames)
+
+                    if (!ValidateToolName(tool, true))
+                    {
+                        // strictly speaking, this will never be hit, assuming validate tool name throws exception (as it should) on failure
+                        throw new InvalidToolNameException("Validation failed for a tool name");
+                    }
+
+                if (string.IsNullOrEmpty(tool.ToolName))
+                {
+                    throw new InvalidOperationException($"The name of the tool passed in with {nameof(tool)} is actually null or an empty. That doesn't work with the protocol");
+                }
+                // does the tool exist?
+                if (ExistsTool(name))
+                    throw new ToolAlreadyExistsException(name);
+                else
+                {
+                    // first check if tool opted into a platform check
+                    if (tool is IButlerToolPlatformPass PlatformChecker)
+                    {
+                        string msg = string.Empty;
+
+
+                        if (PlatformChecker.CheckPlatformNeed(out msg) == false)
+                        {
+                            // tool rejected platform check(returned false) throw exception
+                            throw PlatformPassFailureException.DefaultBuilder(msg, tool.ToolName);
+                        }
+                    }
+
+                    if (ToolSurfaceFlagChecking.HasToolSurfaceFlags(tool))
+                    {
+                        if (ToolSurfaceFlagChecking.CheckMinRequirements(tool, ScopeFlags))
+                        {
+                            // add it with the default limits and call Initialize() if defined
+                            Tools.Add(name, tool);
+                        }
+                        else
+                        {
+
+                            throw new SecurityException($"Tool {tool.ToolName} attempt to add but requests more access than allowed. Rejecting it.");
+
+                        }
+                    }
+                    else
+                    {
+                        // no flags treat as max permission
+                        if (ScopeFlags != ToolSurfaceScope.MaxAvailablePermissions)
+                        {
+                            throw new SecurityException($"Tool {tool.ToolName} has no attributes set. ScopeSurface passed not max requested. Rejecting it");
+                        }
+                        else
+                        {
+                            Tools.Add(name, tool);
+                        }
+                    }
+
+
+                    // pretty much atm UpdateTool() uses this. If set, PreserveLimits means while we
+                    // be swapping this class object out, the service limit class tracking thing
+                    // is not changed.
+                    if (tool is not IButlerPassiveTool)
+                    {
+                        if (PreserveLimits)
+                        {
+                            if (Limiter.DoesServiceExist(name) == false)
+                            {
+                                Limiter.AddService(name, 0, 200, 200, ButlerApiLimitType.PerCall);
+                            }
+                        }
+                        else
+                        {
+                            Limiter.RemoveService(name);
+                            Limiter.AddService(name, 0, 200, 200, ButlerApiLimitType.PerCall);
+                        }
+                        if (tool is IButlerToolSpinup spin)
+                            spin.Initialize();
+                    }
+                }
+            }
+            finally
+            {
+                if (tscope is not null) tscope.Dispose();
             }
         }
 
@@ -260,7 +360,10 @@ namespace ButlerSDK.ToolSupport.Bench
         {
             lock (Tools)
             {
-                return Tools.ContainsKey(name);
+                
+                bool ret = Tools.ContainsKey(name);
+                Telemetry?.LogTrace("Tested Tool bench list for existence of {name}.  Status Existing: {ret}", name, ret);
+                return ret;
             }
         }
 
@@ -277,7 +380,18 @@ namespace ButlerSDK.ToolSupport.Bench
                 IButlerToolBaseInterface? ret = null;
                 if (Tools.TryGetValue(name, out ret))
                 {
-                    return ret;
+                    if (ret is not null)
+                    {
+                        Telemetry?.LogTrace("Tool named {name} found. Instance retrieved is not null. Tool name: {name} Tool Version {version}", name, ret.ToolName, ret.ToolVersion); 
+                    }
+                    else
+                    {
+                        Telemetry?.LogWarning("Tool name {name} found. Warning retrieved instance is null. This will lead to triggering exceptions. Don't add a null instance.", name);
+                    }
+                }
+                else
+                {
+                    Telemetry?.LogTrace("Tool name {name} attempt to find.  FAILED. Does not exist", name);
                 }
                 return ret;
             }
@@ -291,7 +405,7 @@ namespace ButlerSDK.ToolSupport.Bench
         /// </summary>
         /// <param name="name">unique name for tool, grabbing it from the class itself is OK</param>
         /// <param name="tool">tool to add</param>
-        /// <exception cref="ArgumentNullException">If the name argument is null</exception>
+        /// <exception cref="ArgumentNullException">If the name argument is null OR THE TOOL instance is null</exception>
         /// <exception cref="ToolAlreadyExistsException">Will be thrown if tool with same name exists</exception>
         /// <exception cref="InvalidOperationException">Will be thrown if the tool's name <see cref="IButlerToolBaseInterface.ToolName"/> is null or empty</exception>
         /// <exception cref="InvalidToolNameException">Can trigger if validation fails i.e. <see cref="ValidateToolName(IButlerToolBaseInterface, bool)"/> returns false. </exception>
@@ -339,8 +453,9 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <summary>
         /// Add A tool and assign default limits and Surface Scope settings. Lifts tool name from the tool itself
         /// </summary>
-        /// <param name="tool"></param>
+        /// <param name="tool">tool to add</param>
         /// <param name="ValidateNames"></param>
+        /// <exception cref="ArgumentNullException">This till trigger if the tool passed is null</exception>
 
         public void AddTool(IButlerToolBaseInterface tool, bool ValidateNames=true)
         {
@@ -351,8 +466,9 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <summary>
         /// Add A tool and assign default limits. Lifts tool name from the tool itself
         /// </summary>
-        /// <param name="tool"></param>
-        /// <param name="ValidateNames"></param>
+        /// <param name="tool">tool to add. Must not be null</param>
+        /// <param name="ValidateNames">Enforce the default name validation of the tool (before the underling provider / LLM gets it.)</param>
+        /// <exception cref="ArgumentNullException">This will trigger if the tool instance passed is null </exception>
         public void AddTool(IButlerToolBaseInterface tool, ToolSurfaceScope Scope,  bool ValidateNames=true)
         {
             lock (Tools)
@@ -367,6 +483,7 @@ namespace ButlerSDK.ToolSupport.Bench
         /// <param name="name">unique name for tool, grabbing it from the class itself is OK</param>
         /// <param name="tool">tool to add</param>
         /// <exception cref="ToolAlreadyExistsException">Will be thrown if tool with same name exists</exception>
+        /// <exception cref="ArgumentNullException">This will be triggered if the tool instance passed is null</exception>
         /// <remarks>Is a stub to <see cref="AddTool(string, IButlerToolBaseInterface)"/> as the class implements the interface</remarks>
         /// <exception cref="InvalidToolNameException">Can trigger if validation fails i.e. <see cref="ValidateToolName(IButlerToolBaseInterface, bool)"/> returns false. </exception>
         public void AddTool(string name, IButlerToolBaseInterface tool, ToolSurfaceScope Scope, bool ValidateNames)
@@ -410,6 +527,7 @@ namespace ButlerSDK.ToolSupport.Bench
         {
             lock (Tools)
             {
+                Telemetry?.LogInformation("Assigning new limit to tool {name} of {limit} calls.", name, limit);
                 Limiter.AssignNewServiceLimit(name, limit);
             }
         }
@@ -431,6 +549,7 @@ namespace ButlerSDK.ToolSupport.Bench
             IButlerToolBaseInterface? ret = null;
             try
             {
+                Telemetry?.LogInformation("Resolved tool name {name} to instance of type {Type} version {toolversion} with name {Name}", name, ret.GetType().FullName, ret.ToolVersion, ret.ToolName);
                 ret = Tools[name];
             }
             catch (KeyNotFoundException)
@@ -480,272 +599,305 @@ namespace ButlerSDK.ToolSupport.Bench
         {
             ButlerChatToolResultMessage? err_reply = null;
             IButlerToolBaseInterface? Tool = null;
-            if (CallToolFunctionInternalPREPWORK(FunctionName, CallId, Arguments, ForceUser, ref err_reply, ref Tool))
+            IDisposable? Tele = Telemetry?.BeginScope("Beginning a tool call (call id: {CallID}) for tool {FunctionName} in legacy sync path.", CallId, FunctionName);
+            try
             {
-                // the tole payed, go run it.
+                if (CallToolFunctionInternalPREPWORK(FunctionName, CallId, Arguments, ForceUser, ref err_reply, ref Tool))
+                {
+                    // the tole payed, go run it.
 
-                if (Tool is IButlerToolAsyncResolver AsyncTool)
-                {
-                    OK = true;
-                    // THE ESCAPE HATCH: 
-                    // We push the async execution to the ThreadPool to escape any UI SynchronizationContext,
-                    // preventing deadlocks in MAUI/WPF apps, then safely block and unwrap the result.
-                    return Task.Run(async () => await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null))
-                               .ConfigureAwait(false)
-                               .GetAwaiter()
-                               .GetResult();
+                    if (Tool is IButlerToolAsyncResolver AsyncTool)
+                    {
+                        Telemetry?.LogTrace("Tool {FunctionName} for call {CallID} is async path. triggering it via offloaded task.", FunctionName, CallId);
+                        OK = true;
+                        // THE ESCAPE HATCH: 
+                        // We push the async execution to the ThreadPool to escape any UI SynchronizationContext,
+                        // preventing deadlocks in MAUI/WPF apps, then safely block and unwrap the result.
+                        return Task.Run(async () => await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null))
+                                   .ConfigureAwait(false)
+                                   .GetAwaiter()
+                                   .GetResult();
+                    }
+                    else
+                    {
+                        Telemetry?.LogTrace("Tool {FunctionName} for call {CallID} is sync legacy path. triggering directly.", FunctionName, CallId);
+                        OK = true;
+                        // the prepwork should return false, triggering this to never actually work.
+                        return Tool!.ResolveMyTool(Arguments, CallId, null);
+                    }
                 }
-                else
-                {
-                    OK = true;
-                    // the prepwork should return false, triggering this to never actually work.
-                    return Tool!.ResolveMyTool(Arguments, CallId, null);
-                }
+
+                OK = false;
+                return err_reply;
             }
-            OK = false;
-            return err_reply;
-
+            finally
+            {
+                if (Tele is not null) Tele?.Dispose();
+            }
           
         }
 
         internal bool CallToolFunctionInternalPREPWORK(string? FunctionName, string? CallId, string? Arguments, IButlerToolBaseInterface? ForceUser, ref ButlerChatToolResultMessage? ErrorCode, ref IButlerToolBaseInterface? ToolRef)
         {
-            
-            IButlerToolBaseInterface? Tool = null;
-            if (string.IsNullOrEmpty(FunctionName) && (ForceUser is null))
+            var scope =   Telemetry?.BeginScope("Preparing to call {FunctionName} in {CallID} starting", FunctionName, CallId);
+            try
             {
-
-                throw new ArgumentException("ERROR: FunctionName and ForceUser args must not be null");
-            }
-            else
-            {
-                ErrorCode = null;
-                // first check if we got an entry for the function we are calling
-                Console.Write(" TRY RESOLVING ToolName .....");
-                if (FunctionName is not null)
+                IButlerToolBaseInterface? Tool = null;
+                if (string.IsNullOrEmpty(FunctionName) && (ForceUser is null))
                 {
-                    Tool = ChatToTool(FunctionName);
+                    var ex = new ArgumentException("ERROR: FunctionName and ForceUser args must not be null");
+                    Telemetry?.LogCritical("Fatal Error {msg}", ex.Message);
+                    throw ex;
                 }
-                Console.WriteLine("....done!");
-
-                // nope, try subbing the one indicated with ForceUser
-                if (Tool is null)
+                else
                 {
-                    if (ForceUser is not null)
+                    ErrorCode = null;
+                    // first check if we got an entry for the function we are calling
+                    Telemetry?.LogTrace("Trying to Resolve Tool name first");
+                    if (FunctionName is not null)
                     {
-                        Tool = ForceUser;
-                        Console.WriteLine("Tool name resolve failed. Fixed tool was passed!");
-                        FunctionName = ForceUser.ToolName; // don't forget this, the code below assumes FunctionName is NOT NULL
+                        Tool = ChatToTool(FunctionName);
+                    }
+
+                    // nope, try subbing the one indicated with ForceUser
+                    if (Tool is null)
+                    {
+                        Telemetry?.LogWarning("First try failed - Name was null");
+                        if (ForceUser is not null)
+                        {
+                            Telemetry?.LogWarning("Using specific passed tool instance instead - tool {ForceTool} version {version} instead", ForceUser.ToolName, ForceUser.ToolVersion);
+                            Tool = ForceUser;
+                            FunctionName = ForceUser.ToolName; // don't forget this, the code below assumes FunctionName is NOT NULL
+                        }
+                        else
+                        {
+                            var ex = new ToolNotFoundException("Attempt to call unknown tool");
+                            Telemetry?.LogCritical("Unable to finish this call - no known tool to answer it");
+                            throw ex;
+                        }
+                    }
+                    ToolRef = Tool;
+                    // still nope? Give up
+                    if (Tool is null)
+                    {
+                        var ex = new ToolNotFoundException("Someone added a blank tool to the tool list.");
+                        Telemetry?.LogCritical("Unable to finish this call, there's a tool entry but the object instance is null!");
+                        throw ex;
                     }
                     else
                     {
-                        Console.WriteLine("Tool call not known. Exception incoming");
-
-                        throw new ToolNotFoundException("Attempt to call unknown tool");
+                        Telemetry?.LogTrace("Tool call bound to object {tool}", ToolRef);
                     }
-                }
-                ToolRef = Tool;
-                // still nope? Give up
-                if (Tool is null)
-                {
-                    Console.WriteLine("Tool blank. Exception incoming");
-                    throw new ToolNotFoundException("Someone added a blank tool to the tool list.");
-                }
 
-                /*
-                 * This work flow works:
-                 * #1, tool must validate its arguments and reject invalid ones,
-                 * #2, if #1 passes, do we have permission to call?
-                 * #3 if #2 passes,  update the call inventory (or service) and make the call, returning the result;
-                 */
-                JsonDocument? JsonArgs = null;
-                JsonDocument? shimdoc = null;
-                try
-                {
-                    Console.Write("JSON CONVERT....");
-                    JsonArgs = JsonSerializer.SerializeToDocument(Arguments);
-                    Console.WriteLine("....done!");
-                    if (JsonArgs.RootElement.ValueKind == JsonValueKind.String)
+                    /*
+                     * This work flow works:
+                     * #1, tool must validate its arguments and reject invalid ones,
+                     * #2, if #1 passes, do we have permission to call?
+                     * #3 if #2 passes,  update the call inventory (or service) and make the call, returning the result;
+                     */
+                    JsonDocument? JsonArgs = null;
+                    JsonDocument? shimdoc = null;
+                    try
                     {
-        
-                        string? TempHolding = JsonArgs.RootElement.GetString();
-                        if (TempHolding is not null)
+                        Telemetry?.BeginScope("Beginning Tool self validation in call {calliD} for tool {FunctionName}", CallId, FunctionName);
+                        JsonArgs = JsonSerializer.SerializeToDocument(Arguments);
+                        if (JsonArgs.RootElement.ValueKind == JsonValueKind.String)
                         {
-                             shimdoc = JsonDocument.Parse(TempHolding);
-                        }
-                        else
-                        {
-                            shimdoc = JsonDocument.Parse("{}");
-                        }
 
-                        JsonArgs?.Dispose(); // gonna be not null here. Just on the paranoid chance it is, don't take the thing down
-                        JsonArgs = shimdoc;
-                        shimdoc = null;
-                    }
-                    Console.Write("BEGIN Validate tool...");
-                    if (Tool.ValidateToolArgs(null, JsonArgs))
-                    {
-                        Console.WriteLine("....done!");
-                        bool HasPermission = false;
-
-                        if (Tool is IButlerCritPriorityTool)
-                        {
-                            Console.WriteLine("Is crit tool.");
-                            HasPermission = true;
-                        }
-                        if (Limiter is IApiKeyRateLimiterAtomicCharge atomicCharge)
-                        {
-                            Console.Write("Checking if inventory ok....");
-                            if (!HasPermission) // crit priority tool check sets to true, triggering skip
+                            string? TempHolding = JsonArgs.RootElement.GetString();
+                            if (TempHolding is not null)
                             {
-                                HasPermission = atomicCharge.CheckForCallPermissionAndCharge(FunctionName!);
-                                Console.WriteLine("....done!");
-                            }
-                            // upper code already establishes the name of the function  is not null
-                            if (!HasPermission)
-                            {
-                                Console.WriteLine("Error. out of calls!");
-                                ErrorCode = new ButlerChatToolResultMessage(CallId, LimitExceeded);
-                                return false;
+                                shimdoc = JsonDocument.Parse(TempHolding);
                             }
                             else
                             {
-                                // the tole payed, go run it.
-                                /*
-                                if (Tool is IButlerToolAsyncResolver AsyncTool)
-                                {
-                                    return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
-                                }
-                                else
-                                {
-                                    return Tool.ResolveMyTool(Arguments, CallId, null);
-                                }*/
-                                Console.WriteLine("Sucess call is supported (ApiRateLimiter)");
-                                return true;
+                                shimdoc = JsonDocument.Parse("{}");
                             }
-                        }
-                        else
-                        {
-                            Console.Write("Checking if inventory ok....");
 
-                            // legacy path. It's fine.
-                            if (Tool is IButlerCritPriorityTool) // crit priority tools can be called as much as the LLM or the thing scheduling tools wants. Treat with care.
+                            JsonArgs?.Dispose(); // gonna be not null here. Just on the paranoid chance it is, don't take the thing down
+                            JsonArgs = shimdoc;
+                            shimdoc = null;
+                        }
+
+                        if (Tool.ValidateToolArgs(null, JsonArgs))
+                        {
+                            Telemetry?.LogTrace("Tool {tool} in call {callId} was validated!", ToolRef, CallId);
+                            bool HasPermission = false;
+
+                            if (Tool is IButlerCritPriorityTool)
                             {
+                                Telemetry?.LogWarning("Warning this is a Crit tool type. No limits imposed. Ensure it does *not* have IButlerCritPriorityTool interface to let it have limits");
                                 HasPermission = true;
-                                Console.WriteLine("....ool is crit tool. Always allowed");
                             }
-                            else
+                            if (Limiter is IApiKeyRateLimiterAtomicCharge atomicCharge)
                             {
-                                Console.WriteLine("....done!");
-                                HasPermission = Limiter.CheckForCallPermission(FunctionName!);
-                            }
-                            // upper code already establishes the name of the function  is not null
-                            if (!HasPermission)
-                            {
-                                ErrorCode = new ButlerChatToolResultMessage(CallId, LimitExceeded);
-                                return false;
-                            }
-                            else
-                            {
-                                Console.WriteLine("Issuing charge (legacy)");
-                                Limiter.ChargeService(FunctionName!, 1);
-
-                                // the tole payed, go run it.
-                                /*
-                                if (Tool is IButlerToolAsyncResolver AsyncTool)
+                                Telemetry?.LogTrace("Limiter is atomic. Using that check instead");
+                                if (!HasPermission) // crit priority tool check sets to true, triggering skip
                                 {
-                                    return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                                    HasPermission = atomicCharge.CheckForCallPermissionAndCharge(FunctionName!);
+                                }
+                                // upper code already establishes the name of the function  is not null
+                                if (!HasPermission)
+                                {
+                                    Telemetry?.LogError("CalliD  {d} call attempt to exceed limit! Refusing to run.", CallId);
+                                    ErrorCode = new ButlerChatToolResultMessage(CallId, LimitExceeded);
+                                    return false;
                                 }
                                 else
                                 {
-                                    return Tool.ResolveMyTool(Arguments, CallId, null);
-                                }*/
-                                return true;
+                                    // the tole payed, go run it.
+                                    /*
+                                    if (Tool is IButlerToolAsyncResolver AsyncTool)
+                                    {
+                                        return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                                    }
+                                    else
+                                    {
+                                        return Tool.ResolveMyTool(Arguments, CallId, null);
+                                    }*/
+                                    Telemetry?.LogTrace("SUCESSFULL CALL of tool {tool} via call {c}", ToolRef, CallId);
+                                    return true;
+                                }
                             }
+                            else
+                            {
+                                Telemetry?.LogTrace("Limiter is non-atomic. Using that check instead. Warning in heavy threaded env this may let tools be charged *beyond* the limit"); ;
+
+                                // legacy path. It's fine.
+                                if (Tool is IButlerCritPriorityTool) // crit priority tools can be called as much as the LLM or the thing scheduling tools wants. Treat with care.
+                                {
+                                    HasPermission = true;
+                                    Telemetry?.LogWarning("Warning this is a Crit tool type. No limits imposed. Ensure it does *not* have IButlerCritPriorityTool interface to let it have limits");
+                                }
+                                else
+                                {
+                                    HasPermission = Limiter.CheckForCallPermission(FunctionName!);
+                                }
+                                // upper code already establishes the name of the function  is not null
+                                if (!HasPermission)
+                                {
+                                    Telemetry?.LogError("CalliD  {d} call attempt to exceed limit! Refusing to run.", CallId);
+                                    ErrorCode = new ButlerChatToolResultMessage(CallId, LimitExceeded);
+                                    return false;
+                                }
+                                else
+                                {
+                                    Telemetry?.LogTrace("Permission check passed! Issuing charge now (legacy).");
+                                    Limiter.ChargeService(FunctionName!, 1);
+
+                                    // the tole payed, go run it.
+                                    /*
+                                    if (Tool is IButlerToolAsyncResolver AsyncTool)
+                                    {
+                                        return await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
+                                    }
+                                    else
+                                    {
+                                        return Tool.ResolveMyTool(Arguments, CallId, null);
+                                    }*/
+                                    return true;
+                                }
+                            }
+
+
                         }
+                        else
+                        {
+                            Telemetry?.LogError("{CallID} tool call self validate reported failure (tool rejected the function parameters!)", CallId);
+                            var ret = new ButlerChatToolResultMessage(CallId, ToolValidateFailureArg, Arguments);
+                            ret.ToolName = Tool.ToolName;
+                            ErrorCode = ret;
 
-
+                            // load bearing assignment. Either ensure the constructor we use actually sets a message OR we assign.
+                            // Dear future reader *musical number* don't remove this this until ensuring in abstractions, the code assigns a result message!
+                            ret.Message = ToolValidateFailureArg;
+                            return false;
+                        }
                     }
-                    else
+                    finally
                     {
-                        Console.WriteLine("Tool call validation failure per tool");
-                        var ret = new ButlerChatToolResultMessage(CallId, ToolValidateFailureArg, Arguments);
-                        ret.ToolName = Tool.ToolName;
-                        ErrorCode = ret;
 
-                        // load bearing assingment. Either ensure the constructor we use actually sets a message OR we assign.
-                        // Dear future reader *musical number* don't relete this until ensuring in abstractions, the code assigns a result message!
-                        ret.Message = ToolValidateFailureArg;
-                        return false;
+                        if (JsonArgs != null) JsonArgs.Dispose();
+                        if (shimdoc != null) shimdoc.Dispose();
                     }
                 }
-                finally
+            }
+            finally
+            {
+                if (scope is not null)
                 {
-                  
-                    if (JsonArgs != null)  JsonArgs.Dispose();
-                    if (shimdoc != null) shimdoc.Dispose();
+                    scope?.Dispose();
                 }
             }
         }
         internal async Task<ButlerChatToolResultMessage?> CallToolFunctionInternalAsync(string? FunctionName, string? CallId, string Arguments, IButlerToolBaseInterface? ForceUser)
         {
+
+            IDisposable? Tele = Telemetry?.BeginScope("Beginning a tool call (call id: {CallID}) for tool {FunctionName} in async path.", CallId, FunctionName);
             ButlerChatToolResultMessage? ret = null;
             try
             {
                 IButlerToolBaseInterface? Tool = null;
+                Telemetry?.LogTrace("Starting Prep work for the tool call. {CallId} of tool {FunctionName}", CallId, FunctionName);
                 if (CallToolFunctionInternalPREPWORK(FunctionName, CallId, Arguments, ForceUser, ref ret, ref Tool))
                 {
                     // the tole payed, go run it.
 
                     if (Tool is IButlerToolAsyncResolver AsyncTool)
                     {
+                        Telemetry?.LogTrace("Tool {FunctionName} is an async tool, running that path way", FunctionName);
                         ret = await AsyncTool.ResolveMyToolAsync(Arguments, CallId, null);
                         if (ret is null)
                         {
-                            Console.WriteLine("POST CALL ASYNC CALL WAS NULL");
-                            Debugger.Break();
+                            Telemetry?.LogWarning("Warning: Tool call returned null. It is recommended to not do that");
                         }
                         else
-                            if (ret.Message is null)
+                        {
+                            if (ret.Message is not null)
                             {
-                                Console.WriteLine("POST CALL ASYNC.Message was null");
-                                Debugger.Break();
+                                Telemetry?.LogTrace("Results of call {ret}", ret?.Message);
                             }
+                            else
+                            {
+                                Telemetry?.LogWarning("Warning: Message returned is null contents. A provider might throw an error on converting to its LLM");
+                            }
+                        }
+      
                     }
                     else
                     {
-                        // the prepwork should return false, triggering this to never actually work.
+                        Telemetry?.LogTrace("Tool {FunctionName} is an sync (legacy) tool, running that path way", FunctionName);
+                        // the prep work should return false, triggering this to never actually work.
                         ret = Tool!.ResolveMyTool(Arguments, CallId, null);
                         if (ret is null)
                         {
-                            Console.WriteLine("POST CALL SYNC      CALL WAS NULL");
-                            Debugger.Break();
+                            Telemetry?.LogWarning("Warning: Tool call returned null. It is recommended to not do that");
                         }
                         else
-                            if (ret.Message is null)
+                        {
+                            if (ret.Message is not null)
                             {
-                                Console.WriteLine("POST CALL SYNC      CALL.Message was null");
-                                Debugger.Break();
+                                Telemetry?.LogTrace("Results of call {ret}", ret?.Message);
                             }
+                            else
+                            {
+                                Telemetry?.LogWarning("Warning: Message returned is null contents. A provider might throw an error on converting to its LLM");
+                            }
+                        }
+
                     }
                 }
                 else
                 {
-                    Console.WriteLine("TOOL CALL PREP WORK FAIL!");
+                    Telemetry?.LogWarning("Tool call prep work failure.");
                 }
+                Telemetry?.LogTrace("Tool Call is finished");
             }
             finally
             {
-                if (ret is null)
-                {
-                    Debugger.Break();
-                }
-                else
-                if (ret.Message is null)
-                {
-                    Debugger.Break();
-                }
+                if (Tele is not null) Tele?.Dispose();
             }
+            
             return ret;
 
 
@@ -787,6 +939,7 @@ namespace ButlerSDK.ToolSupport.Bench
 
         public void Dispose()
         {
+            Telemetry?.LogTrace("CLEANUP: {ButlerToolBench}", this);
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
@@ -794,21 +947,25 @@ namespace ButlerSDK.ToolSupport.Bench
 
         public async Task<ButlerChatToolCallMessage?> CallToolFunctionAsync(IButlerToolBaseInterface targetTool, string CallID, string Arguments)
         {
-            var ret = await CallToolFunctionInternalAsync(null, CallID, Arguments, targetTool);
-            if (ret is null)
+            IDisposable? scope = 
+                Telemetry?.BeginScope("Calling {targetTool} tool version \"{version}\"with {CallID}", targetTool.ToolName, targetTool.ToolVersion, CallID);
+            try
             {
+                var ret = await CallToolFunctionInternalAsync(null, CallID, Arguments, targetTool);
+                Telemetry?.LogTrace("Call {CallID} for {targetTool} tool is finished.", CallID, targetTool);
                 if (ret is null)
                 {
-                    Debugger.Break();
+                    return null;
                 }
-                
-                return null;
+                else
+                {
+                    return ret;
+                }
             }
-            else
+            finally
             {
-                if (ret.Message is null)
-                    Debugger.Break();
-                return ret;
+                if (scope is not null)
+                    scope.Dispose();
             }
         }
 

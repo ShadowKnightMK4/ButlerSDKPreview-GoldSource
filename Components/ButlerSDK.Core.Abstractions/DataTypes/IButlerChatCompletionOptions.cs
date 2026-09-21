@@ -7,6 +7,29 @@ using System.Threading.Tasks;
 
 namespace ButlerToolContract.DataTypes
 {
+    public enum ButlerThinkingEffortChoice
+    {
+        /// <summary>
+        /// No reasoning effort
+        /// </summary>
+        None,
+        /// <summary>
+        /// Some reasoning effort
+        /// </summary>
+        Low,
+        /// <summary>
+        /// Average reasoning effort
+        /// </summary>
+        Medium,
+        /// <summary>
+        /// Thinking reasoning effort
+        /// </summary>
+        High,
+        /// <summary>
+        /// Didn't study for the test reasoning effort.
+        /// </summary>
+        Max
+    }
     public enum ButlerChatToolChoice
     {
         None,
@@ -39,6 +62,9 @@ namespace ButlerToolContract.DataTypes
         public string? EndUserId { get; set; }
        
         bool? AllowParallelToolCalls { get; set; }
+
+        public ButlerThinkingEffortChoice? ReasoningEffort { get; set; }
+
 
     }
 

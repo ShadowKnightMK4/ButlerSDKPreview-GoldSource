@@ -33,6 +33,8 @@ namespace ButlerToolContract.DataTypes
 
         public bool? AllowParallelToolCalls { get; set; }
         public int? Seed { get; set; }
-       
+
+        public ButlerThinkingEffortChoice? ReasoningEffort { get; set; }
+
     }
 }

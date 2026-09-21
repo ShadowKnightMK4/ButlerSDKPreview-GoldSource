@@ -6,10 +6,11 @@
     <Nullable>enable</Nullable>
 	  <IsPackable>true</IsPackable>
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.2.6-preview</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="OpenAI" Version="2.8.0" />
+    <PackageReference Include="OpenAI" Version="2.9.0" />
   </ItemGroup>
 
   <ItemGroup>

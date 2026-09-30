@@ -242,14 +242,64 @@ namespace ButlerSDK.ToolSupport
         }
 
 
- 
+        public void ScheduleTool(ButlerStreamingToolCallUpdatePart Tool)
+        {
+            bool exists = false;
+            var CheckExists = Que.Where(p => { return p.StreamingIndex == Tool.Index; });
+            ToolTimeSlot? Entry;
+            if (CheckExists.Any() == false)
+            {
+                Entry = new ToolTimeSlot();
+                Entry.ToolName.Append(Tool.FunctionName);
+                Entry.StreamingIndex = Tool.Index;
+            }
+            else
+            {
+                Entry = CheckExists.FirstOrDefault();
+                exists = true;
+            }
+
+
+            if (Entry is not null)
+            {
+                foreach (var prov in Tool.ProviderSpecific.Keys)
+                {
+                    Entry.ProviderSpecific[prov] = Tool.ProviderSpecific[prov];
+                }
+                Entry.ToolArgumentsPart.Append(Tool.FunctionArgumentsUpdate);
+                if (Tool.ToolCallid is not null)
+                {
+                    Debugger.Log(0, "INFO", "Callid is not null");
+                    if (Tool.ToolCallid.ToLower() == Entry.ID.ToString())
+                    {
+                        Debugger.Log(0, "INFO", "Callid is not null and matches current one. Skipping");
+                    }
+                    else
+                    {
+                        Entry.ID.Append(Tool.ToolCallid);
+                    }
+                }
+                if (!exists) { Que.Enqueue(Entry); }
+                if (!string.IsNullOrEmpty(Tool.FunctionName) && string.IsNullOrEmpty(Entry.ToolName.ToString()))
+                {
+                    Entry.ToolName.Append(Tool.FunctionName);
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("Somehow the entry existed but the check returned null");
+            }
+
+        }
+
+
         /// <summary>
         /// Schedule this tool or collect the function arguments passed to a tool previously added
         /// </summary>
         /// <param name="Tool"></param>
         /// <param name="HasInPassingTool">If the tool attempting to be scheduled if of type, <see cref="IButlerToolInPassing"/>, this is set to true</param>
         /// <exception cref="InvalidOperationException"></exception>
-        public void ScheduleTool(ButlerStreamingToolCallUpdatePart Tool)
+        public void ScheduleToolOld(ButlerStreamingToolCallUpdatePart Tool)
         {
             bool exists = false;
             var CheckExists = Que.Where(p => { return p.StreamingIndex == Tool.Index; });
@@ -340,12 +390,279 @@ namespace ButlerSDK.ToolSupport
             await ret;
         }
 
+
+        public async Task RunScheduleAsyncBackup(IButlerToolKitQueryAndGet ToolCollection, ToolResolverTelemetryStats? Stats = null)
+        {
+            SemaphoreSlim UpperTaskLimiter = new SemaphoreSlim(Math.Max(this.maxToolThreads, 1));
+            try
+            {
+                bool EnPassant = false;
+
+
+                IButlerToolKitQueryAndGet? QueryToolKit = ToolCollection as IButlerToolKitQueryAndGet;
+                IButlerToolKitCallable? CallableToolKit = ToolCollection as IButlerToolKitCallable;
+
+                ArgumentNullException.ThrowIfNull(QueryToolKit, "The passed tool collection MUST Implement IButlerToolKitQueryAndGet interface in full");
+                ArgumentNullException.ThrowIfNull(CallableToolKit, "The passed tool collection MUST Implement IButlerToolKitCallable interface in full");
+
+                ConcurrentBag<(string CallID, IButlerToolBaseInterface ToolUsed)>? UsedTools = null;
+                if (Stats is not null)
+                {
+                    UsedTools = new();
+                    Stats.ToolsUsed = new BagTheList(UsedTools);
+                }
+                if ((Que.IsEmpty) && (!EmptyScheduleRunFine))
+                {
+                    throw new NoToolScheduledException($"{this.GetType().Name} has no scheduled tools. This means the thing isn't actually gonna run anything when calling schedule. To turn this exception off, set flag EmptyScheduleRunFine true");
+                }
+                // collection of tasks for each ToolTime instance we resolve/run
+                List<Task<ToolTimeSlot>> RunningRoles = new List<Task<ToolTimeSlot>>();
+                while (!Que.IsEmpty)
+                {
+                    // pop off each entry and create a task for it
+                    ToolTimeSlot? Entry;
+                    if (Que.TryDequeue(out Entry) && (Entry is not null))
+                    {
+                        Entry.TaskLimiter = UpperTaskLimiter;
+                        Task<ToolTimeSlot> tool = Task<ToolTimeSlot>.Run(async () =>
+                        {
+                            try
+                            {
+                                bool ok = false;
+                                ButlerChatToolCallMessage? result = null;
+
+                                if (Entry.TaskLimiter is not null)
+                                {
+                                    await Entry.TaskLimiter.WaitAsync();
+                                }
+
+                                // roll a guid if we're executing a tool if none there.
+                                if (string.IsNullOrWhiteSpace(Entry.ID.ToString()))
+                                {
+                                    Entry.ID.Append("call-");
+                                    Entry.ID.Append(Guid.NewGuid().ToString());
+                                }
+
+                                IButlerToolBaseInterface? TargetTool = QueryToolKit.GetTool(Entry.ToolName.ToString());
+                                try
+                                {
+                                    // invoke the tool function. It's gonna set OK
+
+                                    if (TargetTool is null)
+                                    {
+                                        throw new InvalidOperationException("ERROR: ToolName passed check OK but got null instead of the tool instance before call. ");
+                                    }
+                                    else
+                                    {
+                                        /* 
+                                         * test if the tool is allowed to be run in the current surface/context before we run it.  If it's not allowed, we skip running it and add a failure for the entry.
+                                         */
+                                        if (!this.TestIfToolIsAllowed(TargetTool))
+                                        {
+                                            throw new SecurityException("Tool " + TargetTool.ToolName + " rquests more access than allowed currently. This action is blocked and tool is not gonna be ran");
+                                        }
+                                        else
+                                        {
+                                            /* dear future maintainer
+                                             * as C# currently don't like ref/out for async.
+                                             * OK is changed for async
+                                             * 
+                                             * Sync version let the tool set set OK as normal or not and return a value seperate from that
+                                             * 
+                                             * Async version currently treats null return = bad time, not null = good time (ok is true).
+                                             */
+                                            if (TargetTool is IButlerToolAsyncResolver TT)
+                                            {
+                                                result = await CallableToolKit.CallToolFunctionAsync(TargetTool, Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString());
+                                                if (result is null)
+                                                {
+                                                    Debugger.Break();
+                                                }
+                                                else
+                                                {
+                                                    if (result.Message is null)
+                                                    {
+                                                        Debugger.Break();
+                                                    }
+                                                }
+                                                if (result is not null)
+                                                {
+                                                    ok = true;
+                                                }
+                                                else
+                                                {
+                                                    ok = false;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                result = CallableToolKit.CallToolFunction(TargetTool, Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString(), out ok);
+                                                if (result is null)
+                                                {
+                                                    Debugger.Break();
+                                                }
+                                                else
+                                                {
+                                                    if (result.Message is null)
+                                                    {
+                                                        Debugger.Break();
+                                                    }
+                                                }
+                                            }
+                                            if (Stats is not null)
+                                            {
+                                                UsedTools?.Add((Entry.ID.ToString(), TargetTool));
+                                            }
+                                        }
+                                    }
+                                    //result = ToolDB.CallToolFunction(Entry.ToolName.ToString(), Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString(), out OK);
+                                }
+                                catch (Exception ex)
+                                {
+                                    // grab the error  and add to the list
+                                    Entry.Failures.Add(ex);
+                                }
+                                finally
+                                {
+
+                                    Entry.IsEnPassant = EnPassant = TargetTool is IButlerToolInPassing;
+                                    if (Stats is not null)
+                                    {
+                                        if (Entry.IsEnPassant)
+                                        {
+                                            Stats.InPassingCount++;
+                                        }
+                                        if (TargetTool is IButlerCritPriorityTool)
+                                        {
+                                            Stats.CritPriorityCount++;
+                                        }
+                                        lock (Stats)
+                                        {
+                                            Stats.ExceptionsCaught[Entry.ID.ToString()] = new List<Exception>();
+                                        }
+                                    }
+
+
+                                    if (result is null)
+                                    {
+                                        Debugger.Break();
+                                    }
+                                    else
+                                    {
+                                        if (result.Message is null)
+                                        {
+                                            Debugger.Break();
+                                        }
+                                    }
+
+
+
+                                    // if OK. YAY
+                                    if (ok)
+                                    {
+                                        Entry.Results = result;
+                                        if (result is null)
+                                        {
+                                            Debugger.Break();
+                                        }
+                                        else
+                                        {
+                                            if (result.Message is null)
+                                            {
+                                                Debugger.Break();
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (Stats is not null)
+                                        {
+                                            lock (Stats)
+                                            {
+                                                Stats.ExceptionsCaught[Entry.ID.ToString()].AddRange(Entry.Failures);
+                                            }
+                                        }
+                                        // capture an exception> report
+                                        if (Entry.Failures.Count > 0)
+                                        {
+                                            // if sticking with list<> uncomment this 
+                                            //Entry.Results = new ButlerChatToolResultMessage(Entry.ID.ToString(), $"Tool Error: {Entry.Failures[Entry.Failures.Count - 1].Message}");
+                                            Entry.Results = new ButlerChatToolResultMessage(Entry.ID.ToString(), $"Tool Error: {Entry.Failures.Last().Message}");
+                                        }
+                                        else
+                                        {
+                                            Entry.Results = new ButlerChatToolResultMessage(Entry.ID.ToString(), $"Tool Error: {"The tool reported it did not have sucess."}");
+                                        }
+
+                                        if (result is null)
+                                        {
+                                            Debugger.Break();
+                                        }
+                                        else
+                                        {
+                                            if (result.Message is null)
+                                            {
+                                                Debugger.Break();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            finally
+                            {
+                                if (Entry.TaskLimiter is not null)
+                                {
+                                    Entry.TaskLimiter.Release();
+                                }
+                            }
+
+                            return Entry;
+                        });
+
+
+                        RunningRoles.Add(tool);
+                    }
+                }
+
+                if (RunningRoles is not null)
+                {
+
+                    // do the ye old await all. Is it perfect? Nope.
+                    await Task.WhenAll(RunningRoles);
+
+
+
+
+                    // move our resolved tools to the current pool.
+
+                    for (int i = 0; i < RunningRoles.Count; i++)
+                    {
+                        {
+                            ToolTimeSlot x = RunningRoles[i].Result;
+                            ResolvedTool.Add(x);
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("RUNNING ROLE WAS NULL!");
+                }
+            }
+            finally
+            {
+                if (UpperTaskLimiter is not null) UpperTaskLimiter.Dispose();
+            }
+
+        }
+
+
         /// <summary>
         /// Butler5 Tool resolver
         /// </summary>
         /// <param name="ToolDB">At minimum your kit needs to implement <see cref="IButlerToolKitCallable"/> AND <see cref="IButlerToolKitQueryAndGet"/>. Or just use <see cref="IButlerToolBench"/></param>
         /// <param name="HasInPassing">Should one of the tools be of type <see cref="IButlerToolInPassing"/>, this this true</param>
         /// <returns></returns>
+        /// BACKUP SO I DON"T BREAK THE STUFF
         public async Task RunScheduleAsync(IButlerToolKitQueryAndGet ToolCollection, ToolResolverTelemetryStats? Stats = null)
         {
             SemaphoreSlim UpperTaskLimiter = new SemaphoreSlim(Math.Max(this.maxToolThreads, 1));

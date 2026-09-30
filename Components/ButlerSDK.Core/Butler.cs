@@ -4,10 +4,13 @@ using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerSDK.ButlerPostProcessing;
 using ButlerSDK.Debugging;
 using ButlerSDK.ToolSupport;
+using ButlerSDK.ToolSupport.Bench;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using ButlerToolContracts.DataTypes;
+using Microsoft.Extensions.Logging;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace ButlerSDK.Core
 {
@@ -148,14 +151,14 @@ namespace ButlerSDK.Core
             if (Resolver is null)
             {
                 LogTap?.LogString("Created the Tool Resolver object and assing SurfaceScope");
-                MethodInfo? CreateMe = this.ToolExecType.GetMethod("CreateSchedule", new Type[] { typeof(IButlerLLMProvider), typeof(string) , typeof(ToolSurfaceScope)});
+                MethodInfo? CreateMe = this.ToolExecType.GetMethod("CreateSchedule", new Type[] { typeof(IButlerLLMProvider), typeof(string) , typeof(ToolSurfaceScope),typeof(ILogger<ToolResolver>) });
                 if (CreateMe == null)
                 {
                     throw new InvalidOperationException($"Unable to get create schedule method dispite matching data type. Check if it exists as STATIC and if the type used {ToolExecType.Name} has it.");
                 }
                 else
                 {
-                    Resolver = (IButlerToolResolver?)CreateMe.Invoke(ToolExec, new object[] { Provider,  "ResolveMe", this.ToolSurfaceScope } );
+                    Resolver = (IButlerToolResolver?)CreateMe.Invoke(ToolExec, new object[] { Provider,  "ResolveMe", this.ToolSurfaceScope, null } );
                     if (Resolver is null)
                     {
                         throw new InvalidOperationException($"Fatal error: Unable to create tool scheduler clas (it returned null on create). Class name{ToolExecType.Name}");

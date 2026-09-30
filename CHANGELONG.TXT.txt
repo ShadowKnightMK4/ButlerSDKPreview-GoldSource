@@ -25,9 +25,20 @@ public class ToolResolverTelemetryStats
     public ToolResolverTelemetryStats();
 }
 
+
+BUG FIX TO DO:
+Provider namespace adjust for openai
+
+
 Posible breaking change in 1.2.6.
 both providers (gemini tdb) , openai now translate reasoning effort.
 The abstraction now requires a reasoning effort in the interface
+
+Currently working on added tool + astral support.
+
+Specific to openai provider.
+It has gained a concept of 'model config' Registera modal - such as 'gpt-astra-6' and it provider sees its needed to use response api -> routes there.
+SUBIHJECT TO CHANGE!!
 
 
 ButlerSdk.Tools.Bench

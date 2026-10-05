@@ -12,7 +12,9 @@ namespace UnitTests.Provider.OpenAI
 {
     [TestClass]
     public class TranslatorChatOptions_Tests
+
     {
+
         [TestMethod]
         public void DefaultToolCode_RejectsNull()
         {

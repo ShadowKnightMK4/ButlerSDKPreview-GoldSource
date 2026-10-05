@@ -8,6 +8,7 @@ using OpenAI.Chat;
 using SecureStringHelper;
 using System.ClientModel;
 using System.Security;
+using ButlerSDK.Providers.OpenAI.Generic;
 
 namespace ButlerSDK.Providers.OpenAI.Ollama
 {
@@ -17,7 +18,7 @@ namespace ButlerSDK.Providers.OpenAI.Ollama
     public class OllamaOpenAiProvider : IButlerLLMProvider, IButlerChatCreationProvider_NoApiNeeded, IButlerChatCreationProvider
     {
 
-        ButlerOpenAiProvider local;
+        OpenAiGenericProvider local = new();
         /// <summary>
         /// Ollama default target per documentation
         /// </summary>
@@ -30,7 +31,7 @@ namespace ButlerSDK.Providers.OpenAI.Ollama
         {
             if (Target is null)
                 Target = new Uri(DefaultTarget);
-            local = new ButlerOpenAiProvider(Target);
+            local = new OpenAiGenericProvider(Target);
       
         }
         public IButlerChatCreationProvider ChatCreationProvider => this;

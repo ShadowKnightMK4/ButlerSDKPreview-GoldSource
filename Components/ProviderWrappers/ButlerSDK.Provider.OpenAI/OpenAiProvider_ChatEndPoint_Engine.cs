@@ -13,11 +13,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+
 using System.Threading.Tasks;
 /*
  * Contains the usual LLMProvider, ect.... that all providers have
  */ 
-namespace ButlerSDK.Provider.OpenAI
+namespace ButlerSDK.Providers.OpenAI
 {
 
     public class ButlerOpenAiChatClient : IButlerChatClient

@@ -6,7 +6,7 @@ using System.Collections.Concurrent;
 using System.Security;
 using System.Security.Cryptography.X509Certificates;
 
-namespace ButlerSDK.Provider.TrenchCoat
+namespace ButlerSDK.Providers.TrenchCoat
 {
     public class UnsupportedProviderException: Exception
     {

@@ -1,6 +1,5 @@
 ﻿using ButlerLLMProviderPlatform.DataTypes;
 using ButlerLLMProviderPlatform.Protocol;
-using ButlerSDK.Provider.OpenAI;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using Microsoft.Extensions.Logging;
@@ -385,7 +384,6 @@ namespace ButlerSDK.Providers.OpenAI
         /// If a model is not in the list, this defines the sub engine we use (<see cref="ModelConfig_Type.ChatCompletion"/> or <see cref="ModelConfig_Type.Response"/>
         /// </summary>
         public ModelConfig_Type DefaultType { get; set; }
-
         /// <summary>
         /// Wipe the DB so only the <see cref="DefaultType"/> mode is used
         /// </summary>
@@ -425,11 +423,10 @@ namespace ButlerSDK.Providers.OpenAI
         {
             public static ForwardBranchDB Instance = new ForwardBranchDB();
             public ConcurrentDictionary<string, ModelConfig_Type> Data { get => _Data; }
+            public ModelConfig_Type DefaultType { get => __DefaultType; set => __DefaultType = value; }
 
+            ModelConfig_Type __DefaultType = ModelConfig_Type.ChatCompletion;
             readonly ConcurrentDictionary<string, ModelConfig_Type> _Data = new ConcurrentDictionary<string, ModelConfig_Type>();
-            public static ModelConfig_Type DefaultType = ModelConfig_Type.ChatCompletion;
-
-            ModelConfig_Type IButlerOpenAIProviderEngineConfig.DefaultType { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
 
             public bool AddModelConfig(string name, ModelConfig_Type Kind)
@@ -478,7 +475,7 @@ namespace ButlerSDK.Providers.OpenAI
         /// <summary>
         /// this by default initals per openai stats essential. if using this provider as shim (ollama, deep, ect...) call <see cref="ClearConfig_Data"/> after <see cref="Initialize(SecureString)"/>
         /// </summary>
-        internal void SetupModelConfigDefaults()
+        protected virtual void SetupModelConfigDefaults()
         {
             /* the mean diff is that we ant to data sense ssentially
              * astra to go to response instead of the other
@@ -495,7 +492,7 @@ namespace ButlerSDK.Providers.OpenAI
 
             ProtocolConfig.AddModelConfig("gpt-4o", ModelConfig_Type.ChatCompletion);
         }
-        public ModelConfig_Type DefaultConfig => ForwardBranchDB.DefaultType;
+        public ModelConfig_Type DefaultConfig => ForwardBranchDB.Instance.DefaultType;
 
         #endregion
         const string notInitializedYet = "Not initialized yet with APIKEY. Please call Initialize() or go here for model list. The strings to pick into what model to pick from are there too. https://platform.openai.com/docs/models";
@@ -628,9 +625,13 @@ namespace ButlerSDK.Providers.OpenAI
             ModelConfig_Type ConnectorMode;
 
             if (ProtocolConfig is not null)
+            {
                 ConnectorMode = ProtocolConfig.LookupModelConfig(model);
+            }
             else
+            {
                 ConnectorMode = ModelConfig_Type.ChatCompletion;
+            }
 
             switch (ConnectorMode)
             {
@@ -725,7 +726,6 @@ namespace ButlerSDK.Providers.OpenAI
             /* so i think i'm gonna take the list at face value 
              * a backend of ollama says you, sys prompts must be message 0.
              * BTw while this is in the openai project, when it works, it's gonna be 
-             * MOVED TO OLLAMA
              */
             var ret = new List<ButlerChatMessage>();
             var sys_ret = new List<ButlerChatMessage>();

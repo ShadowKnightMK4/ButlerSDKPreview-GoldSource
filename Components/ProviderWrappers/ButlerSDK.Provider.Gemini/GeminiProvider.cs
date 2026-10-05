@@ -5,6 +5,7 @@ using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using GenerativeAI;
 using GenerativeAI.Types;
+using Microsoft.Extensions.Options;
 using SecureStringHelper;
 using System.Collections;
 #if DEBUG
@@ -197,7 +198,7 @@ public static class DebugSettings
         
         public object CreateChatTool(IButlerToolBaseInterface butlerToolBase)
         {
-            // HELPER FUNCTION: Add this inside your ButlerGeminiProvider class
+            // HELPER FUNCTION: Add this inside your ButlerGeminiProvider class, curotsy of Gemini
                static void FixGeminiTypes(JsonNode? node)
         {
             if (node is JsonObject obj)
@@ -440,6 +441,27 @@ namespace ButlerSDK.Providers.Gemini
         {
             ButlerChatCompletionOptions convertedOptions = new ButlerChatCompletionOptions();
 
+            
+            if (Options.ThinkingConfig is not null)
+            {
+                switch (Options.ThinkingConfig.ThinkingLevel)
+                {
+                    case ThinkingLevel.THINKING_LEVEL_UNSPECIFIED: // do nothing!
+                        convertedOptions.ReasoningEffort = null;
+                        break;
+                    case ThinkingLevel.HIGH:
+                        convertedOptions.ReasoningEffort = ButlerThinkingEffortChoice.Max;
+                        break;
+                    case ThinkingLevel.LOW:
+                        convertedOptions.ReasoningEffort = ButlerThinkingEffortChoice.Low;
+                        break;
+                }
+            }
+            else
+            {
+                convertedOptions.ReasoningEffort = null;
+
+            }
             if (Options.MaxOutputTokens is not null)
             {
                 convertedOptions.MaxOutputTokenCount = Options.MaxOutputTokens;
@@ -725,6 +747,28 @@ namespace ButlerSDK.Providers.Gemini
             }
         }
 
+        static ThinkingConfig? HandleThoughts(IButlerChatCompletionOptions Options)
+        {
+
+            if (Options.ReasoningEffort is not null)
+            {
+                ThinkingConfig? BRAINS = new();
+                switch (Options.ReasoningEffort)
+                {
+                    case ButlerThinkingEffortChoice.Medium:
+                    case ButlerThinkingEffortChoice.Low:
+                        BRAINS.ThinkingLevel = ThinkingLevel.LOW;
+                        break;
+                    case ButlerThinkingEffortChoice.High:
+                    case ButlerThinkingEffortChoice.Max:
+                        BRAINS.ThinkingLevel = ThinkingLevel.HIGH;
+                        break;
+                    default: BRAINS = null; break;
+                }
+                return BRAINS;
+            }
+            return null;
+        }
         static void PlaceToolCall(GenerateContentRequest Target, ButlerChatToolCallMessage CallMe, ButlerChatToolResultMessage ReplyMe)
         {
             Content ToolCall = new();
@@ -798,6 +842,8 @@ namespace ButlerSDK.Providers.Gemini
             List<ButlerChatMessage> SystemMessage = new();
             GenerateContentRequest request = new();
             string? tool_id = null;
+
+
             ButlerChatMessageRole last_role = ((ButlerChatMessageRole)(-1));
             for (int i = 0; i < Messages.Count; i++)
             {
@@ -970,6 +1016,16 @@ namespace ButlerSDK.Providers.Gemini
                 }
             }
             TranslatorChatTools.TranslateTools(request, Options, GeminiProvider);
+
+
+            if (request.GenerationConfig is null)
+                request.GenerationConfig = new GenerationConfig();
+
+            if (request.GenerationConfig is not null)
+            {
+                request.GenerationConfig.ThinkingConfig = HandleThoughts(Options);
+            }
+
 
             return request;
         }

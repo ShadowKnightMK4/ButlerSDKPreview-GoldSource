@@ -4,6 +4,7 @@ using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using SecureStringHelper;
 using System.Security;
+using ButlerSDK.Providers.OpenAI.Generic;
 
 namespace ButlerSDK.Providers.OpenAI.DeepSeek
 {
@@ -13,7 +14,7 @@ namespace ButlerSDK.Providers.OpenAI.DeepSeek
     public class DeepSeekOpenAiProvider : IButlerLLMProvider,  IButlerChatCreationProvider
     {
 
-        ButlerOpenAiProvider local;
+        OpenAiGenericProvider local;
         /// <summary>
         /// DeepSeek default target per documentation
         /// </summary>
@@ -28,7 +29,7 @@ namespace ButlerSDK.Providers.OpenAI.DeepSeek
         {
             if (Target is null)
                 Target = new Uri(DefaultTarget);
-            local = new ButlerOpenAiProvider(Target);
+            local = new OpenAiGenericProvider(Target);
 
         }
         public IButlerChatCreationProvider ChatCreationProvider => this;

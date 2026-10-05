@@ -7,7 +7,6 @@ using ButlerSDK.ButlerPostProcessing;
 using ButlerSDK.Core;
 using ButlerSDK.Debugging;
 using ButlerSDK.Providers.Gemini;
-
 using ButlerSDK.Providers.OpenAI;
 using ButlerSDK.Tools;
 using ButlerSDK.ToolSupport;
@@ -17,6 +16,7 @@ using SecureStringHelper;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security;
+
 /*
  * A word. The TestBed project you see here is how I did manually testing aka edit and run.
  * There's no fancy rules for it to folly.

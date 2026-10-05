@@ -1,19 +1,113 @@
+1.3.0preview-preview aka 'Go go Parrellel bug fixes and Upgrades'
 
-Change log post last release. May be missing, inprogress or inaccurate:
-The ButlerTap object is now virtual for most of the routines, making customization a bit easier.
-Spelling errors in the source code STRINGS (any spelling errors (if existant)) gonna be likely left alone OR documented here if breaking.
-Another way to put it, internal objects with spelling errors are up for fix, private/internal objects too, no plans unless signifant justified of fixing any spell errors (if any) in public objects.
+General:
+As I go thru i'll probably find spelling errors in strings, I'll likely fix them
+API spelling errors are a different situation. Internal? -> those will likely get a metion but keep in mind for ButlerSDK anythinh tagged internal is treated as part of the implemnation rathan than a formal API.
+If it's public API or someowhere where a coder could call it without reflection, I don't plan on fixing spelling errors in the api unless I have a very good reason and simply seeing a spelling error isn't a good reason.
 
-Potential new Providers:
+NEW EXAMPLE:
+OpenAiThinking.
 
-VertexAI,   use the Google VertexAI for your enterpise control needs.
-Deep Seek,  users the OpenAI provider pointed to Deek Seek's mode.
-*Trenchcoat*,  a divient from the other providers and name not finalized.  Goal is let *this* one end up beeing a roater
-between select chat logs for other providers.
-
-On the dockets is IButlerChatCreationSupportedModels requiring IDisposable
+We use openai provider, set a reasoning effort and use a model known for thinking ('o1') then show the otuput.
 
 
+
+ButlerSDK.Core.Abstractions (Core Base intefaces and data types)
+BREAKING CHANGE: IButlerChatCompletionOptions now has Reasoning Effort Config. Both the Core OpenAI and Core Gemini Providers map this.
+Dev note: I was aiming to add gpt-6-astra support for openai provider with tooling.
+
+Developer Impact: As this modified the base abstraction the rest of the engine runs on, stuff is likely gonna break unless you recompile targeting this and use the versions that assume this base.  The main 2 providers
+Gemini / OpenAi currently assume this exists and convert as needed now.
+
+IMPORTANT! While the thinking is adjustable, seeing the thought tokens before the model output is not supported at this time.
+
+
+ButlerSDK.Provider.OpenAI (The OpenAI provider)
+
+TLDR; Adjustments for gpt-6-astra, a compatiblity layer and a few others.
+
+ADJUSTMENT: The Nuget that the OpenAi Provider itself uses to talk OpenAI protocol has been updated to OpenAi 2.11.0 for a few extra features such as ReasoningEffort Support.
+
+BREAKING CHANGE:  OpenAI Provider (and ButlerSDK 1.3.0) in general now supports ReasoningEffort settings for thinking models like gpt-6-astra. If you want to configure Reasoning Effort, you'll need to upgrade
+to 1.3.0 version accross the board in general or later. Earlier versions of ButlerSDK don't have it in the abstraction base. It's recommended if at all feasible in your sitations to match verison info aka don't mix 1.2.0 with 1.3.0 for example.
+
+Developer Note: This is partially because I was trying to bring tool support of gpt-6-astra. Online resources suggested a method with chat completions with reasoning effort. While that didn't bring the fix I wanted, it allows one to set thinking effort.  Note the model has to support it and the implemeation will likely exception if you try to pass Reasoning Effort to a model that goes what is that.
+
+
+NEW FEATURE:  OpenAi Provider now has partial Response EndPoint support. This is *not* full support. It's just enough to get tool calls to work with Astra and  currently only has been tested for that.
+
+Developer Note: The Model config (below) is a direct result of this. Also what the openai sdk is doing is handling the response thing from OpenAI NuGet and translating that to ButlerSDK's chat completion settings, dropping an item 
+if that's not mapped (for example: attempting MCP (Model Context Prototol) or computer control).
+
+
+NEW FEATURE: The above 'model config' setup is used by ButlerOpenAiProvider gaining a new interface that allows data driving config. Leave it blank or null? Everything is gonna be Chat Completion.
+
+
+Developer Note: Out of the box, this shouldn't really effect you. The Shim Providers use a special varient that always uses chat completions. The OpenAI provider (NOT the generic one) is checking a list of strings that have a marker
+that says either use Chat Completion or Response Endpoint and if not there a default setting.
+
+
+NEW FEATURE: There's a general 'always chat completion' model => OpenAiGenericProvider
+
+
+Dev Note: There's an always Chat Completion ment for shims (Ollama, DeepSeek ect...) that blanks the list by default and forces Chat Completion Mode
+ It's ButlerSDK.Provider.OpenAI project in ButlerSDK.Providers.OpenAI.Generic as OpenAiGenericProvider. The Shims (DeepSeek, Ollama) ect use this one instead.
+
+
+ADJUSTMENT: If the OpenAI provier is in response mode, it will check if additionalProperties:false is in the json describing the tool and insert it transparently if not. This does *not* happen in Chat Completion mode.
+I figure there's a performance penality but it seems to be worth supporting to keep the agnostic base which is heavily influenced via Chat Completion.
+
+
+ADJUSTMENT: Accidently adjusting the provider namespace in earlier checkpoint, reverted to normal.
+
+
+
+NEW FEATURE: The Openai provider ships with a small subclass varianet 'OpenAiGenericProvider' that default to always using the chat end point. The Shims use this one.
+
+NEW FEATURE ** AND FEEDBACK REQUESTED**: OpenAi Provider now supports Astra and tool calls, please provider feedback on any weirdness. It works ok for my redacted project of mine.
+
+
+What is OpenAi Provider Model Config?
+
+
+MODEL CONFIG settings OpenAI provider supports a 'ModelConfig' settting.
+
+ Default will give you the chat completion you already know but you can config Chat COmpletio nor ReponseCompletion dressed as chat completion.
+
+Heres how it works.  Provider Checks chat completion list? If requested model there, we route to chat completion list.
+If the chat completion list not found, we check the reponse list and route there if not found.
+BUT should a model not be in either a by default chat completion setting is used.
+
+Current defaults:  everything but gpt6-astra model are chat completion.  Because gpt6 does not support tool calls in chat completion,
+the openai provider has gained response. Note: This is *not* fully response support as the chat completion is assumed thruough the system,
+it's essentially intercepting the response object stuff and stuffing it an a chat ocmlpetion object.
+
+
+ButlerSDK.Provider.OpenAI.DeepSeek
+
+NEW PROVIDER:
+Welcome ButlerSDK.Provider.OpenAI.DeepSeek.  This provider is very much like the Ollama shim, we take the main provider and point it to 
+Deek Seek's end point.  You're gonna need to get yourself a Deep Seek API key to use their sevices. As alwasys don't store keys directly in source without a very good reason, and you likely don't got one.
+
+This shim using the It uses the 'OpenAiGenericProvider' in version 1.3.0
+
+
+ButlerSDK.Provider.OpenAI.Ollama
+
+ADJUSTMENT: Ollama Provider uses 'OpenAiGenericProvider'  instead of the the default OpenAI Provider, keeping it in normal chat completiom mode.
+
+
+
+Butler.Core.
+ADJUSTMENT: ButlerTap object (aka the tap the TimePunch shows) has most routines if not all that could be virtual, actualy be virtual. Have fun.
+
+
+ButlerSDK.Tools.Resolver
+The default result is hopefully more TPL friendly - had more than afew tool calls trigger in parell on openai provider side and the .net was complaining of
+sync errors. 
+
+Consider the source below the read the changes
+```
 public class ToolResolverTelemetryStats
 {
     public uint InPassingCount;
@@ -24,50 +118,44 @@ public class ToolResolverTelemetryStats
 
     public ToolResolverTelemetryStats();
 }
+```
 
 
-BUG FIX TO DO:
-Provider namespace adjust for openai
+
+CHANGE: The ToolUsed (ToolResolverTelemetryStats) readonly list is now a ConcurrentBag in interface form in the default runner.
+CHANGE: Default runner now actually locks {} when interacting with ExceptionsCaught in (ToolResolverTelemetryStats).
+BUG FIX: When a tool returns that a possible request (ie ValidateTool()) require, the error recovery code in the runner here forgot to set a non null return message,
+which triggers errors downstream which triggered fatal errors in a session.
 
 
-Posible breaking change in 1.2.6.
-both providers (gemini tdb) , openai now translate reasoning effort.
-The abstraction now requires a reasoning effort in the interface
 
-Currently working on added tool + astral support.
+CHANGE: Attempt to addding a tool into the tool bench that is a null instance ie AddTool("Something", null) will throw an argumentnullexception on add instead of later.
 
-Specific to openai provider.
-It has gained a concept of 'model config' Registera modal - such as 'gpt-astra-6' and it provider sees its needed to use response api -> routes there.
-SUBIHJECT TO CHANGE!!
+
+
+NEW FEATURE: Default runner now has an adjustable upper limit of max tasks when executing parrel tool calls. Default is 6. You can adjust it in ToolResolver.MaxToolThreads.
+IMPORTANT! the interface implementation does *not* require this feature. It's specific to the default used if a dev doesn't do their own.
+
+
+Dev Note: The redected project of mind exposed some errors in my default bench regarding task parrells and error fallback code. These changes are the result of that.  Heads up I figured orikginally Dictionary => ConccurrentDictionary() but then that was an unneeded breaking change when my tool runner could just do it directly.
+
+Dev note: Now uses a SephmoreSlim to limit spawned tasks. Default resolver is 6 tasks at a time to solve an LLM's parrell tools. Note while this is specific to  default
+resolver, you need not actually impement in your custom one (ie i'ts not part of the standard.)
+
+Dev Note: For the folks interested, yes my error code for ValidateTool forgot to set the message string to non null if a tool reports validation failed, and i forgot to account for that. 
+
+
+ButlerSDK.Provider.Gemini
+Has Reasoning Effort translation added. 
 
 
 ButlerSdk.Tools.Bench
-BUG FIX: When a tool reported that passed json (ie validateTool()) was not infact an allowed called, error code forgot to set a non null return message,
-which which was triggering errors downstream. Hurray for stress test! Still needs a unit test to go *no more* in case someone removes the fix.
 
 
-dev note: When a tool said the json for the call (submitted by the bench runner) was invalid, the runner was forgetting to set message string in the butlerchatmessage,
-which was propergating to the openai provider to go exceptionally bad (triggered exception).
-
-change: Attempt to addding a tool into the tool bench that is a null instance will throw an argumentnullexception on add instead of later.
-
-new:  Default bench now has ILogger stuff. Yay!
+NEW:  Default bench now has ILogger stuff. Yay!
 
 
 
-ButlerSDK.Tools.Resolver
-The default result is hopefully more TPL friendly - had more than afew tool calls trigger in parell on openai provider side and the .net was complaining of
-sync errors. 
-
-CHANGE: The ToolUsed (ToolResolverTelemetryStats) readonly list is now a ConcurrentBag in disuigse in the default runner.
-CHANGE: Default runner now actually locks {} when interacting with ExceptionsCaught in (ToolResolverTelemetryStats).
-NEW FEATURE: Default runner now has an adjustable upper limit of max tasks when executing parrel tool calls. Default is 6. You can adjust it in ToolResolver.MaxToolThreads.
-Note: the interface implementation does *not* require this feature. It's specific to the default used if a dev doesn't do their own.
-
-
-
-Dev note: Now adds a SephmoreSlim to limit spawned tasks. Default resolver is 6 tasks at a time to solve an LLM's parrell tools. Note while this is specific to  default
-resolver, you need not actually impement in your custom one (ie i'ts not part of the standard.
 
 
 
@@ -78,6 +166,7 @@ Note The Vertex AI (Gemini) provider is NOT in this release. I want to confirm w
 The normal Gemini provider however IS, with some adjustments to prep for it's use in VertexAI variant.
 Also the folder structure of the source code has been adjusted to hopefully make it easier for others and myself to nagivate.
 
+GEMINI HAS THE THOUGHT THING NOW. It's curretnly untested.
 
 
 This affects the projects in the SDK:

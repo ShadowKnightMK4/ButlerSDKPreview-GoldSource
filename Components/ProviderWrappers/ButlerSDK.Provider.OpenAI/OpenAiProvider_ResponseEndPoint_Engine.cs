@@ -15,7 +15,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 #pragma warning disable OPENAI001
-namespace ButlerSDK.Provider.OpenAI
+namespace ButlerSDK.Providers.OpenAI
 {
     /* the code that is needed for the response is gonna go here and we are essentially
 

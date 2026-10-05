@@ -67,7 +67,7 @@ static class Program
         // give a push
         butler.AddUserMessage("What's the reason for gaming head phones and what 's the full date and time today.");
 
-        // fire off the request to OpenAI's servers
+        // fire off the request Gemini's servers
         var EndReason = await butler.StreamResponseAsync(SimpleHandler);
 
         // write the message to front.v

@@ -123,6 +123,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK,Provider.Gemini.V
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.TrenchCoat", "Components\ProviderWrappers\ButlerSDK.Provder.TrenchCoat\ButlerSDK.Provider.TrenchCoat.csproj", "{FE88E725-8580-48A2-BBF7-7963A8A88651}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAiThinking", "Examples\OpenAiThinking\OpenAiThinking.csproj", "{8DF6D4F6-E3F7-4BBF-98EF-105B810AF5EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -305,6 +307,10 @@ Global
 		{FE88E725-8580-48A2-BBF7-7963A8A88651}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE88E725-8580-48A2-BBF7-7963A8A88651}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE88E725-8580-48A2-BBF7-7963A8A88651}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DF6D4F6-E3F7-4BBF-98EF-105B810AF5EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DF6D4F6-E3F7-4BBF-98EF-105B810AF5EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DF6D4F6-E3F7-4BBF-98EF-105B810AF5EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DF6D4F6-E3F7-4BBF-98EF-105B810AF5EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -357,6 +363,7 @@ Global
 		{8EE98703-C511-4B42-9987-0C0DD1E08158} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{188A7070-A40C-4D34-AF11-CC5C850A2C48} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{FE88E725-8580-48A2-BBF7-7963A8A88651} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{8DF6D4F6-E3F7-4BBF-98EF-105B810AF5EF} = {90C68CD0-9657-46C7-865E-C27B83631C29}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E98753D-786C-427A-9051-6515CCB6B063}

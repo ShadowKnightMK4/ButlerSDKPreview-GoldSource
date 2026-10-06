@@ -17,6 +17,96 @@ using System.Threading.Tasks;
 #pragma warning disable OPENAI001
 namespace ButlerSDK.Providers.OpenAI
 {
+
+
+    public static class TranslatorReasoningEffortChatCompletion
+    {
+        public static ChatReasoningEffortLevel TranslateToProvider(ButlerThinkingEffortChoice Effort)
+        {
+            switch (Effort)
+            {
+                case ButlerThinkingEffortChoice.Max:
+                    return ChatReasoningEffortLevel.High;
+                case ButlerThinkingEffortChoice.High:
+                    return ChatReasoningEffortLevel.High;
+                case ButlerThinkingEffortChoice.Medium:
+                    return ChatReasoningEffortLevel.Medium;
+                case ButlerThinkingEffortChoice.Low:
+                    return ChatReasoningEffortLevel.Minimal;
+                case ButlerThinkingEffortChoice.None:
+                    return ChatReasoningEffortLevel.None;
+            }
+            throw new NotImplementedException("Unknown effort? Did a new butler reasoning effort for chat completion get added?");
+        }
+
+        public static ButlerThinkingEffortChoice TranslateFromProvider(ChatReasoningEffortLevel Effort)
+        {
+            if (Effort == ChatReasoningEffortLevel.High)
+                return ButlerThinkingEffortChoice.High;
+            if (Effort == ChatReasoningEffortLevel.Medium)
+                return ButlerThinkingEffortChoice.Medium;
+            if (Effort == ChatReasoningEffortLevel.Minimal)
+                return ButlerThinkingEffortChoice.Low;
+            if (Effort == ChatReasoningEffortLevel.None)
+                return ButlerThinkingEffortChoice.None;
+
+
+            throw new NotImplementedException("Unknown effort? Did openai's response effort add someting?");
+        }
+    }
+    public static class TranslatorReasoningEffortResponse
+    {
+        public static ResponseReasoningEffortLevel TranslateToProvider(ButlerThinkingEffortChoice Effort)
+        {
+            switch (Effort)
+            {
+                case ButlerThinkingEffortChoice.Max:
+                    return ResponseReasoningEffortLevel.High;
+                case ButlerThinkingEffortChoice.High:
+                    return ResponseReasoningEffortLevel.High;
+                case ButlerThinkingEffortChoice.Medium:
+                    return ResponseReasoningEffortLevel.Medium;
+                case ButlerThinkingEffortChoice.Low:
+                    return ResponseReasoningEffortLevel.Low;
+                case ButlerThinkingEffortChoice.None:
+                    return ResponseReasoningEffortLevel.None;
+            }
+
+            throw new NotImplementedException("Unknown effort? Did a new butler reasoning effort for response (openai) get added?");
+        }
+        public static ButlerThinkingEffortChoice TranslateFromProvider(ResponseReasoningEffortLevel Effort)
+        {
+            if (Effort == null)
+            {
+                return ButlerThinkingEffortChoice.Low;
+            }
+            if (Effort ==  ResponseReasoningEffortLevel.High)
+            {
+                return ButlerThinkingEffortChoice.High;
+            }
+
+            if (Effort ==  ResponseReasoningEffortLevel.Low)
+            {
+                return ButlerThinkingEffortChoice.Low;
+            }
+
+            if (Effort == ResponseReasoningEffortLevel.Medium)
+            {
+                return ButlerThinkingEffortChoice.Medium;
+            }
+
+            if (Effort == ResponseReasoningEffortLevel.Minimal)
+            {
+                return ButlerThinkingEffortChoice.Low;
+            }
+
+            if (Effort == ResponseReasoningEffortLevel.None)
+            {
+                return ButlerThinkingEffortChoice.None;
+            }
+            throw new NotImplementedException("Unknown effort!");
+        }
+    }
     /* the code that is needed for the response is gonna go here and we are essentially
 
 

@@ -22,6 +22,10 @@ Gemini / OpenAi currently assume this exists and convert as needed now.
 IMPORTANT! While the thinking is adjustable, seeing the thought tokens before the model output is not supported at this time.
 
 
+ButlerSDK.Core
+NEW FEATURE: the Sandbox loader now has constructors using IList on top of the original List contructors.
+
+
 ButlerSDK.Provider.OpenAI (The OpenAI provider)
 
 TLDR; Adjustments for gpt-6-astra, a compatiblity layer and a few others.

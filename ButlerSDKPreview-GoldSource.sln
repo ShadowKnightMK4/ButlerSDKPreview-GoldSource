@@ -119,7 +119,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.OpenAI.O
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.OpenAI.DeepSeek", "Components\ProviderWrappers\ButlerSDK.Provider.OpenAI.DeepSeek\ButlerSDK.Provider.OpenAI.DeepSeek.csproj", "{8EE98703-C511-4B42-9987-0C0DD1E08158}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK,Provider.Gemini.Vertex", "Components\ProviderWrappers\ButlerSDK,Provider.Gemini.Vertex\ButlerSDK,Provider.Gemini.Vertex.csproj", "{188A7070-A40C-4D34-AF11-CC5C850A2C48}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.Gemini.Vertex", "Components\ProviderWrappers\ButlerSDK,Provider.Gemini.Vertex\ButlerSDK.Provider.Gemini.Vertex.csproj", "{188A7070-A40C-4D34-AF11-CC5C850A2C48}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ButlerSDK.Provider.TrenchCoat", "Components\ProviderWrappers\ButlerSDK.Provder.TrenchCoat\ButlerSDK.Provider.TrenchCoat.csproj", "{FE88E725-8580-48A2-BBF7-7963A8A88651}"
 EndProject

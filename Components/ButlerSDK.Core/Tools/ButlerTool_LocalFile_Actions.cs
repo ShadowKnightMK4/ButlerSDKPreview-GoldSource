@@ -16,6 +16,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 namespace ButlerSDK.Tools
 {
+
+    
     [ToolSupport.DiscoverTool.ButlerTool_DiscoverAttributes(true)]
     /// <summary>
     /// load text from disk and save text to disk
@@ -23,6 +25,7 @@ namespace ButlerSDK.Tools
     /// <remarks>API handler, <see cref="IButlerVaultKeyCollection"/> can be null when using this</remarks>
     public class ButlerTool_LocalFile_Load : ButlerToolBase
     {
+   
         /// <summary>
         /// file to be read is bigger than the limit
         /// </summary>
@@ -596,15 +599,25 @@ namespace ButlerSDK.Tools
            
         }
 
-        public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler, List<string> AllowedReads) : base(KeyHandler)
+        public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler, IList<string> AllowedReads) : base(KeyHandler)
         {
             this._SandBoxPathReadOnly = new();
             this._SandBoxPathWriteOnly = new();
 
             this._SandBoxPathReadOnly.AddRange(AllowedReads);
         }
+        public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler, List<string> AllowedReads) : this(KeyHandler, AllowedReads as IList<string>)
+        {
 
-        public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler, List<string> AllowedReads, List<string> AllowedWrites) : base(KeyHandler)
+        }
+
+        public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler, List<string> AllowedReads, List<string> AllowedWrites) : this(KeyHandler, AllowedReads as IList<string>, AllowedWrites as IList<string>)
+        {
+
+        }
+
+
+        public ButlerTool_LocalFile_Load(IButlerVaultKeyCollection? KeyHandler, IList<string> AllowedReads, IList<string> AllowedWrites) : base(KeyHandler)
         {
             this._SandBoxPathReadOnly = new();
             this._SandBoxPathReadOnly.AddRange(AllowedReads);
@@ -615,7 +628,7 @@ namespace ButlerSDK.Tools
 
         public override string ToolName => "PerformLocalFileAction";
 
-        public override string ToolDescription => "Retrieve files on the local system indicated by user";
+        public override string ToolDescription => "Retrieve files and on the local system indicated by user";
 
         public override string ToolVersion => "YES";
 

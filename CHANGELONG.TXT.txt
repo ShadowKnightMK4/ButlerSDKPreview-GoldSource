@@ -1,12 +1,20 @@
+SELF:
+Finish Unit tests for reasoning effort.
+Rip the reasoning effort translator stuff to its its TranslatorXXXX thing to stay consistant.
+
+
+
 1.3.0preview-preview aka 'Go go Parrellel bug fixes and Upgrades'
 
 General:
 As I go thru i'll probably find spelling errors in strings, I'll likely fix them
 API spelling errors are a different situation. Internal? -> those will likely get a metion but keep in mind for ButlerSDK anythinh tagged internal is treated as part of the implemnation rathan than a formal API.
 If it's public API or someowhere where a coder could call it without reflection, I don't plan on fixing spelling errors in the api unless I have a very good reason and simply seeing a spelling error isn't a good reason.
+If you're digging thru internal / private routines via reflection, no commment, no promises.
+
 
 NEW EXAMPLE:
-OpenAiThinking.
+OpenAiThinking - still very entry level but it shows setting the reasoing effort for a model that takes it.
 
 We use openai provider, set a reasoning effort and use a model known for thinking ('o1') then show the otuput.
 

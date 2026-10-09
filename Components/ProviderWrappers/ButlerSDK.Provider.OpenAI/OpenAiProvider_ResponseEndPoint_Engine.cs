@@ -27,12 +27,18 @@ namespace ButlerSDK.Providers.OpenAI
             {
                 case ButlerThinkingEffortChoice.Max:
                     return ChatReasoningEffortLevel.High;
+
+
                 case ButlerThinkingEffortChoice.High:
                     return ChatReasoningEffortLevel.High;
+
+
                 case ButlerThinkingEffortChoice.Medium:
                     return ChatReasoningEffortLevel.Medium;
+
                 case ButlerThinkingEffortChoice.Low:
-                    return ChatReasoningEffortLevel.Minimal;
+                    return ChatReasoningEffortLevel.Low;
+
                 case ButlerThinkingEffortChoice.None:
                     return ChatReasoningEffortLevel.None;
             }
@@ -45,7 +51,7 @@ namespace ButlerSDK.Providers.OpenAI
                 return ButlerThinkingEffortChoice.High;
             if (Effort == ChatReasoningEffortLevel.Medium)
                 return ButlerThinkingEffortChoice.Medium;
-            if (Effort == ChatReasoningEffortLevel.Minimal)
+            if ( (Effort == ChatReasoningEffortLevel.Minimal) || (Effort == ChatReasoningEffortLevel.Low))
                 return ButlerThinkingEffortChoice.Low;
             if (Effort == ChatReasoningEffortLevel.None)
                 return ButlerThinkingEffortChoice.None;
@@ -76,10 +82,6 @@ namespace ButlerSDK.Providers.OpenAI
         }
         public static ButlerThinkingEffortChoice TranslateFromProvider(ResponseReasoningEffortLevel Effort)
         {
-            if (Effort == null)
-            {
-                return ButlerThinkingEffortChoice.Low;
-            }
             if (Effort ==  ResponseReasoningEffortLevel.High)
             {
                 return ButlerThinkingEffortChoice.High;
@@ -170,7 +172,7 @@ namespace ButlerSDK.Providers.OpenAI
                 case StreamingResponseFunctionCallArgumentsDeltaUpdate FuncCall:
                     {
                         Gotton = true;
-                        break;
+                        break; /*
                         ButlerStreamingToolCallUpdatePart Pr = new(
                             string.Empty,
                             FuncCall.Delta.ToString(),
@@ -180,12 +182,12 @@ namespace ButlerSDK.Providers.OpenAI
 
                         ret.EditableToolCallUpdates.Add(Pr);
                         Gotton = true;
-                        break; 
+                        break; */
                     }
                 case StreamingResponseFunctionCallArgumentsDoneUpdate FuncDone:
                     {
                         Gotton = true;
-                        break;
+                        break; /*
                         string str = FuncDone.FunctionArguments.ToString();
                         if (str is null)
                         {
@@ -199,7 +201,7 @@ namespace ButlerSDK.Providers.OpenAI
         
                         ret.EditableToolCallUpdates.Add(Pr);
                         Gotton = true;
-                        break;
+                        break;*/
                     }
                 case StreamingResponseCreatedUpdate CreatedUpdate:
                     {
@@ -509,10 +511,12 @@ namespace ButlerSDK.Providers.OpenAI
                 throw new NotImplementedException("Frequence penalty don't map to reponse. ");
             }
 
+#pragma warning disable CS0618 // Type or member is obsolete
             if (chat_shim.FunctionChoice is not null)
             {
                 throw new NotImplementedException("For butlersdk to openai to response mini provider (tools are still the butler mode!).");
             }
+
 
             if (chat_shim.Functions is not null)
             {
@@ -521,7 +525,7 @@ namespace ButlerSDK.Providers.OpenAI
                     throw new NotImplementedException("For butlersdk to openai to response mini provider (tools are still the butler mode!).");
                 }
             }
-
+#pragma warning restore CS0618 // Type or member is obsolete
             if (chat_shim.IncludeLogProbabilities is not null)
             {
                 throw new NotImplementedException("IncludeLog don't map!");
@@ -550,7 +554,7 @@ namespace ButlerSDK.Providers.OpenAI
 
             if (chat_shim.OutputPrediction is not null)
             {
-                throw new NotImplementedException("OtuputPriction don't map");
+                throw new NotImplementedException("OutputPriction don't map");
             }
 
             if (chat_shim.PresencePenalty is not null)

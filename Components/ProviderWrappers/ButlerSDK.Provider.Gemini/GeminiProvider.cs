@@ -435,12 +435,64 @@ namespace ButlerSDK.Providers.Gemini
             return null;
         }
     }
+
+    public static class  TranslatorChatReasoningEffort
+    {
+        public static ButlerThinkingEffortChoice? FromProvider(ThinkingConfig? Config)
+        {
+            if (Config is null)
+                return null;
+            if (Config.ThinkingLevel == ThinkingLevel.THINKING_LEVEL_UNSPECIFIED)
+            {
+                return null;
+            }
+            if (Config.ThinkingLevel == ThinkingLevel.HIGH)
+            {
+                return ButlerThinkingEffortChoice.Max;
+            }
+
+            if (Config.ThinkingLevel == ThinkingLevel.LOW)
+            {
+                return ButlerThinkingEffortChoice.Low;
+            }
+
+            if (Config.ThinkingLevel == null)
+            {
+                return null;
+            }
+            return null;
+        }
+
+        public static ThinkingConfig? TranslateToProvider(IButlerChatCompletionOptions Options)
+        {
+
+            if (Options.ReasoningEffort is not null)
+            {
+                ThinkingConfig? BRAINS = new();
+                switch (Options.ReasoningEffort)
+                {
+                    case ButlerThinkingEffortChoice.Medium:
+                    case ButlerThinkingEffortChoice.Low:
+                        BRAINS.ThinkingLevel = ThinkingLevel.LOW;
+                        break;
+                    case ButlerThinkingEffortChoice.High:
+                    case ButlerThinkingEffortChoice.Max:
+                        BRAINS.ThinkingLevel = ThinkingLevel.HIGH;
+                        break;
+                    default: BRAINS = null; break;
+                }
+                return BRAINS;
+            }
+            return null;
+        }
+    }
     public static class TranslatorChatCompletionObjects
     {
         public static IButlerChatCompletionOptions TranslateFromProvider(GenerationConfig Options)
         {
             ButlerChatCompletionOptions convertedOptions = new ButlerChatCompletionOptions();
 
+            /*
             
             if (Options.ThinkingConfig is not null)
             {
@@ -461,7 +513,10 @@ namespace ButlerSDK.Providers.Gemini
             {
                 convertedOptions.ReasoningEffort = null;
 
-            }
+            }*/
+            convertedOptions.ReasoningEffort = TranslatorChatReasoningEffort.FromProvider(Options.ThinkingConfig);
+
+
             if (Options.MaxOutputTokens is not null)
             {
                 convertedOptions.MaxOutputTokenCount = Options.MaxOutputTokens;
@@ -1023,7 +1078,7 @@ namespace ButlerSDK.Providers.Gemini
 
             if (request.GenerationConfig is not null)
             {
-                request.GenerationConfig.ThinkingConfig = HandleThoughts(Options);
+                request.GenerationConfig.ThinkingConfig = TranslatorChatReasoningEffort.TranslateToProvider(Options);
             }
 
 

@@ -32,7 +32,7 @@ namespace ButlerSDK.Core
         /// <summary>
         /// If <see cref="AutoSysPromptToday"/> is true, this method is called to insert today's date/time as a temporary system prompt each turn.
         /// </summary>
-        /// <remarks>This method is overridable if you want to insert something else. IMPORTANT. Highly recommand you do NOT insert anything except temporary messages</remarks>
+        /// <remarks>This method is overridable if you want to insert something else. IMPORTANT. Highly recommend you do NOT insert anything except temporary messages</remarks>
         protected virtual void HandleAutoSysPromptToday()
         {
             if (AutoSysPromptToday)

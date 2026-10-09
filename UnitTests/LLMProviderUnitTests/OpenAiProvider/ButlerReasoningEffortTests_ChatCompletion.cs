@@ -9,7 +9,7 @@ using OpenAI.Chat;
 #pragma warning disable OPENAI001
 namespace UnitTests.Provider.OpenAI
 {
-#error finish the reasoning effort unit tests for solidifying the openai translatior thing
+
     [TestClass]
     public class ButlerReasoningEffortTests_ButlerToOpenAI
     {
@@ -58,10 +58,11 @@ namespace UnitTests.Provider.OpenAI
             Assert.AreEqual(
 
                 TranslatorReasoningEffortChatCompletion.TranslateToProvider(ButlerToolContract.DataTypes.ButlerThinkingEffortChoice.Low),
-                ChatReasoningEffortLevel.Minimal);
+                ChatReasoningEffortLevel.Low);
 
 
         }
+
 
         [TestMethod]
         public void TranslatorMapping_ChatCompletion_zero_is_none()

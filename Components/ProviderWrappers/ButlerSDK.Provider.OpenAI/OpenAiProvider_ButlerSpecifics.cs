@@ -215,10 +215,9 @@ namespace ButlerSDK.Providers.OpenAI
                     break;
                 default:
                     throw new InvalidDataException("Unknown reasoning effort. Accepted values are {High, medium, low, none} if openai has added more, this provider for butler needs update");
-                    break;
 
             }
-#pragma warning enable OPENAI001
+#pragma warning disable OPENAI001
 
 
 
@@ -249,14 +248,6 @@ namespace ButlerSDK.Providers.OpenAI
                     object whatbox = ConversionSource.CreateChatTool(ToolInterface);
                     ChatTool WhatsIn = (ChatTool)whatbox;
                     continue;
-                    if (WhatsIn is not null)
-                    {
-                        ret.Tools.Add(WhatsIn);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Hey a CreateChatTool for an OpenAI based provider failed to actual return correct data type - ChatTool");
-                    }
                 }
             }
             return ret;

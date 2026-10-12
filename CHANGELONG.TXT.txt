@@ -1,17 +1,13 @@
-SELF:
-Finish Unit tests for reasoning effort.
-Rip the reasoning effort translator stuff to its its TranslatorXXXX thing to stay consistant.
-
-
 
 1.3.0preview-preview aka 'Go go Parrellel bug fixes and Upgrades'
+
 
 General:
 As I go thru i'll probably find spelling errors in strings, I'll likely fix them
 API spelling errors are a different situation. Internal? -> those will likely get a metion but keep in mind for ButlerSDK anythinh tagged internal is treated as part of the implemnation rathan than a formal API.
 If it's public API or someowhere where a coder could call it without reflection, I don't plan on fixing spelling errors in the api unless I have a very good reason and simply seeing a spelling error isn't a good reason.
 If you're digging thru internal / private routines via reflection, no commment, no promises.
-
+Heads up thru, this general spell check is *not* for the things in the unit test session. They exist to test the code.
 
 NEW EXAMPLE:
 OpenAiThinking - still very entry level but it shows setting the reasoing effort for a model that takes it.
@@ -28,6 +24,16 @@ Developer Impact: As this modified the base abstraction the rest of the engine r
 Gemini / OpenAi currently assume this exists and convert as needed now.
 
 IMPORTANT! While the thinking is adjustable, seeing the thought tokens before the model output is not supported at this time.
+
+
+ButlerSDK.Tool.Bench
+NEW FEATURE:  Part of the way to ensure the bug fix for the resolver forgetting error messages doesn't silently return, Bench has gained an opt in (default is current old action if made outside of butler chat object, if in the chat object,
+butler will use the new one) where tool validation returning false will trigger an exception that the used tool resolver is expected to run. If you let the chat session object pick (you're gonna get the new option)
+
+
+BREAKING CHANGE:
+IButlerToolKitAssignValidationHandler is now a requested part of the butler tool min requirement protocol. It linterally is just expose a way to control if your custom bench wants the legacy or throw behavior a client might want for now
+but might be extended in the future. HOWEVER the legacy behavior (no exception thrown for the task runner) should be the default if your custom bench don't know what it is.
 
 
 ButlerSDK.Core

@@ -1,10 +1,13 @@
-﻿using ButlerToolContract.DataTypes;
-using ButlerSDK.ToolSupport;
+﻿using ButlerSDK.ToolSupport;
+using ButlerSDK.ToolSupport.Bench;
+using ButlerToolContract.DataTypes;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnitTestDataTypes;
 using UnitTests.UnitTestingTools;
 
 namespace UnitTests.CurrentTests
@@ -12,6 +15,63 @@ namespace UnitTests.CurrentTests
     [TestClass]
     public class ToolResolver5_UnitTests
     {
+        [TestMethod]
+        public void ToolResolver_ValidFailDoesNotCrash_EXCEPTION_LOUD_MODE()
+        {
+            ToolResolver TestMe = (ToolResolver)ToolResolver.CreateSchedule("TEST");
+            TestMe.MaxToolThreads = 1;
+            Assert.IsNotNull(TestMe);
+            var ddool = new AlwaysFailsVaidationTool();
+            TestMe.ScheduleTool("TEST", "{}", ddool.ToolName);
+            TestMe.ToolSurfaceScope = ButlerProtocolBase.ToolSecurity.ToolSurfaceScope.AllAccess;
+            var bench = new ButlerToolBench();
+            bench.AddTool(ddool.ToolName, ddool, ButlerProtocolBase.ToolSecurity.ToolSurfaceScope.AllAccess, true);
+            bench.ToolValidationAction = ToolValidationMode.AlwaysThrow;
+            var resolt = new ToolResolverTelemetryStats();
+
+            TestMe.RunScheduleAsync(bench, resolt).Wait();
+
+            Assert.IsTrue(resolt.ExceptionsCaught.Keys.Count != 0);
+            Assert.IsNotNull(resolt.ExceptionsCaught["TEST"]);
+            Assert.IsTrue(resolt.ExceptionsCaught["TEST"].Count != 0); 
+
+            // when in always throw mode, a validation fail triggers an exception the default bench gets, and then adds to the list.
+            Assert.IsTrue(resolt.ExceptionsCaught["TEST"].Count != 0);
+            return;
+
+            
+        }
+
+        [TestMethod]
+        public void ToolResolver_ValidFailDoesNotCrash_EXCEPTION_LEGACY_MODE()
+        {
+            ToolResolver TestMe = (ToolResolver)ToolResolver.CreateSchedule("TEST");
+            TestMe.MaxToolThreads = 1;
+            Assert.IsNotNull(TestMe);
+            var ddool = new AlwaysFailsVaidationTool();
+            TestMe.ScheduleTool("TEST", "{}", ddool.ToolName);
+            TestMe.ToolSurfaceScope = ButlerProtocolBase.ToolSecurity.ToolSurfaceScope.AllAccess;
+            var bench = new ButlerToolBench();
+            bench.AddTool(ddool.ToolName, ddool, ButlerProtocolBase.ToolSecurity.ToolSurfaceScope.AllAccess, true);
+            bench.ToolValidationAction = ToolValidationMode.Legacy;
+            var resolt = new ToolResolverTelemetryStats();
+
+            TestMe.RunScheduleAsync(bench, resolt).Wait();
+
+            Assert.IsTrue(resolt.ExceptionsCaught.Keys.Count != 0);
+            Assert.IsNotNull(resolt.ExceptionsCaught["TEST"].Count != 0);
+
+            // when in legacy, a validation fail just returns an error message in the tool call as if the result, there should be no exception.
+            // NOTE: the actualy tested tool literhally just always returns false.
+            // the tool runner should never actually be ran via the default resolver (yes notimplement)
+            Assert.IsTrue(resolt.ExceptionsCaught["TEST"].Count == 0);
+            return;
+
+
+        }
+
+
+
         /// <summary>
         /// Can we create an instance of our tool scheduler
         /// </summary>

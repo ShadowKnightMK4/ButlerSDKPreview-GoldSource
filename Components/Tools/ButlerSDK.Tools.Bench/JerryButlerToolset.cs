@@ -20,17 +20,26 @@ namespace ButlerSDK.ToolSupport.Bench
     /// </summary>
     public class ButlerToolBench: IButlerToolBench
     {
+
+
+        /// <summary>
+        /// Control if tool validation (ie validatetoolcall) returning false triggers an exception
+        /// </summary>
+        public ToolValidationMode ToolValidationAction { get; set; } = ToolValidationMode.Legacy;
+
         ILogger<ButlerToolBench>? Telemetry = null;
         public ButlerToolBench()
         {
             Limiter = new ApiKeyRateLimiter();
             Telemetry = null;
+            this.ToolValidationAction = ToolValidationMode.Legacy;
         }
 
         public ButlerToolBench(IApiKeyRateLimiter CustomLimiter)
         {
             ArgumentNullException.ThrowIfNull(CustomLimiter, nameof(CustomLimiter));    
             Limiter = CustomLimiter;
+            this.ToolValidationAction = ToolValidationMode.Legacy;
         }
 
         public ButlerToolBench(IApiKeyRateLimiter CustomLimiter, ILogger<ButlerToolBench>? TelemetryOutput=default): this(CustomLimiter)
@@ -39,6 +48,7 @@ namespace ButlerSDK.ToolSupport.Bench
             {
                 Telemetry = TelemetryOutput;
             }
+            this.ToolValidationAction = ToolValidationMode.Legacy;
         }
         /// <summary>
         /// When a tool does not have the attribute set, treat it as this attribute.
@@ -804,15 +814,29 @@ namespace ButlerSDK.ToolSupport.Bench
                         else
                         {
                             Telemetry?.LogError("{CallID} tool call self validate reported failure (tool rejected the function parameters!)", CallId);
+                            
                             var ret = new ButlerChatToolResultMessage(CallId, ToolValidateFailureArg, Arguments);
                             ret.ToolName = Tool.ToolName;
                             ErrorCode = ret;
 
+                            switch (ToolValidationAction)
+                            {
+                                case ToolValidationMode.Legacy:
+                                    break;
+                                default:
+                                    break;
+                                case ToolValidationMode.AlwaysThrow:
+                                    throw new ToolValidationFailure($"CallId {CallId} reported tool validation error (tool rejection function arguments!");
+                            }
                             // load bearing assignment. Either ensure the constructor we use actually sets a message OR we assign.
                             // Dear future reader *musical number* don't remove this this until ensuring in abstractions, the code assigns a result message!
                             ret.Message = ToolValidateFailureArg;
                             return false;
                         }
+                    }
+                    catch (ToolValidationFailure)
+                    {
+                        throw;
                     }
                     finally
                     {
@@ -821,6 +845,10 @@ namespace ButlerSDK.ToolSupport.Bench
                         if (shimdoc != null) shimdoc.Dispose();
                     }
                 }
+            }
+            catch (ToolValidationFailure)
+            {
+                throw;
             }
             finally
             {

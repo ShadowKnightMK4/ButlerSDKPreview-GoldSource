@@ -35,6 +35,8 @@ namespace UnitTests.UnitTestingTools
 
         public IEnumerable<string> ToolNames => throw new NotImplementedException();
 
+        public ToolValidationMode ToolValidationAction { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         public Dictionary<string, IButlerToolBaseInterface> fakeToolKit =new();
         /// <summary>
         /// For use in <see cref="ToolResolver"/> style test. Does NOT invoke anything. Will return a contracted 

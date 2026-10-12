@@ -616,10 +616,6 @@ namespace ButlerSDK
 
                     }
                 }
-                /*catch (InventoryOrSeviceCostException)
-                {
-                    HasCharged = false;
-                } */
                 catch (OverBudgetException)
                 {
                     HasCharged = false;

@@ -8,7 +8,49 @@ namespace UnitTests.CurrentTests
     [TestClass]
     public class ApiKeyExceptionTests
     {
-  
+        [TestMethod]
+        public void AtomicLookUp_ThrowsNonExistanceException_IfNotFound()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 2000, 200, 200, ButlerApiLimitType.SharedBudget, false);
+            testme.SharedBudget = 20;
+
+            Assert.ThrowsException<ServiceNonExistentException>( ()=>{
+
+                testme.CheckForCallPermissionAndCharge("NONAME", 200000);
+            });
+        }
+
+
+        [TestMethod]
+        public void AtomicLookUp_ThrowsOverBudget_IfNotEnough_SharedBudget()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 2000, 200, 200, ButlerApiLimitType.PerCall, false);
+            testme.SharedBudget = 20;
+
+
+            Assert.IsFalse(testme.CheckForCallPermissionAndCharge("TEST", 500012));
+
+        }
+
+
+        [TestMethod]
+        public void AtomicLookUp_ThrowsOverBudget_IfNotEnough_SharedBudget_AndInventory()
+        {
+            var testme = new ApiKeyRateLimiter();
+            testme.AddService("TEST", 2000, 200, 200, ButlerApiLimitType.PerCall, false);
+            testme.SharedBudget = 20;
+
+            
+                Assert.IsFalse(testme.CheckForCallPermissionAndCharge("TEST", 5000));
+            
+        }
+
+
+
+
+
         [TestMethod]
         public void CreateServiceNonExistant_ByString()
         {

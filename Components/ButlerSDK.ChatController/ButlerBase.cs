@@ -109,6 +109,7 @@ namespace ButlerSDK.Core
         
         public ButlerBase(IButlerVaultKeyCollection Keys, IButlerLLMProvider  Handler, IButlerChatCompletionOptions? Options,string ModelChoice,  string LLMKEYVAR= "" )
         {
+            this.ToolSet.ToolValidationAction = ToolValidationMode.AlwaysThrow;
             ArgumentNullException.ThrowIfNull(Keys, nameof(Keys));
             ArgumentNullException.ThrowIfNull(Handler, nameof(Handler));
             ArgumentNullException.ThrowIfNull(ModelChoice, nameof(ModelChoice));
@@ -142,6 +143,7 @@ namespace ButlerSDK.Core
         /// <exception cref="ArgumentNullException"> can trigger If <see cref="Keys"/>, <see cref="Handler"/> and <see cref="ModelChoice"/> are null </exception>
         public ButlerBase(IButlerVaultKeyCollection Keys, IButlerLLMProvider Handler, IButlerChatCompletionOptions? Options, string ModelChoice, string LLMKEYVAR = "", IButlerChatCollection? ChatMessageHandler=default)
         {
+            this.ToolSet.ToolValidationAction = ToolValidationMode.AlwaysThrow;
             ArgumentNullException.ThrowIfNull(Keys, nameof(Keys));
             ArgumentNullException.ThrowIfNull(Handler, nameof(Handler));
             ArgumentNullException.ThrowIfNull(ModelChoice, nameof(ModelChoice));

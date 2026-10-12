@@ -6,6 +6,30 @@ namespace ButlerSDK.ToolSupport.Bench
 {
 
     /// <summary>
+    /// This exists to trigger an exception when validation goes *nope*, which gets caught for telemetry data
+    /// </summary>
+    public class ToolValidationFailure : Exception
+    {
+        public ToolValidationFailure() : base()
+        {
+
+        }
+
+        public ToolValidationFailure(string message) : base(message)
+        {
+
+        }
+
+
+        public ToolValidationFailure(string? message, Exception? innerException) : base(message, innerException)
+        {
+        }
+    }
+
+
+
+
+    /// <summary>
     /// This defines a control for the tool thing to abstract a bit of it away from hard need on <see cref="ButlerToolBench"/>
     /// </summary>
     public interface IButlerToolKitQueryAndGet
@@ -81,7 +105,27 @@ namespace ButlerSDK.ToolSupport.Bench
         public void RemoveTool(string name, bool AllowCleanup, bool DoNotRemoveSystemTools = true);
 
     }
-    public interface IButlerToolBench : IDisposable, IButlerToolKitQueryAndGet, IButlerToolKitCallable, IButlerToolKitAsyncCallable, IButlerToolKitMutate
+
+    public enum ToolValidationMode
+    {
+        /// <summary>
+        /// don't throw, just return the error message *as* the tool resolve
+        /// </summary>
+        Legacy = 0,
+        /// <summary>
+        /// throw an exception that the task runner is expected to use
+        /// </summary>
+        AlwaysThrow = 1
+    }
+
+    public interface IButlerToolKitAssignValidationHandler
+    {
+        /// <summary>
+        /// control if you want legacy (no throw on validation failure) (or throw that lets you look at the stats object)
+        /// </summary>
+        public ToolValidationMode ToolValidationAction { get; set; } 
+    }
+    public interface IButlerToolBench : IDisposable, IButlerToolKitQueryAndGet, IButlerToolKitCallable, IButlerToolKitAsyncCallable, IButlerToolKitMutate, IButlerToolKitAssignValidationHandler
     {
     }
 }

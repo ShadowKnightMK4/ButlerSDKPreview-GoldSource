@@ -746,17 +746,6 @@ namespace ButlerSDK.ToolSupport
                                             if (TargetTool is IButlerToolAsyncResolver TT)
                                             {
                                                 result = await CallableToolKit.CallToolFunctionAsync(TargetTool, Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString());
-                                                if (result is null)
-                                                {
-                                                    Debugger.Break();
-                                                }
-                                                else
-                                                {
-                                                    if (result.Message is null)
-                                                    {
-                                                        Debugger.Break();
-                                                    }
-                                                }
                                                 if (result is not null)
                                                 {
                                                     ok = true;
@@ -769,17 +758,6 @@ namespace ButlerSDK.ToolSupport
                                             else
                                             {
                                                 result = CallableToolKit.CallToolFunction(TargetTool, Entry.ID.ToString(), Entry.ToolArgumentsPart.ToString(), out ok);
-                                                if (result is null)
-                                                {
-                                                    Debugger.Break();
-                                                }
-                                                else
-                                                {
-                                                    if (result.Message is null)
-                                                    {
-                                                        Debugger.Break();
-                                                    }
-                                                }
                                             }
                                             if (Stats is not null)
                                             {
@@ -793,6 +771,7 @@ namespace ButlerSDK.ToolSupport
                                 {
                                     // grab the error  and add to the list
                                     Entry.Failures.Add(ex);
+                                    
                                 }
                                 finally
                                 {
@@ -815,35 +794,11 @@ namespace ButlerSDK.ToolSupport
                                     }
 
 
-                                    if (result is null)
-                                    {
-                                        Debugger.Break();
-                                    }
-                                    else
-                                    {
-                                        if (result.Message is null)
-                                        {
-                                            Debugger.Break();
-                                        }
-                                    }
-
-
 
                                     // if OK. YAY
                                     if (ok)
                                     {
                                         Entry.Results = result;
-                                        if (result is null)
-                                        {
-                                            Debugger.Break();
-                                        }
-                                        else
-                                        {
-                                            if (result.Message is null)
-                                            {
-                                                Debugger.Break();
-                                            }
-                                        }
                                     }
                                     else
                                     {
@@ -866,17 +821,6 @@ namespace ButlerSDK.ToolSupport
                                             Entry.Results = new ButlerChatToolResultMessage(Entry.ID.ToString(), $"Tool Error: {"The tool reported it did not have sucess."}");
                                         }
 
-                                        if (result is null)
-                                        {
-                                            Debugger.Break();
-                                        }
-                                        else
-                                        {
-                                            if (result.Message is null)
-                                            {
-                                                Debugger.Break();
-                                            }
-                                        }
                                     }
                                 }
                             }

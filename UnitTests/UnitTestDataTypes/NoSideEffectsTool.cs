@@ -28,6 +28,32 @@ namespace UnitTests.UnitTestingTools
     {
 
     }
+
+
+    public class AlwaysFailsVaidationTool : IButlerToolBaseInterface
+    {
+        public string ToolName => "FailValidationAlways";
+
+        public string ToolVersion => "YEP";
+
+        public string ToolDescription => "This tool never passes validation";
+
+        public string GetToolJsonString()
+        {
+            return "{}";
+        }
+
+        public ButlerChatToolResultMessage? ResolveMyTool(string? FunctionCallArguments, string? FuncId, ButlerChatToolCallMessage? Call)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ValidateToolArgs(ButlerChatToolCallMessage? Call, JsonDocument? FunctionParse)
+        {
+            return false;
+        }
+    }
+
     public class AllModeToolMockUnspecifiedScope : IButlerToolBaseInterface
     {
         public string ToolName => "WantAllPerms";

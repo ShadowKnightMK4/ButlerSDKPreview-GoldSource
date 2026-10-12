@@ -9,6 +9,7 @@ using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using ButlerToolContracts.DataTypes;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -158,7 +159,8 @@ namespace ButlerSDK.Core
                 }
                 else
                 {
-                    Resolver = (IButlerToolResolver?)CreateMe.Invoke(ToolExec, new object[] { Provider,  "ResolveMe", this.ToolSurfaceScope, null } );
+                    Resolver = (IButlerToolResolver?)CreateMe.Invoke(ToolExec, new object[] { Provider, "ResolveMe", this.ToolSurfaceScope, new NullLogger<Butler>()});
+                    
                     if (Resolver is null)
                     {
                         throw new InvalidOperationException($"Fatal error: Unable to create tool scheduler clas (it returned null on create). Class name{ToolExecType.Name}");

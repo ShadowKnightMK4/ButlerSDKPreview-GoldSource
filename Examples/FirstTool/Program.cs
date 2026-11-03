@@ -303,7 +303,7 @@ static class Program
         for (int i = 0; i < content.ContentUpdate.Count; i++)
         {
             if (!string.IsNullOrEmpty(content.ContentUpdate[i].Text))
-                Console.WriteLine(content.ContentUpdate[i].Text);
+                Console.Write(content.ContentUpdate[i].Text);
         }
         return true;
     }
@@ -329,12 +329,14 @@ static class Program
 
 
         /// make the openai butler
-        var butler = ButlerStarter.Instance.CreateOpenAiButler(apiKey, "gpt4-o-mini"); 
+        //var butler = ButlerStarter.Instance.CreateOpenAiButler(apiKey, "gpt4-o-mini"); 
+        var butler = ButlerStarter.Instance.CreateOpenAiButler(apiKey, "gpt-4o-mini-2024-07-18");
+        //var butler = ButlerStarter.Instance.CreateOpenAiButler(apiKey, "gpt-5.6-terra");
 
         // set a System level prompt for the LLM
         butler.AddSystemMessage("You start each reply with 'what's up' but are helpful otherwise.");
 
-
+        //butler.MainOptions.ReasoningEffort = ButlerThinkingEffortChoice.Low;
         /* 
          * Let's add a tool.
          * There are 2 things to be aware of at this time.
@@ -355,6 +357,8 @@ static class Program
         // step for tools is add it to the core object
         butler.AddTool(ToolTime);
 
+        // it's a short cut
+        butler.ToolSurfaceScope = ButlerProtocolBase.ToolSecurity.ToolSurfaceScope.AllAccess;
 
         // don't forget the custom tool.
         butler.AddTool(new SimpleMathTool());

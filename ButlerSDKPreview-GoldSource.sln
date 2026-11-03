@@ -33,6 +33,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		doc\CreatingACustomCounterMeasures.txt = doc\CreatingACustomCounterMeasures.txt
 		doc\CreatingACustomProvider.txt = doc\CreatingACustomProvider.txt
 		doc\CreatingACustomTool.txt = doc\CreatingACustomTool.txt
+		doc\ModelConfig.txt = doc\ModelConfig.txt
 		readme.md = readme.md
 		doc\ShowingOff.txt = doc\ShowingOff.txt
 		doc\SupportedProviders.txt = doc\SupportedProviders.txt
@@ -126,6 +127,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAiThinking", "Examples\OpenAiThinking\OpenAiThinking.csproj", "{8DF6D4F6-E3F7-4BBF-98EF-105B810AF5EF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FirstTool", "Examples\FirstTool\FirstTool.csproj", "{0BF4A5DC-7F0F-49F2-A89A-70595993C041}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepSeekExample", "Examples\DeepSeekExample\DeepSeekExample.csproj", "{49BE8C8B-EC46-4897-BFEA-8133C1182EB2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -317,6 +320,10 @@ Global
 		{0BF4A5DC-7F0F-49F2-A89A-70595993C041}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0BF4A5DC-7F0F-49F2-A89A-70595993C041}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0BF4A5DC-7F0F-49F2-A89A-70595993C041}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49BE8C8B-EC46-4897-BFEA-8133C1182EB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49BE8C8B-EC46-4897-BFEA-8133C1182EB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49BE8C8B-EC46-4897-BFEA-8133C1182EB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49BE8C8B-EC46-4897-BFEA-8133C1182EB2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -371,6 +378,7 @@ Global
 		{FE88E725-8580-48A2-BBF7-7963A8A88651} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{8DF6D4F6-E3F7-4BBF-98EF-105B810AF5EF} = {90C68CD0-9657-46C7-865E-C27B83631C29}
 		{0BF4A5DC-7F0F-49F2-A89A-70595993C041} = {90C68CD0-9657-46C7-865E-C27B83631C29}
+		{49BE8C8B-EC46-4897-BFEA-8133C1182EB2} = {90C68CD0-9657-46C7-865E-C27B83631C29}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E98753D-786C-427A-9051-6515CCB6B063}

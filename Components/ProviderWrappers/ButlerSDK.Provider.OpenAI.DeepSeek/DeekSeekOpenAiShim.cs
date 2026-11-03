@@ -11,10 +11,10 @@ namespace ButlerSDK.Providers.OpenAI.DeepSeek
     /// <summary>
     /// A small 'shim' for using the OpenAI Provider to talk to Deek Seek models from its OpenAI end point
     /// </summary>
-    public class DeepSeekOpenAiProvider : IButlerLLMProvider,  IButlerChatCreationProvider
+    public class DeepSeekOpenAiProvider : OpenAiGenericProvider
     {
 
-        OpenAiGenericProvider local;
+        //OpenAiGenericProvider local;
         /// <summary>
         /// DeepSeek default target per documentation
         /// </summary>
@@ -25,27 +25,30 @@ namespace ButlerSDK.Providers.OpenAI.DeepSeek
         /// Initialize DeepSeenk provider in OpenAI mode. Set target. Will use <see cref="DefaultTarget"/> if null
         /// </summary>
         /// <param name="Target">If unset, or null, uses <see cref="DefaultTarget"/></param>
-        public DeepSeekOpenAiProvider(Uri? Target)
+        public DeepSeekOpenAiProvider():base(new Uri(DefaultTarget))
         {
-            if (Target is null)
-                Target = new Uri(DefaultTarget);
-            local = new OpenAiGenericProvider(Target);
+            
 
         }
-        public IButlerChatCreationProvider ChatCreationProvider => this;
 
-        public IButlerChatCreationSupportedModels? SupportedModels => local.SupportedModels;
-
-        public IButlerChatCompletionOptions DefaultOptions => local.DefaultOptions;
-
-        IButlerChatCompletionOptions IButlerChatCreationProvider.DefaultOptions => local.DefaultOptions;
-
-        public object CreateChatTool(IButlerToolBaseInterface butlerToolBase)
+        public DeepSeekOpenAiProvider(Uri Target): base(Target)
         {
-            return local.CreateChatTool(butlerToolBase);
-        }
 
-        public void Initialize(SecureString key)
+        }
+        //public IButlerChatCreationProvider ChatCreationProvider => this;
+
+        //public IButlerChatCreationSupportedModels? SupportedModels => local.SupportedModels;
+
+        //public IButlerChatCompletionOptions DefaultOptions => local.DefaultOptions;
+
+        //IButlerChatCompletionOptions IButlerChatCreationProvider.DefaultOptions => local.DefaultOptions;
+
+        /* public object CreateChatTool(IButlerToolBaseInterface butlerToolBase)
+         {
+             return local.CreateChatTool(butlerToolBase);
+         }*/
+
+        /*public void Initialize(SecureString key)
         {
             CommmonInitialize(key);
         }
@@ -70,7 +73,12 @@ namespace ButlerSDK.Providers.OpenAI.DeepSeek
                 return new DeepSeekChatClient(ret);
             }
         }
-
+        */
+        protected override void SetupModelConfigDefaults()
+        {
+            base.SetupModelConfigDefaults();
+            this.ProtocolConfig = null;
+        }
 
     }
 

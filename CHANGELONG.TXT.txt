@@ -1,176 +1,71 @@
 
-1.3.0preview-preview aka 'Go go Parrellel bug fixes and Upgrades'
+1.3.0preview-preview aka 'Go-go Parallel bug fixes and Upgrades'
 
+The Gist:
+This update adds the Reasoning Effort setting to allow control of thinking effect,  some breaking changes for nicer gpt6-astra and 5 series support on the OpenAI provider  that also effects the Shims.    It is recommended to not mix versions 1.3.0preview and above with pre version 1.3.0 stuff.
 
-General:
-As I go thru i'll probably find spelling errors in strings, I'll likely fix them
-API spelling errors are a different situation. Internal? -> those will likely get a metion but keep in mind for ButlerSDK anythinh tagged internal is treated as part of the implemnation rathan than a formal API.
-If it's public API or someowhere where a coder could call it without reflection, I don't plan on fixing spelling errors in the api unless I have a very good reason and simply seeing a spelling error isn't a good reason.
-If you're digging thru internal / private routines via reflection, no commment, no promises.
-Heads up thru, this general spell check is *not* for the things in the unit test session. They exist to test the code.
-
-NEW EXAMPLE:
-OpenAiThinking - still very entry level but it shows setting the reasoing effort for a model that takes it.
-
-We use openai provider, set a reasoning effort and use a model known for thinking ('o1') then show the otuput.
-
+What’s news:
+OpenAI (And Gemini) Providers get reasoning effort configuration, several bug were discovered when integrating this with something else and were fixed too. 
 
 
 ButlerSDK.Core.Abstractions (Core Base intefaces and data types)
-BREAKING CHANGE: IButlerChatCompletionOptions now has Reasoning Effort Config. Both the Core OpenAI and Core Gemini Providers map this.
-Dev note: I was aiming to add gpt-6-astra support for openai provider with tooling.
+* BREAKING CHANGE/NEW FEATURE:  Gained Reasoning Effort configuration for thinking models.  The model itself still must support it.  The rest of the ButlerSDK Components assume this exists starting in version 1.3.0.
 
-Developer Impact: As this modified the base abstraction the rest of the engine runs on, stuff is likely gonna break unless you recompile targeting this and use the versions that assume this base.  The main 2 providers
-Gemini / OpenAi currently assume this exists and convert as needed now.
+ButlerSDK.Tool.Bench (tool list handling for butler objects):
+* BREAKING CHANGE: IButlerToolBench now requires implementing ‘IButlerToolKitAssignValidationHandler’ also which exposes a property to control action on when a tool json request is reported to be failed (i.e.) return false.
 
-IMPORTANT! While the thinking is adjustable, seeing the thought tokens before the model output is not supported at this time.
-
-
-ButlerSDK.Tool.Bench
-NEW FEATURE:  Part of the way to ensure the bug fix for the resolver forgetting error messages doesn't silently return, Bench has gained an opt in (default is current old action if made outside of butler chat object, if in the chat object,
-butler will use the new one) where tool validation returning false will trigger an exception that the used tool resolver is expected to run. If you let the chat session object pick (you're gonna get the new option)
-
-
-BREAKING CHANGE:
-IButlerToolKitAssignValidationHandler is now a requested part of the butler tool min requirement protocol. It linterally is just expose a way to control if your custom bench wants the legacy or throw behavior a client might want for now
-but might be extended in the future. HOWEVER the legacy behavior (no exception thrown for the task runner) should be the default if your custom bench don't know what it is.
-
-
-ButlerSDK.Core
-NEW FEATURE: the Sandbox loader now has constructors using IList on top of the original List contructors.
-
+* DEV IMPACT: The chat session controller (i.e Butler) class uses this new feature by default if it’s rolling its own non dev supplied instance. Should you make your own instance to pass to Butler chat session object, *that* instance will use the older legacy action.
+* NEW FEATURE: The default tool bench object now supports ILogger.
 
 ButlerSDK.Provider.OpenAI (The OpenAI provider)
+* INFORMATIONAL:  The NuGet that the OpenAI Provider itself uses to talk OpenAI protocol has been updated to OpenAI 2.11.0 for better support with reasoning effort.
 
-TLDR; Adjustments for gpt-6-astra, a compatiblity layer and a few others.
+* BREAKING CHANGE: OpenAI Provider has support for control of ReasoningEffort, enabling the dev to set that and expects min Abstraction version 1.3.0 and above.
 
-ADJUSTMENT: The Nuget that the OpenAi Provider itself uses to talk OpenAI protocol has been updated to OpenAi 2.11.0 for a few extra features such as ReasoningEffort Support.
+* NEW FEATURE: Considering gpt6-astra series requiring response endpoint communication rather than chat completion endpoint for function (ButlerSDK tool backend) calls, the provider has gained partial response support plus a data driven routing table to select between chat completion and response mode called ‘Model Config.’  Note this is *not* full response support. It’s enough to support gpt-6-astra  (and other thinking modles) to get tool calls and work with them. Please see the model config document on the repo or in the doc folder for specifics.
 
-BREAKING CHANGE:  OpenAI Provider (and ButlerSDK 1.3.0) in general now supports ReasoningEffort settings for thinking models like gpt-6-astra. If you want to configure Reasoning Effort, you'll need to upgrade
-to 1.3.0 version accross the board in general or later. Earlier versions of ButlerSDK don't have it in the abstraction base. It's recommended if at all feasible in your sitations to match verison info aka don't mix 1.2.0 with 1.3.0 for example.
+* NEW FEATURE: With the adding of a response vs chat completion mode there’s a new built in always chat completion mode called ‘OpenAiGenericProvider’. 
 
-Developer Note: This is partially because I was trying to bring tool support of gpt-6-astra. Online resources suggested a method with chat completions with reasoning effort. While that didn't bring the fix I wanted, it allows one to set thinking effort.  Note the model has to support it and the implemeation will likely exception if you try to pass Reasoning Effort to a model that goes what is that.
+* ADJUSTMENT: Specifically in response mode, OpenAI seems to want a entry ‘additionalProperties:false’ set, should your tool JSON *not* have this,  the provider will add it transparently to maintain compatibility.
 
-
-NEW FEATURE:  OpenAi Provider now has partial Response EndPoint support. This is *not* full support. It's just enough to get tool calls to work with Astra and  currently only has been tested for that.
-
-Developer Note: The Model config (below) is a direct result of this. Also what the openai sdk is doing is handling the response thing from OpenAI NuGet and translating that to ButlerSDK's chat completion settings, dropping an item 
-if that's not mapped (for example: attempting MCP (Model Context Prototol) or computer control).
-
-
-NEW FEATURE: The above 'model config' setup is used by ButlerOpenAiProvider gaining a new interface that allows data driving config. Leave it blank or null? Everything is gonna be Chat Completion.
-
-
-Developer Note: Out of the box, this shouldn't really effect you. The Shim Providers use a special varient that always uses chat completions. The OpenAI provider (NOT the generic one) is checking a list of strings that have a marker
-that says either use Chat Completion or Response Endpoint and if not there a default setting.
-
-
-NEW FEATURE: There's a general 'always chat completion' model => OpenAiGenericProvider
-
-
-Dev Note: There's an always Chat Completion ment for shims (Ollama, DeepSeek ect...) that blanks the list by default and forces Chat Completion Mode
- It's ButlerSDK.Provider.OpenAI project in ButlerSDK.Providers.OpenAI.Generic as OpenAiGenericProvider. The Shims (DeepSeek, Ollama) ect use this one instead.
-
-
-ADJUSTMENT: If the OpenAI provier is in response mode, it will check if additionalProperties:false is in the json describing the tool and insert it transparently if not. This does *not* happen in Chat Completion mode.
-I figure there's a performance penality but it seems to be worth supporting to keep the agnostic base which is heavily influenced via Chat Completion.
-
-
-ADJUSTMENT: Accidently adjusting the provider namespace in earlier checkpoint, reverted to normal.
+* DEV IMPACT: If you needed strictly chat completion backend, the ‘OpenAiGenericProvider’ works out of the box. Also, keep in mind that the ‘Model Config’ setting is CUSTOMIZABLE in the main provider object as 'ProtocolConfig' property.
 
 
 
-NEW FEATURE: The Openai provider ships with a small subclass varianet 'OpenAiGenericProvider' that default to always using the chat end point. The Shims use this one.
+ButlerSDK.Provider.OpenAI.DeepSeek (OpenAi provider shim for deep seek)
+* NEW FEATURE: There’s a OpenAI shim for Deep seek now starting in version 1.3.0, it uses the always chat completion ‘OpenAiGenericProvider’
 
-NEW FEATURE ** AND FEEDBACK REQUESTED**: OpenAi Provider now supports Astra and tool calls, please provider feedback on any weirdness. It works ok for my redacted project of mine.
-
-
-What is OpenAi Provider Model Config?
-
-
-MODEL CONFIG settings OpenAI provider supports a 'ModelConfig' settting.
-
- Default will give you the chat completion you already know but you can config Chat COmpletio nor ReponseCompletion dressed as chat completion.
-
-Heres how it works.  Provider Checks chat completion list? If requested model there, we route to chat completion list.
-If the chat completion list not found, we check the reponse list and route there if not found.
-BUT should a model not be in either a by default chat completion setting is used.
-
-Current defaults:  everything but gpt6-astra model are chat completion.  Because gpt6 does not support tool calls in chat completion,
-the openai provider has gained response. Note: This is *not* fully response support as the chat completion is assumed thruough the system,
-it's essentially intercepting the response object stuff and stuffing it an a chat ocmlpetion object.
-
-
-ButlerSDK.Provider.OpenAI.DeepSeek
-
-NEW PROVIDER:
-Welcome ButlerSDK.Provider.OpenAI.DeepSeek.  This provider is very much like the Ollama shim, we take the main provider and point it to 
-Deek Seek's end point.  You're gonna need to get yourself a Deep Seek API key to use their sevices. As alwasys don't store keys directly in source without a very good reason, and you likely don't got one.
-
-This shim using the It uses the 'OpenAiGenericProvider' in version 1.3.0
-
-
-ButlerSDK.Provider.OpenAI.Ollama
-
-ADJUSTMENT: Ollama Provider uses 'OpenAiGenericProvider'  instead of the the default OpenAI Provider, keeping it in normal chat completiom mode.
+ButlerSDK.Provider.OpenAI.Ollama: (OpenAI Provider shim for Ollama)
+* ADJUSTMENT:  The implementation of this shim uses ‘OpenAiGenericProvider’
 
 
 
-Butler.Core.
-ADJUSTMENT: ButlerTap object (aka the tap the TimePunch shows) has most routines if not all that could be virtual, actualy be virtual. Have fun.
+ButlerSDK.Tools.Resolver: (Default ButlerSDK Tool call handler)
+* DEVELOPER NOTE: This had several bug fixes that were discovered.
+
+* ADJUSTMENT: To better support tool call requests getting in the right slot for resolving, the backend has been adjusted some as described below.
+o	Previously,  when scheduling a tool via any of the Schedule tools, an internal object (specifically ‘ToolTime’) object is created then enqueued to a private queue. 
+o	What is different is that the object is *also* tracked via a couple of ConcurrentDictionaries, taking advantage of the case of ToolTime being a class i.e.  looking up an incoming schedule request via said ConcurrentDictionaries and skipping the searching thru the queue. Updating a match stored *in* the ConcurrentDictionary will update the one in the queue.
+o	The scheduling first tries to match via *func call id* then *stream index* it receives in the dictionarys above, no match? We add to them and then add this new tool request to the queue.
 
 
-ButlerSDK.Tools.Resolver
-The default result is hopefully more TPL friendly - had more than afew tool calls trigger in parell on openai provider side and the .net was complaining of
-sync errors. 
+* BUG FIX:   Adjusting appending logic in ScheduleTool() that helps prevend a duplication call id being appended incorrectly.
 
-Consider the source below the read the changes
-```
-public class ToolResolverTelemetryStats
-{
-    public uint InPassingCount;
-    public uint CritPriorityCount;
-    public Dictionary<string, List<Exception>> ExceptionsCaught; <- the default resolver now locks an object when trying to use this to prevent TPL threading collections.
-    [TupleElementNames(new[] { "CallID", "Tool" })]
-    public IReadOnlyList<(string CallID, IButlerToolBaseInterface Tool)>? ToolsUsed;
+* ADJUSTMENT: Default Runner attempts to avoid updating ToolResolverTelemetryStats ExceptionsCaught corruption by locking with standard C# when accessing it.
 
-    public ToolResolverTelemetryStats();
-}
-```
+* ADJUSTMENT with POSSIBLE BREAKING CHANGE: To help improve concurrency needs and the current API contract, the default bench uses an adapter object for the ToolResolverTelemetryStats.ToolsUsed property to help sync more.  The adapter presents a ConcurrentBag object as a IReadOnlyList.
 
 
+* BUG FIX/BREAKING CHANGE: Fixed the bug where on tool validation (required path before call) fails, a null message would be set and that would go downstream to code that didn’t account for that followed by crashing. The fix now successfully set the error message and uses the IButlerToolKitAssignValidationHandler interface (OF THE BENCH project) to decide to end a task by exception or not.
+o	Note: Each scheduled tool gets its own task to run in.  The [default] runner will catch exceptions and log them for telemetry.  An exception in a task brings that task down *but* does not end your program.   The new interface controls lets a IButlerToolBench project decide if an exception is thrown on validation failure or the legacy option (error message).   Also, Custom runners are expected to match this.  
+o	Note: The *private* instance of the ToolResolver/ButlerToolBench that the chat session Butler object uses opts into *this* new behavior i.e. after a run you can see if an exception triggered in ExceptionsCaught of the ToolTelemetryStats object.
+*
 
-CHANGE: The ToolUsed (ToolResolverTelemetryStats) readonly list is now a ConcurrentBag in interface form in the default runner.
-CHANGE: Default runner now actually locks {} when interacting with ExceptionsCaught in (ToolResolverTelemetryStats).
-BUG FIX: When a tool returns that a possible request (ie ValidateTool()) require, the error recovery code in the runner here forgot to set a non null return message,
-which triggers errors downstream which triggered fatal errors in a session.
-
-
-
-CHANGE: Attempt to addding a tool into the tool bench that is a null instance ie AddTool("Something", null) will throw an argumentnullexception on add instead of later.
-
-
-
-NEW FEATURE: Default runner now has an adjustable upper limit of max tasks when executing parrel tool calls. Default is 6. You can adjust it in ToolResolver.MaxToolThreads.
-IMPORTANT! the interface implementation does *not* require this feature. It's specific to the default used if a dev doesn't do their own.
-
-
-Dev Note: The redected project of mind exposed some errors in my default bench regarding task parrells and error fallback code. These changes are the result of that.  Heads up I figured orikginally Dictionary => ConccurrentDictionary() but then that was an unneeded breaking change when my tool runner could just do it directly.
-
-Dev note: Now uses a SephmoreSlim to limit spawned tasks. Default resolver is 6 tasks at a time to solve an LLM's parrell tools. Note while this is specific to  default
-resolver, you need not actually impement in your custom one (ie i'ts not part of the standard.)
-
-Dev Note: For the folks interested, yes my error code for ValidateTool forgot to set the message string to non null if a tool reports validation failed, and i forgot to account for that. 
-
+* ADJUSTMENT/BUG FIX:   Default tool resolver prior to version 1.3.0 had *NO* upper limit on number of tasks spawned at once by TPL to handle tool calls. 1.3.0 does to conserve resources. Default is 6 *but* it is customizable. NOTICE: While this is specific to the default, it is *NOT* part of the interface requirement for a tool resolver implementation. To adjust this in the default runner use the ‘MaxToolThreads’ property of it.
 
 ButlerSDK.Provider.Gemini
-Has Reasoning Effort translation added. 
+NEW FEATURE: Has Reasoning Effort translation added.
 
-
-ButlerSdk.Tools.Bench
-
-
-NEW:  Default bench now has ILogger stuff. Yay!
 
 
 

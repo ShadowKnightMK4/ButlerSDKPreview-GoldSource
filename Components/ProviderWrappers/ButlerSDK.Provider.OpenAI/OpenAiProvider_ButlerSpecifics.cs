@@ -476,12 +476,86 @@ namespace ButlerSDK.Providers.OpenAI
                 this.ProtocolConfig = ForwardBranchDB.Instance;
             }
 
+  
+
             ProtocolConfig.AddModelConfig("gpt-6-astra", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-6.1-sol", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-6-sol", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-6.1-terra", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-6-luna", ModelConfig_Type.Response);
 
 
 
+            ProtocolConfig.AddModelConfig("gpt-5.6-terra", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-5.6-sol", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-5.6-luna", ModelConfig_Type.Response);
+
+
+
+            ProtocolConfig.AddModelConfig("gpt-5.5-2026-04-23", ModelConfig_Type.Response);
+
+
+
+            ProtocolConfig.AddModelConfig("gpt-5.4-pro-2026-03-05", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-5.4-mini-2026-03-17", ModelConfig_Type.Response);
+
+            ProtocolConfig.AddModelConfig("gpt-5.2-2025-12-11", ModelConfig_Type.Response);
+
+            ProtocolConfig.AddModelConfig("gpt-5-2025-08-07", ModelConfig_Type.Response);
+
+            ProtocolConfig.AddModelConfig("gpt-5", ModelConfig_Type.Response);
+
+
+            ProtocolConfig.AddModelConfig("gpt-5-nano-2025-08-07", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-5-nano", ModelConfig_Type.Response);
+
+
+
+            ProtocolConfig.AddModelConfig("gpt-5-mini-2025-08-07", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-5-mini", ModelConfig_Type.Response);
+
+            ProtocolConfig.AddModelConfig("gpt-5-pro-2025-10-06", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-5-pro", ModelConfig_Type.Response);
+
+
+            ProtocolConfig.AddModelConfig("o3-pro-2025-06-10", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("o3-pro", ModelConfig_Type.Response);
+
+
+            ProtocolConfig.AddModelConfig("o3-2025-04-16", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("o3", ModelConfig_Type.Response);
+
+
+
+
+
+            ProtocolConfig.AddModelConfig("gpt-daybreak-red-latest", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-5.6-cyber", ModelConfig_Type.Response);
+
+            ProtocolConfig.AddModelConfig("gpt-daybreak-blue-latest", ModelConfig_Type.Response);
+
+
+
+            ProtocolConfig.AddModelConfig("gpt-5.4-nano-2026-03-17", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-5.4-nano", ModelConfig_Type.Response);
+
+
+            ProtocolConfig.AddModelConfig("gpt-5.3-codex", ModelConfig_Type.Response);
+
+
+            ProtocolConfig.AddModelConfig("gpt-5.1-2025-11-13", ModelConfig_Type.Response);
+            ProtocolConfig.AddModelConfig("gpt-5.1", ModelConfig_Type.Response);
+
+
+
+
+
+            // my defividing line is 4.1 is the cut off. W
+            // 4.1 and below *not* in the list will default to chat completion
 
             ProtocolConfig.AddModelConfig("gpt-4o", ModelConfig_Type.ChatCompletion);
+            ProtocolConfig.AddModelConfig("gpt-4.1-2025-04-14", ModelConfig_Type.ChatCompletion);
+            ProtocolConfig.AddModelConfig("gpt-4.1", ModelConfig_Type.ChatCompletion);
         }
         public ModelConfig_Type DefaultConfig => ForwardBranchDB.Instance.DefaultType;
 

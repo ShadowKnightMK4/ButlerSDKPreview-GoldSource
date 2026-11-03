@@ -257,6 +257,10 @@ namespace ButlerSDK.Providers.OpenAI
             {
                 throw new NotImplementedException();
             }
+            if (ClientResult is null)
+            {
+                return Array.Empty<byte>();
+            }
             return ClientResult.GetRawResponse().Content.ToArray();
         }
 

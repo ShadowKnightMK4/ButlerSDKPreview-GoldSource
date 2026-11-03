@@ -159,7 +159,7 @@ namespace ButlerSDK.Core
                 }
                 else
                 {
-                    Resolver = (IButlerToolResolver?)CreateMe.Invoke(ToolExec, new object[] { Provider, "ResolveMe", this.ToolSurfaceScope, new NullLogger<Butler>()});
+                    Resolver = (IButlerToolResolver?)CreateMe.Invoke(ToolExec, new object[] { Provider, "ResolveMe", this.ToolSurfaceScope, new NullLogger<ButlerSDK.ToolSupport.ToolResolver>()});
                     
                     if (Resolver is null)
                     {

@@ -1,0 +1,128 @@
+
+Note: this is also on the repo wiki.
+
+
+# OpenAI ButlerSDK Provider: Model Protocol Routing ("Model Config")
+
+### Overview
+Modern OpenAI model families differ in how they handle function calling and tool execution. While older models tend operate through the traditional **Chat Completion API**, newer architectures (such as the Astra and GPT-5/6 series) utilize OpenAI's structured **Response Endpoint** and GPT-6 series in particular wants Response end points for function calls, one of ButlerSDK's main features.
+
+**Model Config** is an internal routing engine specific within `ButlerOpenAiProvider`. It inspects the target model string and dynamically dispatches requests to either the **Chat Completion** or **Response** sub-engine, aiming to let your your code downstream interact with all models through Butler's unified Chat Completion abstraction without needing to know or care which underlying protocol is running and get function calls.  Please note that the targeted model also *must* support function calls.
+
+The Model Config is **OPTIONAL**, if you set it to null on the `ButlerOpenAiProvider` provider, everything is always **Chat Completion API** sub engine.
+
+---
+
+### How It Works
+
+Think of Model Config as an internal protocol routing table:
+
+```
+                ┌───────────────────────────────────────┐
+Incoming Model  │  Look up Model in ProtocolConfig DB  │
+     String    ──►                                       │
+                └──────────────────┬────────────────────┘
+                                   │
+                    ┌──────────────┴──────────────┐
+                 Found?                        Not Found?
+                    │                             │
+          ┌─────────┴─────────┐                   ▼
+          ▼                   ▼         Fallback to DefaultType 
+   ChatCompletion         Response        (Default: ChatCompletion)
+```
+
+1. When a chat client request is initiated, `ButlerOpenAiProvider` checks its `ProtocolConfig` registry for the requested model string.
+2. If registered, the provider routes the payload through that model's designated handler (`ChatCompletion` or `Response`).
+3. If unregistered, it falls back to the configured `DefaultType` (which defaults to `ChatCompletion`).
+
+---
+
+### Out-of-the-Box Defaults
+
+By default, ButlerSDK pre-configures known models in `SetupModelConfigDefaults()`:
+
+| Model Family / Pattern | Default Protocol | Notes |
+| :--- | :--- | :--- |
+| **GPT-4 / GPT-4o / GPT-4.1** | `ChatCompletion` | Preserves standard legacy protocol behavior. |
+| **GPT-5 Series** (`gpt-5.0`, `mini`, `pro`, etc.) | `Response` | Configured for structured tool resolution. |
+| **GPT-6 / Astra Series** | `Response` | Required for tool calling support. |
+| **Unrecognized / Custom Models** | `ChatCompletion` | Controlled via `DefaultType`. |
+
+---
+
+### Customizing the Routing Table
+
+The provider exposes its routing configuration through the `IButlerOpenAIProviderEngineConfig` contract on `ButlerOpenAiProvider.ProtocolConfig`.
+
+#### 1. Runtime Configuration (Direct API)
+You can register custom fine-tunes or override defaults directly at initialization:
+
+```csharp
+var provider = new ButlerOpenAiProvider(apiKey);
+
+// Explicitly route a custom model to the Response endpoint
+provider.ProtocolConfig?.AddModelConfig("my-custom-astra-ft", ModelConfig_Type.Response);
+
+// Change the global fallback behavior for unrecognized models
+if (provider.ProtocolConfig != null)
+{
+    provider.ProtocolConfig.DefaultType = ModelConfig_Type.Response;
+}
+```
+
+#### 2. Subclassing Override
+If you want to maintain a custom default catalog across your application, you can inherit from `ButlerOpenAiProvider` and override the protected virtual routine:
+
+```csharp
+public class CustomButlerOpenAiProvider : ButlerOpenAiProvider
+{
+    protected override void SetupModelConfigDefaults()
+    {
+        base.SetupModelConfigDefaults();
+        
+        // Add your custom mappings here
+        ProtocolConfig?.AddModelConfig("internal-llm-proxy", ModelConfig_Type.ChatCompletion);
+    }
+}
+```
+
+---
+
+### Architecture Contract (`IButlerOpenAIProviderEngineConfig`)
+
+For advanced scenarios or custom engine config stores, the provider relies on this contract:
+
+```csharp
+public interface IButlerOpenAIProviderEngineConfig
+{
+    /// <summary>
+    /// In-memory lookup registry mapping model identifiers to protocol handlers.
+    /// </summary>
+    public ConcurrentDictionary<string, ModelConfig_Type> Data { get; }
+
+    /// <summary>
+    /// Global fallback protocol used if a model is not found in the registry.
+    /// </summary>
+    public ModelConfig_Type DefaultType { get; set; }
+
+    /// <summary>
+    /// Clears all explicit model mappings, forcing all lookups to resolve to DefaultType.
+    /// </summary>
+    public void ClearConfigData();
+
+    /// <summary>
+    /// Registers or updates a model to use a specific protocol.
+    /// </summary>
+    public bool AddModelConfig(string name, ModelConfig_Type kind);
+
+    /// <summary>
+    /// Resolves the protocol for the given model name. Returns DefaultType if not registered.
+    /// </summary>
+    public ModelConfig_Type LookupModelConfig(string name);
+
+    /// <summary>
+    /// Removes a model mapping, returning its routing to DefaultType.
+    /// </summary>
+    public bool RemoveModelConfig(string name);
+}
+```

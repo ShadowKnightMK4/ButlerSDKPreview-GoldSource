@@ -559,8 +559,9 @@ namespace ButlerSDK.ToolSupport.Bench
             IButlerToolBaseInterface? ret = null;
             try
             {
-                Telemetry?.LogInformation("Resolved tool name {name} to instance of type {Type} version {toolversion} with name {Name}", name, ret.GetType().FullName, ret.ToolVersion, ret.ToolName);
                 ret = Tools[name];
+                Telemetry?.LogInformation("Resolved tool name {name} to instance of type {Type} version {toolversion} with name {Name}", name, ret.GetType().FullName, ret.ToolVersion, ret.ToolName);
+                
             }
             catch (KeyNotFoundException)
             {

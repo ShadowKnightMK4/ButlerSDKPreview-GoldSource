@@ -22,6 +22,7 @@ using System.Net.Http.Headers;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
 
 
 namespace ButlerSDK.ToolSupport
@@ -195,6 +196,47 @@ namespace ButlerSDK.ToolSupport
             }
         }
 
+
+        internal void InsertScheduledTool(ToolTimeSlot Slot)
+        {
+            ArgumentNullException.ThrowIfNull(Slot);
+            ArgumentNullException.ThrowIfNull(Slot.ID);
+            ArgumentNullException.ThrowIfNullOrWhiteSpace(Slot.ID.ToString());
+
+            if (Slot.ID is not null)
+            {
+                string str = Slot.ID.ToString();
+                if (CrossRefMap.TryGetValue(str, out var input))
+                {
+                    // if it exists - do nothing
+                }
+                else
+                {
+                    Que.Enqueue(Slot);
+                    this.CrossRefMap[Slot.ID.ToString()] = Slot;
+                    this.CrossStreamIndex[Slot.StreamingIndex] = Slot;
+                }
+            }
+            else
+            {
+                int id = Slot.StreamingIndex;
+                if (CrossStreamIndex.TryGetValue(id, out var input))
+                {
+                    // if it exists, do nothing
+                }
+                else
+                {
+                    Que.Enqueue(Slot);
+                    // code earlier throws excpetion if null for slot.id
+                    string tmp = Slot.ID!.ToString();
+                    this.CrossRefMap[tmp] = Slot;
+                    this.CrossStreamIndex[Slot.StreamingIndex] = Slot;
+                }
+            }
+       
+            
+            
+        }
         public void ScheduleTool(JsonDocument PossibleTool, bool ExceptionOnInvalid = true)
         {
             var NodeWalk = PossibleTool.RootElement.EnumerateObject();
@@ -246,7 +288,8 @@ namespace ButlerSDK.ToolSupport
         {
             bool exists = false;
             var CheckExists = Que.Where(p => { return p.StreamingIndex == Tool.Index; });
-            ToolTimeSlot? Entry;
+            ToolTimeSlot? Entry = null;
+            /*
             if (CheckExists.Any() == false)
             {
                 Entry = new ToolTimeSlot();
@@ -257,6 +300,64 @@ namespace ButlerSDK.ToolSupport
             {
                 Entry = CheckExists.FirstOrDefault();
                 exists = true;
+            }*/
+            if (Que.Count == 0)
+            {
+                Entry = new ToolTimeSlot();
+                Entry.ToolName.Append(Tool.FunctionName);
+                Entry.StreamingIndex = Tool.Index;
+            }
+            else
+            {
+                if (Tool.ToolCallid is not null)
+                {
+                    if (this.CrossRefMap.TryGetValue(Tool.ToolCallid, out var PossIndex))
+                    {
+                        // it's a hit. roll with it
+                        if (PossIndex is not null)
+                        {
+                            Entry = PossIndex;
+                            goto endfre;
+                        }
+                    }
+                    else
+                    {
+                        // possible miss.
+
+                    }
+                }
+                else
+                {
+                    if (this.CrossStreamIndex.TryGetValue(Tool.Index, out var AltPossIndex))
+                    {
+                        if (AltPossIndex is not null)
+                        {
+                            Entry = AltPossIndex;
+                            goto endfre;
+                        }
+                    }
+                    
+                }
+                /*
+
+                if (this.CrossStreamIndex.TryGetValue(Tool.Index, out var AltPossIndex))
+                {
+                    if (AltPossIndex is not null)
+                    {
+                        Entry = AltPossIndex;
+                        goto endfre;
+                    }
+                }*/
+
+                
+            endfre:
+                if (Entry is null)
+                {
+                    Entry = new ToolTimeSlot();
+                    Entry.ToolName.Append(Tool.FunctionName);
+                    Entry.StreamingIndex = Tool.Index;
+                }
+                ;
             }
 
 
@@ -270,7 +371,8 @@ namespace ButlerSDK.ToolSupport
                 if (Tool.ToolCallid is not null)
                 {
                     Debugger.Log(0, "INFO", "Callid is not null");
-                    if (Tool.ToolCallid.ToLower() == Entry.ID.ToString())
+                    //if (Tool.ToolCallid.ToLower() == Entry.ID.ToString())
+                    if (string.Compare(Tool.ToolCallid, Entry.ID.ToString(), StringComparison.InvariantCultureIgnoreCase) == 0)
                     {
                         Debugger.Log(0, "INFO", "Callid is not null and matches current one. Skipping");
                     }
@@ -279,7 +381,11 @@ namespace ButlerSDK.ToolSupport
                         Entry.ID.Append(Tool.ToolCallid);
                     }
                 }
-                if (!exists) { Que.Enqueue(Entry); }
+                if (!exists) 
+                {
+                    //Que.Enqueue(Entry);
+                    InsertScheduledTool(Entry);
+                }
                 if (!string.IsNullOrEmpty(Tool.FunctionName) && string.IsNullOrEmpty(Entry.ToolName.ToString()))
                 {
                     Entry.ToolName.Append(Tool.FunctionName);
@@ -299,7 +405,7 @@ namespace ButlerSDK.ToolSupport
         /// <param name="Tool"></param>
         /// <param name="HasInPassingTool">If the tool attempting to be scheduled if of type, <see cref="IButlerToolInPassing"/>, this is set to true</param>
         /// <exception cref="InvalidOperationException"></exception>
-        public void ScheduleToolOld(ButlerStreamingToolCallUpdatePart Tool)
+        /*public void ScheduleToolOld(ButlerStreamingToolCallUpdatePart Tool)
         {
             bool exists = false;
             var CheckExists = Que.Where(p => { return p.StreamingIndex == Tool.Index; });
@@ -333,7 +439,7 @@ namespace ButlerSDK.ToolSupport
                 throw new InvalidOperationException("Somehow the entry existed but the check returned null");
             }
 
-        }
+        }*/
 
 
         /// <summary>
@@ -352,7 +458,8 @@ namespace ButlerSDK.ToolSupport
             NewEntry.ID.Append(ID);
             NewEntry.ToolArgumentsPart.Append(Arguments);
             NewEntry.ToolName.Append(Name);
-            Que.Enqueue(NewEntry);
+            this.InsertScheduledTool(NewEntry);
+            //Que.Enqueue(NewEntry);
         }
 
 
@@ -867,6 +974,12 @@ namespace ButlerSDK.ToolSupport
             finally
             {
                 if (UpperTaskLimiter is not null) UpperTaskLimiter.Dispose();
+
+                if (Que.IsEmpty)
+                {
+                    this.CrossRefMap.Clear();
+                    this.CrossStreamIndex.Clear();
+                }
             }
         
         }
@@ -995,18 +1108,7 @@ namespace ButlerSDK.ToolSupport
                     ButlerChatToolResultMessage? Result = (ButlerChatToolResultMessage?)tool.Results;
                     if (Result is not null)
                     {
-                        if (tool.ToolArgumentsPart is null)
-                        {
-                            Debugger.Break();
-                        }
-
-
-                        Console.WriteLine($"$CANARAY: {i}");
-                        Console.WriteLine("TOOL CALL DUMP STRING: CRASH HERE");
-                        Console.WriteLine($"tool.id = {tool.ID.ToString()}");
-                        Console.WriteLine($"tool.name = {tool.ToolName.ToString()}");
-                        Console.WriteLine($"too.toolargs = {tool.ToolArgumentsPart.ToString()}\r\n\r\n");
-
+                   
                         var callData = ButlerChatToolCallMessage.CreateFunctionToolCall(tool.ID.ToString(), tool.ToolName.ToString(), tool.ToolArgumentsPart.ToString());
                         Messages.Add(callData);
                         Result.Id = tool.ID.ToString();
@@ -1031,15 +1133,16 @@ namespace ButlerSDK.ToolSupport
                 }
                 catch (Exception x)
                 {
+                    /*
+                     * if trying to debug. uncomment this to help
                     Console.WriteLine($"Canary value {i}. Exception is {x.ToString()}");
-                    Debugger.Break();
+                    Debugger.Break();*/
                 }
 
             }
 
             if (i != -1)
             {
-                Console.WriteLine("TOOL CALL DUMP DONE");
                 this.ResolvedTool.Clear();
             }
             return;
@@ -1055,6 +1158,9 @@ namespace ButlerSDK.ToolSupport
                 return Que.Count;
             }
         }
+
+        ConcurrentDictionary<int, ToolTimeSlot> CrossStreamIndex = new();
+        ConcurrentDictionary<string, ToolTimeSlot> CrossRefMap = new();
         ConcurrentQueue<ToolTimeSlot> Que = new();
 
 

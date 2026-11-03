@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\ApiKeyHandling\ButlerSDK.ApiKeyMgr\ButlerSDK.ApiKeyMgr.csproj" />
     <ProjectReference Include="..\..\ButlerSDK.Core.Abstractions\ButlerSDK.Core.Abstractions.csproj" />
   </ItemGroup>
 

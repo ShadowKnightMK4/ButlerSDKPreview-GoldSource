@@ -114,6 +114,7 @@ namespace DeepSeekExample
                 else
                 {
                     Console.WriteLine("Can't locate required key 'DEEPSEEK'");
+                    return -1;
                 }
             }
             else
@@ -133,15 +134,23 @@ namespace DeepSeekExample
 
             
             
-            var ChatObject = new Butler(Keys, Shim, Shim.DefaultOptions, "deepseek-flash", "DEEPSEEK", null, null);
+            var ChatObject = new Butler(Keys, Shim, Shim.DefaultOptions, "deepseek-v4-pro", "DEEPSEEK", null, null);
 
             ChatObject.MainOptions.ReasoningEffort = ButlerToolContract.DataTypes.ButlerThinkingEffortChoice.Medium;
 
             ChatObject.AddTool(new ButlerTool_DeviceAPI_GetLocalDateTime(null));
 
-            ChatObject.AddSystemMessage("Play a friendly nerd");
+            ChatObject.AddSystemMessage("You are an analytical AI that solves algebraic equations step-by-step.");
 
-            ChatObject.AddUserMessage("Hey do you got the time?");
+            // 4. The Trap Prompt
+            ChatObject.AddUserMessage(
+                "I have an algebraic puzzle for you. Solve for X in the following equation:\n" +
+                "3X + 45 = (H * 60) + M\n\n" +
+                "Where H is the current local hour (in 24-hour format) and M is the current local minute.\n" +
+                "Think through how to isolate X, call the device tool to retrieve the current local time, and then compute the final numerical value of X."
+            );
+
+            ChatObject.AddUserMessage("Hey do you got the date? I don't care about time atm.");
 
             // don't forget to await for async stuff.
 
@@ -151,7 +160,8 @@ namespace DeepSeekExample
             Console.BackgroundColor = ConsoleColor.Red;
             
             Console.WriteLine("\r\n\r\nAI TURN OVER. Displaying its output.");
-            Console.BackgroundColor = ConsoleColor.Black;
+            Console.ResetColor();
+
 
 
             Console.WriteLine(ChatObject.ChatCollection.Last().GetCombinedText());
@@ -160,8 +170,35 @@ namespace DeepSeekExample
             Console.BackgroundColor = ConsoleColor.Red;
 
             Console.WriteLine("\r\n\r\n/AI TURN OVER. End of AI TURN OUTPUT its output.");
+            Console.ResetColor();
 
-            Console.BackgroundColor = ConsoleColor.Black;
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("SLEEPING 4 seconds");
+            Console.ResetColor();
+
+            ChatObject.AddUserMessage("Thank you. I'd like the time now please");
+
+            var result2 = await (ChatObject.StreamResponseAsync(SimpleHandler!));
+
+
+            Console.WriteLine("\r\n\r\n");
+            Console.BackgroundColor = ConsoleColor.Green;
+
+            Console.WriteLine("\r\n\r\nAI TURN    2  OVER. Displaying its output.");
+            Console.ResetColor();
+
+
+
+            Console.WriteLine(ChatObject.ChatCollection.Last().GetCombinedText());
+
+
+
+            Console.WriteLine("\r\n\r\n/AI TURN OVER. End of AI TURN OUTPUT its output.");
+            Console.ResetColor();
+
+
+
 
             Console.WriteLine("Believe it! Signing off the Deep Seek Example");
 

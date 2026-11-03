@@ -313,7 +313,7 @@ public static class DebugSettings
             }
         }
 
-        public void HandlerToolExecuteRequestMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolCallMessage Item)
+        public virtual void HandlerToolExecuteRequestMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolCallMessage Item)
         {
             if (ProviderSpecific.TryGetValue(GeminiAssist_ThoughtSigHelper.GeminiThoughSigKey, out string? Thinking))
             {
@@ -324,7 +324,7 @@ public static class DebugSettings
             }
         }
 
-        public void HandlerToolExecuteMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolResultMessage Item)
+        public virtual void HandlerToolExecuteMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolResultMessage Item)
         {
 
                 if (ProviderSpecific.TryGetValue(GeminiAssist_ThoughtSigHelper.GeminiThoughSigKey, out string? Thinking))

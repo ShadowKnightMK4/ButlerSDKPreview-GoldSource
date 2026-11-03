@@ -1,4 +1,5 @@
-﻿using ButlerLLMProviderPlatform.Protocol;
+﻿using ApiKeyMgr;
+using ButlerLLMProviderPlatform.Protocol;
 using ButlerSDK.ApiKeyMgr.Contract;
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
@@ -13,48 +14,120 @@ namespace ButlerSDK.Providers.TrenchCoat
         public UnsupportedProviderException() { }
         public UnsupportedProviderException(string message) : base(message) { }
     }
+
+    public class DuplicateModelEntryException : Exception
+    {
+        public DuplicateModelEntryException() { }
+        public DuplicateModelEntryException(string message) : base(message) { }
+    }
+
+
+    public class TrenchyModelEnum : IButlerChatCreationSupportedModels
+    {
+
+
+        public TrenchyModelEnum(IList<string> ModelList)
+        {
+            this.ModelName = ModelList;
+        }
+
+        public TrenchyModelEnum(List<string> Models)
+        {
+            this.ModelName = Models;
+        }
+        IList<string> ModelName;
+        public IEnumerable<string> GetEnumerator()
+        {
+            return ModelName;
+        }
+    }
+
+    public class ButlerTrenchCoatLLMProvider: ButlerTrenchCoatLLMProviderBase
+    {
+
+    }
+
+
+    
     /// <summary>
     /// Trench coat provider is a forwarding dispatcher to other providers.
     /// </summary>
-    public abstract class ButlerTrenchCoatLLMProviderBase : IButlerLLMProvider, IButlerChatCreationProvider
+    public abstract class ButlerTrenchCoatLLMProviderBase : IButlerLLMProvider, IButlerChatCreationProvider, IButlerLLMProvider_RecoverOptions, IButlerLLMProvider_SpecificToolExecutionPostCall
     {
-        public class ModelEntry
+        /// <summary>
+        /// Presented name, system
+        /// </summary>
+       readonly  ConcurrentDictionary<string, ModelEntry> CrossRefEnv = new();
+
+
+        /// <summary>
+        /// used by model resolver to tell the implementation *what* to setup.
+        /// </summary>
+        public readonly InMemoryApiKey EnvNameFetching = new();
+        class ModelEntry
         {
-            /// <summary>
-            /// Name we expose the model as
-            /// </summary>
-            public string ExposedName;
-
-            /// <summary>
-            /// Name as defined in the provider holding this model
-            /// </summary>
-            public string ProviderName;
-            /// <summary>
-            /// Where we go fetch the model
-            /// </summary>
-            public IButlerLLMProvider Origin;
-            public IButlerVaultKeyCollection Keys;
+            public IButlerLLMProvider Provider;
+            public IButlerChatCreationProvider ChatCreationProvider;
+            public string RequestedModel;
+            public string APIKEYNAME;
+            public bool WasInitCalled = false;
         }
+        #region
 
-
-        public readonly ConcurrentDictionary<string, ModelEntry> Entries = new();
-
-        public delegate string IngestProviderModelNameFixup(string ModelName);
-
-        public abstract void IngestProviderModel(IButlerLLMProvider provider, IngestProviderModelNameFixup? Fixup=null);
-
-
-        public IButlerChatCreationProvider ChatCreationProvider
+        /// <summary>
+        /// Either adds the model, overriding it or th
+        /// </summary>
+        /// <param name="Core"></param>
+        /// <param name="ChatCreationProvider"></param>
+        /// <param name="ModelName"></param>
+        /// <param name="APIKEYID"></param>
+        /// <param name="PresentedName"></param>
+        /// <param name="OverrideIfDuplicate"></param>
+        /// <remarks>Return true if ok, and false on error</remarks>
+        /// <exception cref="DuplicateModelEntryException"> triggers if the error was an existing model</exception>
+        public bool AddModel(IButlerLLMProvider Core, IButlerChatCreationProvider ChatCreationProvider, string ModelName, string APIKEYID, string PresentedName, bool OverrideIfDuplicate=true)
         {
-            get => this;
+            ModelEntry Entry = new();
+            Entry.Provider = Core;
+            Entry.ChatCreationProvider = ChatCreationProvider;
+            Entry.RequestedModel = ModelName;
+            Entry.APIKEYNAME = APIKEYID;
+
+            if (CrossRefEnv.TryGetValue(PresentedName, out var CurrentVal))
+            {
+                if (OverrideIfDuplicate)
+                {
+                    if (CrossRefEnv.TryRemove(PresentedName, out var _))
+                    {
+                        if (CrossRefEnv.TryAdd(PresentedName, Entry))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    throw new DuplicateModelEntryException($"There's already a model under the {PresentedName}. Either call this with OverriderDuplicate true or remove this instance first before adding");
+                }
+            }
+            else
+            {
+                if (CrossRefEnv.TryAdd(PresentedName, Entry))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
+        #endregion
+
+        public IButlerChatCreationProvider ChatCreationProvider => this;
 
         public IButlerChatCreationSupportedModels? SupportedModels
         {
             get
             {
-                var WalkMe = this.Entries.Keys;
-                return new CoatLLMModelEnum(WalkMe);
+                return new TrenchyModelEnum(this.CrossRefEnv.Keys.ToList());
             }
         }
 
@@ -62,90 +135,51 @@ namespace ButlerSDK.Providers.TrenchCoat
 
         public object CreateChatTool(IButlerToolBaseInterface butlerToolBase)
         {
-            // hmm. what do do here. 
-            // but the current assumed standard is essential OPENAI json tool description.
             throw new NotImplementedException();
         }
 
         public IButlerChatClient? GetChatClient(string model, object? Options, IButlerChatPreprocessor? PPR)
         {
-            if (Entries.TryGetValue(model, out ModelEntry? Data))
+            IButlerChatClient? ret;
+            if (CrossRefEnv.TryGetValue(model, out var entry))
             {
-                if (Data is not null)
+                if (!entry.WasInitCalled)
                 {
-                    return Data.Origin.ChatCreationProvider.GetChatClient(Data.ProviderName, Options, PPR);
+                    var key = this.EnvNameFetching.ResolveKey(entry.APIKEYNAME);
+                    if (key is null)
+                    {
+                        throw new InvalidDataException("Error: Unable to get chat client due to not known *whhich* key to load Ensure key exists in db");
+                    }
+                    else
+                    {
+                     
+                    }
                 }
+                ret = entry.ChatCreationProvider.GetChatClient(entry.RequestedModel, Options, PPR);
             }
             return null;
         }
 
+        public void HandlerToolExecuteMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolResultMessage Item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandlerToolExecuteRequestMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolCallMessage Item)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Initialize(SecureString x)
         {
-            // we are taking the chat session stance. The other providers need to be init() first for now.
+            throw new NotImplementedException();
+        }
+
+        public bool StreamingErrorHandler(Exception x, bool IsAggregated, out int SleepTime)
+        {
+            throw new NotImplementedException();
         }
     }
-
-
-
-    public class ButlerTrenchCoatLLMProvider : ButlerTrenchCoatLLMProviderBase
-    {
-        public override void IngestProviderModel(IButlerLLMProvider provider, IngestProviderModelNameFixup? Fixup=null)
-        {
-            var Factory = provider.ChatCreationProvider;
-
-            if (Factory is null)
-            {
-                throw new UnsupportedProviderException("Invalid Provider. This Provider does not support the chat factor standard. To Fix: Ensure that it's ChatCreationProvider returns a thing to make chats!");
-            }
-
-            if (Factory.SupportedModels is null)
-            {
-                throw new UnsupportedProviderException($"Unsupported Provider. This provider does not implement model enumeration, a required feature for {nameof(ButlerTrenchCoatLLMProvider)} disptcher provider");
-            }
-            var WalkMe = Factory.SupportedModels.GetEnumerator();
-
-            if (WalkMe is null)
-            {
-                throw new UnsupportedProviderException($"Unsupported Provider. This provider does not implement model enumeration, a required feature for {nameof(ButlerTrenchCoatLLMProvider)} disptcher provider. Also the enumerator returned null");
-            }
-
-            foreach (string model in WalkMe)
-            {
-                ModelEntry x = new ModelEntry();
-                x.Origin = provider;
-                x.ProviderName = model;
-                if (Fixup is not null)
-                {
-                    x.ExposedName = Fixup(x.ProviderName);
-                }
-                else
-                {
-                    x.ExposedName = model;
-                }
-                x.Keys = null;
-                this.Entries.TryAdd(x.ExposedName, x);
-            }
-        }
-
-        
-    }
-
-    public class CoatLLMModelEnum : IButlerChatCreationSupportedModels
-    {
-        ICollection<string> Keys;
-        public CoatLLMModelEnum(ICollection<string> Data)
-        {
-            Keys = Data;
-        }
-        public IEnumerable<string> GetEnumerator()
-        {
-            foreach (string entry in Keys)
-            {
-                yield return entry;
-            }
-        }
-    }
-
 
 
 }

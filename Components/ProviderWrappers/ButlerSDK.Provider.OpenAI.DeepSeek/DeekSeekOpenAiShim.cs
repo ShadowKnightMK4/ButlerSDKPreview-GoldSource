@@ -35,45 +35,7 @@ namespace ButlerSDK.Providers.OpenAI.DeepSeek
         {
 
         }
-        //public IButlerChatCreationProvider ChatCreationProvider => this;
 
-        //public IButlerChatCreationSupportedModels? SupportedModels => local.SupportedModels;
-
-        //public IButlerChatCompletionOptions DefaultOptions => local.DefaultOptions;
-
-        //IButlerChatCompletionOptions IButlerChatCreationProvider.DefaultOptions => local.DefaultOptions;
-
-        /* public object CreateChatTool(IButlerToolBaseInterface butlerToolBase)
-         {
-             return local.CreateChatTool(butlerToolBase);
-         }*/
-
-        /*public void Initialize(SecureString key)
-        {
-            CommmonInitialize(key);
-        }
-
-        internal void CommmonInitialize(SecureString? key)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            local.Initialize(key);
-        }
-
-
-
-        public IButlerChatClient? GetChatClient(string model, object? Options, IButlerChatPreprocessor? PPR)
-        {
-            IButlerChatClient? ret = local.GetChatClient(model, Options, PPR);
-            if (ret == null)
-            {
-                throw new InvalidOperationException(Message);
-            }
-            else
-            {
-                return new DeepSeekChatClient(ret);
-            }
-        }
-        */
         protected override void SetupModelConfigDefaults()
         {
             base.SetupModelConfigDefaults();

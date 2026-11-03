@@ -404,7 +404,7 @@ namespace ButlerSDK.Providers.OpenAI
     }
     
 
-    public class ButlerOpenAiProvider : IButlerLLMProvider, IButlerChatCreationProvider, IButlerLLMProvider_RecoverOptions
+    public class ButlerOpenAiProvider : IButlerLLMProvider, IButlerChatCreationProvider, IButlerLLMProvider_RecoverOptions, IButlerLLMProvider_SpecificToolExecutionPostCall
     {
         /// <summary>
         /// If null, uses a built in one.
@@ -776,6 +776,26 @@ namespace ButlerSDK.Providers.OpenAI
         {
             SleepTime = 0;
             return false;
+        }
+
+        /// <summary>
+        /// Default for the openai handler is no op, but it is virtual to let shims if needed to have a ready to go hook. This is fired after getting the tool request
+        /// </summary>
+        /// <param name="ProviderSpecific"></param>
+        /// <param name="Item"></param>
+        public virtual void HandlerToolExecuteRequestMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolCallMessage Item)
+        {
+           
+        }
+
+
+        /// <summary>
+        /// Default for the openai handler is no op, but it is virtual to let shims if needed to have a ready to go hook. This is fired after the tool return is done
+        /// </summary>
+        /// <param name="ProviderSpecific"></param>
+        /// <param name="Item"></param>
+        public virtual void HandlerToolExecuteMarkup(Dictionary<string, string> ProviderSpecific, ButlerChatToolResultMessage Item)
+        {
         }
     }
 

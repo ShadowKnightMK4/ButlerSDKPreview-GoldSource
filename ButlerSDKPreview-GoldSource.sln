@@ -130,6 +130,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FirstTool", "Examples\First
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepSeekExample", "Examples\DeepSeekExample\DeepSeekExample.csproj", "{49BE8C8B-EC46-4897-BFEA-8133C1182EB2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VertexCallingAToolGemini", "Examples\VertexGeminiToolCall\VertexCallingAToolGemini.csproj", "{360842E6-DEA6-057D-8928-F8614FE38525}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -324,6 +326,10 @@ Global
 		{49BE8C8B-EC46-4897-BFEA-8133C1182EB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49BE8C8B-EC46-4897-BFEA-8133C1182EB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49BE8C8B-EC46-4897-BFEA-8133C1182EB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{360842E6-DEA6-057D-8928-F8614FE38525}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{360842E6-DEA6-057D-8928-F8614FE38525}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{360842E6-DEA6-057D-8928-F8614FE38525}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{360842E6-DEA6-057D-8928-F8614FE38525}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -379,6 +385,7 @@ Global
 		{8DF6D4F6-E3F7-4BBF-98EF-105B810AF5EF} = {90C68CD0-9657-46C7-865E-C27B83631C29}
 		{0BF4A5DC-7F0F-49F2-A89A-70595993C041} = {90C68CD0-9657-46C7-865E-C27B83631C29}
 		{49BE8C8B-EC46-4897-BFEA-8133C1182EB2} = {90C68CD0-9657-46C7-865E-C27B83631C29}
+		{360842E6-DEA6-057D-8928-F8614FE38525} = {90C68CD0-9657-46C7-865E-C27B83631C29}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E98753D-786C-427A-9051-6515CCB6B063}

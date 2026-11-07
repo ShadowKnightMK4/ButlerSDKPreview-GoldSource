@@ -32,6 +32,7 @@ ButlerSDK.Provider.OpenAI (The OpenAI provider)
 
 * NEW FEATURE: Now implements IButlerLLMProvider_SpecificToolExecutionPostCall routines HandlerToolExecuteRequestMarkup and HandlerToolExecuteMarkup. They currently are virtual and do nothing but exist to let devs have a hook to fire on tool call and result handling.
 
+* INFORMATIONAL:  ChatFactory.CreateChatToool() now intentionally throws ArgumentNullException if you pass null to it instead of random crash.
 
 ButlerSDK.Provider.OpenAI.DeepSeek (OpenAi provider shim for deep seek)
 * NEW FEATURE: There’s a OpenAI shim for Deep seek now starting in version 1.3.0.
@@ -70,7 +71,7 @@ NEW FEATURE: Has Reasoning Effort translation added.
 
 * NEW FEATURE:  IButlerLLMProvider_SpecificToolExecutionPostCall routines HandlerToolExecuteRequestMarkup and HandlerToolExecuteMarkup are now marked virtual to support customization needs. Be advised if the base default isn't called (when overwritten) you'll likely get errors in calling Gemini tools.
 
-
+* BREAKING:  ChatFactory.CreateChatToool() now intentionally throws ArgumentNullException if you pass null to it instead of random crash.
 
 
 

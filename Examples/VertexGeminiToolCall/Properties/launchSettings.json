@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "VertexCallingAToolGemini": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "\"GCLOUD\"": "C:\\Users\\SetupUser\\AppData\\Local\\Google\\Cloud SDK"
+      }
+    }
+  }
+}

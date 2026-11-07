@@ -24,6 +24,36 @@ namespace UnitTests.Provider.OpenAI
             Assert.IsInstanceOfType(x, typeof(IButlerLLMProvider));
         }
 
+        [TestMethod]
+        public void BasicCreateTool_DontThrow_IsNonNull()
+        {
+            ButlerOpenAiProvider prov = new ButlerOpenAiProvider();
+            Assert.IsNotNull(prov);
+            Assert.IsInstanceOfType(prov, typeof(IButlerLLMProvider));
+
+            var demo = new NoSideEffectsTool(null);
+
+            var not_null = prov.CreateChatTool(demo);
+
+            Assert.IsNotNull(not_null);
+        }
+
+        [TestMethod]
+        public void BasicCreateTool_NullTull_Throws()
+        {
+            ButlerOpenAiProvider prov = new ButlerOpenAiProvider();
+            Assert.IsNotNull(prov);
+            Assert.IsInstanceOfType(prov, typeof(IButlerLLMProvider));
+
+
+            Assert.Throws<ArgumentException> ( () => {
+                var is_null = prov.CreateChatTool(null);
+            }
+            );
+
+            
+        }
+
         static bool containstool(string name, IList<ChatTool> check)
         {
             bool found = false;

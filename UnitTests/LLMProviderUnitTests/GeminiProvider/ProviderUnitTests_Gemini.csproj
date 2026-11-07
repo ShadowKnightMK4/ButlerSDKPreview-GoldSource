@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Components\ProviderWrappers\ButlerSDK.Provider.Gemini\ButlerSDK.Provider.Gemini.csproj" />
+    <ProjectReference Include="..\..\..\Components\ProviderWrappers\ButlerSDK,Provider.Gemini.Vertex\ButlerSDK.Provider.Gemini.Vertex.csproj" />
     <ProjectReference Include="..\..\UnitTestDataTypes\UnitTestDataTypes.csproj" />
   </ItemGroup>
 

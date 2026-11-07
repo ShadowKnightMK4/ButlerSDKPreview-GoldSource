@@ -10,6 +10,8 @@ using SecureStringHelper;
 using System.Collections;
 #if DEBUG
 using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
+
 
 #endif
 using System.Runtime.CompilerServices;
@@ -119,8 +121,10 @@ public static class DebugSettings
 
         protected GoogleEndPointMode EndPointMode { get; set; } = GoogleEndPointMode.AiStudio;
 
-        GenerativeAI.VertexAI? enterprise;
-        GenerativeAI.GoogleAi? apiOLD;
+        protected string? VertexProject;
+        protected string? VertexRegion;
+        protected string? accessToken;
+
         ISchrodingerCat? api; // unit initalized this could be other VertexAI or GoogleAI. The code does enforce the right open for level though.
         /* has unit tests*/
 
@@ -158,9 +162,11 @@ public static class DebugSettings
         public ButlerGeminiProvider(VertexAI vertexAI)
         {
             this.EndPointMode = GoogleEndPointMode.VertexAi;
-            this.api = (ISchrodingerCat) vertexAI;
+            this.api = new SchrodingerCat(vertexAI); 
             ArgumentNullException.ThrowIfNull(vertexAI);
         }
+
+
         public IButlerChatCreationProvider ChatCreationProvider
         {
             get
@@ -226,6 +232,8 @@ public static class DebugSettings
             }
         }
 
+            ArgumentNullException.ThrowIfNull(butlerToolBase, nameof(butlerToolBase));
+
             if (!SetOK)
             {
                 Preferred.PropertyNameCaseInsensitive = true;
@@ -286,27 +294,41 @@ public static class DebugSettings
 
         public void Initialize(SecureString x)
         {
-            ArgumentNullException.ThrowIfNull(x);
-            if (x.Length == 0)
+            if (this.EndPointMode == GoogleEndPointMode.AiStudio)
             {
-                throw new ArgumentException("Google Gemini Provider needs non empty key. Go set that API at https://aistudio.google.com/ and DO NOT hard code it in you source code if using source control (i.e. GitHub)");
+                ArgumentNullException.ThrowIfNull(x);
+                if (x.Length == 0)
+                {
+                    throw new ArgumentException("Google Gemini Provider needs non empty key. Go set that API at https://aistudio.google.com/ and DO NOT hard code it in you source code if using source control (i.e. GitHub)");
+                }
+                if (api is null)
+                {
+                    api = (ISchrodingerCat)new SchrodingerCat(new GoogleAi(x.DecryptString()));
+                }
+                goto done;
             }
+            
 
-
+            if (this.EndPointMode == GoogleEndPointMode.VertexAi)
+            {
+                   api = (ISchrodingerCat) new SchrodingerCat(new VertexAI());
+            }
             if (api is null)
             {
                 switch (this.EndPointMode)
                 {
                     case GoogleEndPointMode.AiStudio:
-                        api = (ISchrodingerCat)new SchrodingerCat(new GoogleAi(x.DecryptString()));
+             
                         break;
                     case GoogleEndPointMode.VertexAi:
-                        api = (ISchrodingerCat) new SchrodingerCat(new VertexAI());
+                
                         break;
                 }
                 
             }
 
+
+            done:
             if (api is null)
             {
                 throw new InvalidOperationException("Failed to initialize Google Gemini Provider");

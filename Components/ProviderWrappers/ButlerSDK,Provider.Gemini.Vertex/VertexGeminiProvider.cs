@@ -2,16 +2,23 @@
 using ButlerToolContract;
 using ButlerToolContract.DataTypes;
 using GenerativeAI;
+using SecureStringHelper;
 using System.Security;
 
 namespace ButlerSDK.Providers.Gemini.Vertex
 {
-    public class VertexGeminiProvider : IButlerLLMProvider, IButlerLLMProviderToolRequests, IButlerLLMProvider_SpecificToolExecutionPostCall, IButlerChatCreationProvider
+    public class VertexGeminiProvider : IButlerLLMProvider, IButlerLLMProviderToolRequests, IButlerLLMProvider_SpecificToolExecutionPostCall, IButlerChatCreationProvider, IButlerChatCreationProvider_NoApiNeeded
     {
         ButlerGeminiProvider _inner;
         VertexAI? FancyProvider;
 
         bool IsOwnerOfFancy = false;
+
+        /// <summary>
+        /// Setup with the vertex ai object directly.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <remarks>leaks a bid of the abstraction but needed</remarks>
         public VertexGeminiProvider(VertexAI x)
         {
             _inner = new ButlerGeminiProvider(x);
@@ -19,12 +26,21 @@ namespace ButlerSDK.Providers.Gemini.Vertex
             IsOwnerOfFancy = false;
         }
 
+        /// <summary>
+        /// Setup with this project, region and access token
+        /// </summary>
+        /// <param name="project"></param>
+        /// <param name="region"></param>
+        /// <param name="accessToken"></param>
         public VertexGeminiProvider(string project, string region, string accessToken)
         {
             FancyProvider = new VertexAI(project, region, accessToken);
             IsOwnerOfFancy = true;
             _inner = new ButlerGeminiProvider(FancyProvider);
         }
+        /// <summary>
+        /// Setup with whatever is the configration settings <see cref="VertexAI"/> will pull
+        /// </summary>
         public VertexGeminiProvider()
         {
             _inner = new ButlerGeminiProvider(ButlerGeminiProvider.GoogleEndPointMode.VertexAi);
@@ -60,9 +76,28 @@ namespace ButlerSDK.Providers.Gemini.Vertex
             _inner.HandlerToolExecuteRequestMarkup(ProviderSpecific, Item);
         }
 
+        bool IsInit = false;
         public void Initialize(SecureString x)
         {
-            _inner.Initialize(x);
+            if (!IsInit)
+            {
+                _inner.Initialize(x);
+                IsInit = true;
+            }
+
+        }
+
+        /// <summary>
+        /// the VertexAI object either runs with it OR jsut let one setup initalization.
+        /// </summary>
+        public void Initialize()
+        {
+            if (!IsInit)
+            {
+                SecureString stub = new SecureString();
+                stub.AssignStringThenReadOnly("DUMMYVAL");
+                _inner.Initialize(stub);
+            }
         }
     }
 }
